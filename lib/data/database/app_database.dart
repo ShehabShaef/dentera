@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/error/exceptions.dart';
+import 'database_seeder.dart';
 
 /// Singleton manager for the local SQLite database in Dentera.
 class AppDatabase {
@@ -47,7 +48,18 @@ class AppDatabase {
     await db.execute('PRAGMA foreign_keys = ON;');
   }
 
-  /// Creates the relational schema for all domain tables.
+  /// Creates the relational schema for all domain tables and pre-populates default academic data.
+  ///
+  /// **Why Seeding Occurs During [onCreate]:**
+  /// The [onCreate] callback executes exclusively when the local SQLite database file is first created
+  /// on disk. Executing [DatabaseSeeder.seedInitialData] immediately following the schema batch commit
+  /// ensures that the application is initialized with essential academic departments and requirement
+  /// quotas right after onboarding without manual configuration or network connectivity.
+  ///
+  /// **Relational Integrity & Foreign Keys:**
+  /// Foreign key constraints (`PRAGMA foreign_keys = ON`) are established in [_onConfigure] prior
+  /// to [onCreate]. Because [DatabaseSeeder] inserts parent clinic records prior to child requirements,
+  /// foreign key referential integrity is preserved seamlessly without constraint violations.
   Future<void> _onCreate(Database db, int version) async {
     final batch = db.batch();
 
@@ -116,6 +128,9 @@ class AppDatabase {
     ''');
 
     await batch.commit();
+
+    // Pre-populate default academic clinics and baseline requirement quotas.
+    await DatabaseSeeder.seedInitialData(db);
   }
 
   /// Closes the active database connection.
