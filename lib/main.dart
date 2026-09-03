@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/logging/app_provider_observer.dart';
 import 'core/theme/theme.dart';
 import 'data/repositories/preferences_repository.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
@@ -10,6 +11,9 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
+      observers: [
+        AppProviderObserver(),
+      ],
       child: DenteraApp(),
     ),
   );
