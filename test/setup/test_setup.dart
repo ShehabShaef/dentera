@@ -34,10 +34,11 @@ void setupDatabaseTests() {
 
   // Mock path_provider method channel so getApplicationDocumentsDirectory()
   // resolves to a valid local test temporary directory on host test runners.
-  const MethodChannel channel = MethodChannel('plugins.flutter.io/path_provider');
+  final tempDirPath = Directory.systemTemp.createTempSync('dentera_test_').path;
+  const channel = MethodChannel('plugins.flutter.io/path_provider');
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-    return Directory.systemTemp.path;
+    return tempDirPath;
   });
 
   AppLogger.debug('[TestSetup] sqflite_common_ffi databaseFactory successfully initialized.');

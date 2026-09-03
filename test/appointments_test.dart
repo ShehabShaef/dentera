@@ -7,6 +7,8 @@ import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/appointments/appointments_screen.dart';
 import 'package:dentera/presentation/screens/appointments/widgets/widgets.dart';
 
+import 'package:dentera/presentation/state/state.dart';
+
 void main() {
   group('Appointments Timeline Screen Widget Tests', () {
     testWidgets('DateSelectorStrip renders dates and calls onDateSelected', (WidgetTester tester) async {
@@ -69,13 +71,65 @@ void main() {
     });
 
     testWidgets('AppointmentsScreen renders schedule, next up, timeline, and toggles empty state', (WidgetTester tester) async {
+      final today = DateTime.now();
+      final dummyAppointments = [
+        Appointment(
+          id: 'apt-01',
+          patientId: 'PT-2049',
+          clinicId: 'clinic-surgery',
+          scheduledDate: today.copyWith(hour: 10, minute: 30),
+          status: 'Confirmed',
+          procedureDescription: 'Extraction - Tooth 38',
+        ),
+        Appointment(
+          id: 'apt-02',
+          patientId: 'PT-1002',
+          clinicId: 'clinic-pediatric',
+          scheduledDate: today.copyWith(hour: 13, minute: 0),
+          status: 'Scheduled',
+          procedureDescription: 'Pediatric Care',
+        ),
+        Appointment(
+          id: 'apt-03',
+          patientId: 'PT-1003',
+          clinicId: 'clinic-endo',
+          scheduledDate: today.copyWith(hour: 15, minute: 30),
+          status: 'Scheduled',
+          procedureDescription: 'Root Canal Therapy',
+        ),
+      ];
+
+      final dummyPatients = [
+        Patient(id: 'PT-2049', name: 'Ali Nasser', age: 45, gender: 'Male', createdAt: today),
+        Patient(id: 'PT-1002', name: 'Sarah Jenkins', age: 24, gender: 'Female', createdAt: today),
+        Patient(id: 'PT-1003', name: 'Michael Chang', age: 31, gender: 'Male', createdAt: today),
+      ];
+
+      final dummyClinics = [
+        const Clinic(id: 'clinic-surgery', name: 'Oral Surgery', academicYear: '5th Year', colorHex: '#2E3F50'),
+        const Clinic(id: 'clinic-pediatric', name: 'Pediatric Dentistry', academicYear: '5th Year', colorHex: '#4A6572'),
+        const Clinic(id: 'clinic-endo', name: 'Endodontics', academicYear: '5th Year', colorHex: '#1E568C'),
+      ];
+
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            dailyAppointmentsProvider.overrideWith((ref, date) async {
+              if (date.year == today.year && date.month == today.month && date.day == today.day) {
+                return dummyAppointments;
+              }
+              return <Appointment>[];
+            }),
+            patientListProvider.overrideWith((ref) async => dummyPatients),
+            clinicListProvider.overrideWith((ref) async => dummyClinics),
+          ],
+          child: const MaterialApp(
             home: AppointmentsScreen(),
           ),
         ),
       );
+
+      await tester.pumpAndSettle();
 
       expect(find.text('Appointments'), findsOneWidget);
       expect(find.text('Next Up'), findsOneWidget);

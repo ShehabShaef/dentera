@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
 
-/// Clinical schedule timeline screen.
+/// Clinical schedule timeline screen providing reactive, offline-first appointment tracking.
+///
+/// **Riverpod State Reactivity:**
+/// This screen watches [dailyAppointmentsProvider] parameterized by [_selectedDate].
+/// Whenever the user selects a new date on the [DateSelectorStrip], [_selectedDate] updates,
+/// which automatically triggers Riverpod to fetch the relevant appointments from the local
+/// SQLite database for that specific calendar day.
+///
+/// **AsyncValue State Handling:**
+/// - `loading`: Displays a centered [CircularProgressIndicator] while the local SQLite query executes.
+/// - `data`: If empty, renders a clean zero-state prompt ([_buildEmptyState]) inviting the user
+///   to schedule a new patient. If populated, splits the appointments into a highlighted "Next Up" card
+///   and a chronological timeline using [TimelineAppointmentCard].
+/// - `error`: Gracefully catches and logs errors via [AppLogger.error] while presenting the empty state
+///   to prevent clinical workflow disruptions.
 class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
 
@@ -17,68 +34,21 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
 class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   DateTime _selectedDate = DateTime.now();
 
-  // Mock appointments dataset (ready for SQLite injection in Phase 7)
-  final List<Map<String, dynamic>> _mockAppointments = [
-    {
-      'appointment': Appointment(
-        id: 'apt-01',
-        patientId: 'PT-2049',
-        clinicId: 'clinic-surgery',
-        scheduledDate: DateTime.now().copyWith(hour: 10, minute: 30),
-        status: 'Confirmed',
-        procedureDescription: 'Extraction - Tooth 38',
-      ),
-      'patientName': 'Ali Nasser',
-      'clinicName': 'Oral Surgery',
-      'timeWindow': '10:30 AM - 12:00 PM',
-      'timeFormatted': '10:30 AM',
-      'clinicColor': AppColors.error,
-      'isNextUp': true,
-    },
-    {
-      'appointment': Appointment(
-        id: 'apt-02',
-        patientId: 'PT-1002',
-        clinicId: 'clinic-pediatric',
-        scheduledDate: DateTime.now().copyWith(hour: 13, minute: 0),
-        status: 'Scheduled',
-        procedureDescription: 'Pediatric Care',
-      ),
-      'patientName': 'Sarah Jenkins',
-      'clinicName': 'Pediatric Dentistry',
-      'timeWindow': '01:00 PM - 02:30 PM',
-      'timeFormatted': '01:00 PM',
-      'clinicColor': AppColors.secondary,
-      'isNextUp': false,
-    },
-    {
-      'appointment': Appointment(
-        id: 'apt-03',
-        patientId: 'PT-1003',
-        clinicId: 'clinic-endo',
-        scheduledDate: DateTime.now().copyWith(hour: 15, minute: 30),
-        status: 'Scheduled',
-        procedureDescription: 'Root Canal Therapy',
-      ),
-      'patientName': 'Michael Chang',
-      'clinicName': 'Endodontics',
-      'timeWindow': '03:30 PM - 05:00 PM',
-      'timeFormatted': '03:30 PM',
-      'clinicColor': AppColors.primary,
-      'isNextUp': false,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
-    // For demo purposes, show appointments if today, otherwise allow toggling
-    final isToday = _selectedDate.day == DateTime.now().day &&
-        _selectedDate.month == DateTime.now().month &&
-        _selectedDate.year == DateTime.now().year;
+    // Watch daily appointments for the currently selected calendar date
+    final appointmentsAsync = ref.watch(dailyAppointmentsProvider(_selectedDate));
 
-    final appointmentsForDay = isToday ? _mockAppointments : <Map<String, dynamic>>[];
-    final nextUpAppointment = appointmentsForDay.where((a) => a['isNextUp'] == true).firstOrNull;
-    final laterAppointments = appointmentsForDay.where((a) => a['isNextUp'] != true).toList();
+    // Watch registered patients and clinics for relational display mapping
+    final patientsAsync = ref.watch(patientListProvider);
+    final clinicsAsync = ref.watch(clinicListProvider);
+
+    final patientsMap = {
+      for (final p in patientsAsync.valueOrNull ?? const <Patient>[]) p.id: p,
+    };
+    final clinicsMap = {
+      for (final c in clinicsAsync.valueOrNull ?? const <Clinic>[]) c.id: c,
+    };
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -113,6 +83,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   DateSelectorStrip(
                     selectedDate: _selectedDate,
                     onDateSelected: (date) {
+                      AppLogger.info(
+                        '[AppointmentsScreen] User navigated timeline to: '
+                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+                      );
                       setState(() {
                         _selectedDate = date;
                       });
@@ -120,54 +94,113 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  if (appointmentsForDay.isEmpty)
-                    _buildEmptyState()
-                  else ...<Widget>[
-                    // 2. "Next Up" Appointment Highlight Card
-                    if (nextUpAppointment != null) ...<Widget>[
-                      Text(
-                        'Next Up',
-                        style: AppTextStyles.h2.copyWith(
-                          fontWeight: FontWeight.w600,
+                  // 2. Reactive Appointments Content
+                  appointmentsAsync.when(
+                    data: (appointments) {
+                      AppLogger.debug(
+                        '[AppointmentsScreen] Loaded ${appointments.length} appointments for date: '
+                        '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}',
+                      );
+
+                      if (appointments.isEmpty) {
+                        return _buildEmptyState();
+                      }
+
+                      // Sort chronologically by scheduled time
+                      final sorted = List<Appointment>.from(appointments)
+                        ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+
+                      final nextUpAppointment = sorted.first;
+                      final laterAppointments = sorted.skip(1).toList();
+
+                      final nextUpPatientName =
+                          patientsMap[nextUpAppointment.patientId]?.name ??
+                              'Patient #${nextUpAppointment.patientId}';
+                      final nextUpClinic = clinicsMap[nextUpAppointment.clinicId];
+                      final nextUpClinicName = nextUpClinic?.name ?? 'General Clinic';
+                      final nextUpTimeWindow = _formatTimeWindow(nextUpAppointment.scheduledDate);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          // "Next Up" Highlight Card
+                          Text(
+                            'Next Up',
+                            style: AppTextStyles.h2.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildNextUpCard(
+                            appointment: nextUpAppointment,
+                            patientName: nextUpPatientName,
+                            clinicName: nextUpClinicName,
+                            timeWindow: nextUpTimeWindow,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // "Later Today" Chronological Timeline
+                          if (laterAppointments.isNotEmpty) ...<Widget>[
+                            Text(
+                              'Later Today',
+                              style: AppTextStyles.h2.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: laterAppointments.length,
+                              itemBuilder: (context, index) {
+                                final apt = laterAppointments[index];
+                                final isLast = index == laterAppointments.length - 1;
+                                final patientName =
+                                    patientsMap[apt.patientId]?.name ??
+                                        'Patient #${apt.patientId}';
+                                final clinic = clinicsMap[apt.clinicId];
+                                final clinicName = clinic?.name ?? 'General Clinic';
+                                final clinicColor = _parseColor(
+                                  clinic?.colorHex,
+                                  fallback: AppColors.secondary,
+                                );
+                                final timeFormatted = _formatTime(apt.scheduledDate);
+
+                                return TimelineAppointmentCard(
+                                  appointment: apt,
+                                  patientName: patientName,
+                                  clinicName: clinicName,
+                                  timeFormatted: timeFormatted,
+                                  clinicColor: clinicColor,
+                                  isLast: isLast,
+                                  onTap: () {
+                                    // TODO: Phase 6.2 - Open Case Sheet
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48.0),
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _buildNextUpCard(nextUpAppointment),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                    error: (error, stackTrace) {
+                      AppLogger.error(
+                        '[AppointmentsScreen] Failed to retrieve appointments for date $_selectedDate: $error',
+                        error,
+                        stackTrace,
+                      );
+                      return _buildEmptyState();
+                    },
+                  ),
 
-                    // 3. "Later Today" Chronological Timeline
-                    if (laterAppointments.isNotEmpty) ...<Widget>[
-                      Text(
-                        'Later Today',
-                        style: AppTextStyles.h2.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: laterAppointments.length,
-                        itemBuilder: (context, index) {
-                          final item = laterAppointments[index];
-                          final isLast = index == laterAppointments.length - 1;
-
-                          return TimelineAppointmentCard(
-                            appointment: item['appointment'] as Appointment,
-                            patientName: item['patientName'] as String,
-                            clinicName: item['clinicName'] as String,
-                            timeFormatted: item['timeFormatted'] as String,
-                            clinicColor: item['clinicColor'] as Color? ?? AppColors.secondary,
-                            isLast: isLast,
-                            onTap: () {
-                              // TODO: Phase 6.2 - Open Case Sheet
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ],
                   const SizedBox(height: 80), // Padding for FAB
                 ],
               ),
@@ -177,22 +210,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_appointments',
-        onPressed: () {
-          ScheduleAppointmentModal.show(
-            context,
-            initialDate: _selectedDate,
-            onAppointmentScheduled: (newApt) {
-              setState(() {
-                _mockAppointments.add({
-                  'appointment': newApt,
-                  'patientName': 'Sara Ahmed',
-                  'clinicName': 'Prosthodontics',
-                  'clinicColor': AppColors.secondary,
-                });
-              });
-            },
-          );
-        },
+        onPressed: _openScheduleAppointmentModal,
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
         elevation: 3,
@@ -207,12 +225,31 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     );
   }
 
-  Widget _buildNextUpCard(Map<String, dynamic> item) {
-    final appointment = item['appointment'] as Appointment;
-    final patientName = item['patientName'] as String;
-    final clinicName = item['clinicName'] as String;
-    final timeWindow = item['timeWindow'] as String;
+  /// Opens the appointment creation modal and invalidates providers upon insertion.
+  Future<void> _openScheduleAppointmentModal() async {
+    await ScheduleAppointmentModal.show(
+      context,
+      initialDate: _selectedDate,
+      onAppointmentScheduled: (newApt) async {
+        try {
+          await ref.read(appointmentRepositoryProvider).addAppointment(newApt);
+        } catch (_) {}
+        ref.invalidate(dailyAppointmentsProvider(_selectedDate));
+        ref.invalidate(allAppointmentsProvider);
+        ref.invalidate(upcomingAppointmentsProvider);
+      },
+    );
+    if (mounted) {
+      ref.invalidate(dailyAppointmentsProvider(_selectedDate));
+    }
+  }
 
+  Widget _buildNextUpCard({
+    required Appointment appointment,
+    required String patientName,
+    required String clinicName,
+    required String timeWindow,
+  }) {
     return BaseCard(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -265,10 +302,13 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                 color: AppColors.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
-              Text(
-                '$clinicName${appointment.procedureDescription != null && appointment.procedureDescription!.isNotEmpty ? ' - ${appointment.procedureDescription}' : ''}',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
+              Expanded(
+                child: Text(
+                  '$clinicName${appointment.procedureDescription != null && appointment.procedureDescription!.isNotEmpty ? ' - ${appointment.procedureDescription}' : ''}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -331,26 +371,38 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                 color: AppColors.onPrimary,
                 size: 18,
               ),
-              onPressed: () {
-                ScheduleAppointmentModal.show(
-                  context,
-                  initialDate: _selectedDate,
-                  onAppointmentScheduled: (newApt) {
-                    setState(() {
-                      _mockAppointments.add({
-                        'appointment': newApt,
-                        'patientName': 'Sara Ahmed',
-                        'clinicName': 'Prosthodontics',
-                        'clinicColor': AppColors.secondary,
-                      });
-                    });
-                  },
-                );
-              },
+              onPressed: _openScheduleAppointmentModal,
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
+  }
+
+  String _formatTimeWindow(DateTime dateTime) {
+    final start = _formatTime(dateTime);
+    final end = _formatTime(dateTime.add(const Duration(minutes: 90)));
+    return '$start - $end';
+  }
+
+  Color _parseColor(String? hexString, {Color fallback = AppColors.secondary}) {
+    if (hexString == null || hexString.isEmpty) return fallback;
+    try {
+      final hex = hexString.replaceAll('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('0xFF$hex'));
+      } else if (hex.length == 8) {
+        return Color(int.parse('0x$hex'));
+      }
+    } catch (_) {}
+    return fallback;
   }
 }

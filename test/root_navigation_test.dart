@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/appointments/appointments_screen.dart';
 import 'package:dentera/presentation/screens/clinics/clinics_screen.dart';
 import 'package:dentera/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:dentera/presentation/screens/patients/patients_screen.dart';
 import 'package:dentera/presentation/screens/profile/profile_screen.dart';
 import 'package:dentera/presentation/screens/root_navigation_screen.dart';
+
+import 'package:dentera/presentation/state/state.dart';
 
 void main() {
   setUp(() {
@@ -23,8 +26,11 @@ void main() {
   group('RootNavigationScreen Widget Tests', () {
     testWidgets('Renders all 5 BottomNavigationBar items and switches tabs', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+          ],
+          child: const MaterialApp(
             home: RootNavigationScreen(),
           ),
         ),
@@ -70,8 +76,11 @@ void main() {
 
     testWidgets('IndexedStack preserves state when switching away and returning', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+          ],
+          child: const MaterialApp(
             home: RootNavigationScreen(),
           ),
         ),

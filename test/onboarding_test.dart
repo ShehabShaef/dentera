@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/data/repositories/preferences_repository.dart';
+import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:dentera/presentation/screens/root_navigation_screen.dart';
+import 'package:dentera/presentation/state/state.dart';
 import 'package:dentera/presentation/widgets/widgets.dart';
 
 void main() {
@@ -42,6 +44,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+          ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
             home: const OnboardingScreen(),
