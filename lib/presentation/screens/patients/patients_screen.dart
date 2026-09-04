@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
@@ -152,16 +153,21 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                     color: AppColors.primary,
                   ),
                 ),
-                error: (error, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                    child: Text(
-                      'Failed to load patients: $error',
-                      style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
+                error: (error, stackTrace) {
+                  AppLogger.error(
+                    '[PatientsScreen] Failed to load patients: $error',
+                    error,
+                    stackTrace,
+                  );
+                  return DenteraErrorState(
+                    title: 'Failed to load patients',
+                    message: error.toString(),
+                    onRetry: () {
+                      ref.invalidate(patientListProvider);
+                      ref.invalidate(allCasesProvider);
+                    },
+                  );
+                },
               ),
             ),
           ],

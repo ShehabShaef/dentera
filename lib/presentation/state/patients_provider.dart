@@ -8,13 +8,21 @@ import 'clinics_provider.dart';
 import 'requirements_provider.dart';
 
 /// Provides the full list of patients directly from the SQLite database.
+///
+/// **Error Propagation Architecture:**
+/// Previously, a local `try/catch` block caught database exceptions and silently returned
+/// an empty list (`<Patient>[]`). Swallowing errors locally masked underlying SQLite failures
+/// (such as lock contention or disk I/O errors) as valid empty rosters, preventing the UI
+/// from alerting clinical users and bypassing error-recovery mechanisms.
+///
+/// Exceptions thrown by [PatientRepository.getAllPatients] are now allowed to propagate
+/// unhindered. Riverpod's [FutureProvider] automatically captures any thrown exception and
+/// transitions into an [AsyncError] state. This enables:
+/// 1. [AppProviderObserver] to intercept the error and record detailed stack traces.
+/// 2. UI screens to gracefully present dedicated error state widgets with user retry options.
 final patientListProvider = FutureProvider<List<Patient>>((ref) async {
-  try {
-    final repository = ref.watch(patientRepositoryProvider);
-    return await repository.getAllPatients();
-  } catch (_) {
-    return <Patient>[];
-  }
+  final repository = ref.watch(patientRepositoryProvider);
+  return await repository.getAllPatients();
 });
 
 /// Tracks the active search query text for filtering patients.
@@ -97,6 +105,12 @@ final filteredPatientListProvider = Provider<AsyncValue<List<Patient>>>((ref) {
 
     if (clinicsAsync.isLoading || requirementsAsync.isLoading) {
       return const AsyncValue.loading();
+    }
+    if (clinicsAsync.hasError) {
+      return AsyncValue.error(clinicsAsync.error!, clinicsAsync.stackTrace!);
+    }
+    if (requirementsAsync.hasError) {
+      return AsyncValue.error(requirementsAsync.error!, requirementsAsync.stackTrace!);
     }
 
     final clinics = clinicsAsync.value ?? <Clinic>[];

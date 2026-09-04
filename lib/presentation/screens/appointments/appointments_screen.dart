@@ -197,7 +197,11 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         error,
                         stackTrace,
                       );
-                      return _buildEmptyState();
+                      return DenteraErrorState(
+                        title: 'Failed to load schedule',
+                        message: error.toString(),
+                        onRetry: () => ref.invalidate(dailyAppointmentsProvider(_selectedDate)),
+                      );
                     },
                   ),
 

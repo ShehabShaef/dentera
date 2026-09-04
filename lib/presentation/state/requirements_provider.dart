@@ -4,24 +4,25 @@ import '../../data/database/database_providers.dart';
 import '../../domain/entities/entities.dart';
 
 /// Provides the list of requirements for a specific clinic.
+///
+/// **Error Propagation Architecture:**
+/// Database exceptions are allowed to propagate to Riverpod's [FutureProvider.family],
+/// wrapping errors into [AsyncError] rather than masking database failures with empty lists.
 final requirementsByClinicProvider =
     FutureProvider.family<List<Requirement>, String>((ref, clinicId) async {
-  try {
-    final repository = ref.watch(requirementRepositoryProvider);
-    return await repository.getRequirementsByClinicId(clinicId);
-  } catch (_) {
-    return <Requirement>[];
-  }
+  final repository = ref.watch(requirementRepositoryProvider);
+  return await repository.getRequirementsByClinicId(clinicId);
 });
 
 /// Provides all clinical requirements across all departments.
+///
+/// **Error Propagation Architecture:**
+/// Exceptions thrown by [RequirementRepository.getAllRequirements] propagate naturally
+/// to Riverpod, transitioning the provider to [AsyncError] and allowing [globalQuotaSummaryProvider]
+/// and consumer widgets to display actionable error interfaces.
 final allRequirementsProvider = FutureProvider<List<Requirement>>((ref) async {
-  try {
-    final repository = ref.watch(requirementRepositoryProvider);
-    return await repository.getAllRequirements();
-  } catch (_) {
-    return <Requirement>[];
-  }
+  final repository = ref.watch(requirementRepositoryProvider);
+  return await repository.getAllRequirements();
 });
 
 /// Aggregate quota stats across the entire application.

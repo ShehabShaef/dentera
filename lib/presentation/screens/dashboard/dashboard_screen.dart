@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
 import '../../state/state.dart';
@@ -85,7 +86,19 @@ class DashboardScreen extends ConsumerWidget {
                           );
                         },
                         loading: () => const DashboardProgressCard(),
-                        error: (_, _) => const DashboardProgressCard(),
+                        error: (error, stackTrace) {
+                          AppLogger.error(
+                            '[DashboardScreen] Failed to load quota statistics: $error',
+                            error,
+                            stackTrace,
+                          );
+                          return DenteraErrorState(
+                            isCompact: true,
+                            title: 'Quota Statistics Unavailable',
+                            message: 'Could not retrieve departmental progress.',
+                            onRetry: () => ref.invalidate(allRequirementsProvider),
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -145,15 +158,19 @@ class DashboardScreen extends ConsumerWidget {
                           clinicColor: AppColors.secondary,
                           onViewCase: () {},
                         ),
-                        error: (_, _) => DashboardAppointmentCard(
-                          patientName: 'Ali Nasser',
-                          patientId: 'PT-2049',
-                          patientDetails: 'Male • 45 Y',
-                          timeWindow: '10:30 AM - 12:00 PM',
-                          procedureTitle: 'Prosthodontics - Metal Denture',
-                          clinicColor: AppColors.secondary,
-                          onViewCase: () {},
-                        ),
+                        error: (error, stackTrace) {
+                          AppLogger.error(
+                            '[DashboardScreen] Failed to load today\'s appointments: $error',
+                            error,
+                            stackTrace,
+                          );
+                          return DenteraErrorState(
+                            isCompact: true,
+                            title: 'Appointments Unavailable',
+                            message: 'Could not load today\'s scheduled appointments.',
+                            onRetry: () => ref.invalidate(dailyAppointmentsProvider(DateTime.now())),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 
@@ -202,7 +219,19 @@ class DashboardScreen extends ConsumerWidget {
                           );
                         },
                         loading: () => const DashboardUpcomingSection(),
-                        error: (_, _) => const DashboardUpcomingSection(),
+                        error: (error, stackTrace) {
+                          AppLogger.error(
+                            '[DashboardScreen] Failed to load upcoming patients: $error',
+                            error,
+                            stackTrace,
+                          );
+                          return DenteraErrorState(
+                            isCompact: true,
+                            title: 'Upcoming Patients Unavailable',
+                            message: 'Could not retrieve tomorrow\'s patient schedule.',
+                            onRetry: () => ref.invalidate(upcomingAppointmentsProvider),
+                          );
+                        },
                       ),
                       const SizedBox(height: 80), // Padding for floating action button
                     ],
