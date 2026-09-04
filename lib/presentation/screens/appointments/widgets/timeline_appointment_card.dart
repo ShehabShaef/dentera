@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../patients/patient_case_sheet_screen.dart';
 
 /// Timeline appointment row widget with chronological node line and detailed patient card.
+///
+/// ### Routing Mechanisms:
+/// Activating this timeline card executes an imperative [Navigator.push] to the
+/// [PatientCaseSheetScreen], passing the linked [Appointment.patientId].
+/// In Dentera's offline architecture, detail views are pushed onto the [Navigator]
+/// stack to isolate workflow contexts and maintain standard platform back-stack navigation,
+/// whereas core sections switch via Riverpod's `rootNavigationIndexProvider` inside the
+/// root `IndexedStack`.
 class TimelineAppointmentCard extends StatelessWidget {
   const TimelineAppointmentCard({
     super.key,
@@ -88,8 +99,19 @@ class TimelineAppointmentCard extends StatelessWidget {
                 color: AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
-                  onTap: onTap ?? () {
-                    // TODO: Phase 6.2 - Open Case Sheet
+                  onTap: () {
+                    if (onTap != null) {
+                      onTap!();
+                    } else {
+                      AppLogger.info('Navigating to Patient Case Sheet for patient: ${appointment.patientId}');
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => PatientCaseSheetScreen(
+                            patientId: appointment.patientId,
+                          ),
+                        ),
+                      );
+                    }
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(

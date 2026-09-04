@@ -7,9 +7,23 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
+import '../patients/patient_case_sheet_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Clinical schedule timeline screen providing reactive, offline-first appointment tracking.
+///
+/// ### Routing Mechanisms:
+/// 1. **State-Driven Tab Switching (Riverpod):**
+///    Tapping the AppBar settings icon mutates [rootNavigationIndexProvider] to index `4`
+///    (Profile tab). This activates the Profile screen within the root [IndexedStack],
+///    preserving the active schedule scroll position and loaded timeline state without
+///    manipulating the imperative [Navigator] history.
+///
+/// 2. **Stack-Based Deep Link Routing ([Navigator.push]):**
+///    Tapping "Open Case Sheet" on the Next Up card or tapping any [TimelineAppointmentCard]
+///    pushes [PatientCaseSheetScreen] onto the [Navigator] stack with the corresponding
+///    `patientId` and [Patient] entity. This isolates clinical case workflows and
+///    ensures predictable back-button / back-gesture popping to the timeline.
 ///
 /// **Riverpod State Reactivity:**
 /// This screen watches [dailyAppointmentsProvider] parameterized by [_selectedDate].
@@ -64,7 +78,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // TODO: Phase 5.5 - Navigate to Profile & Settings
+              AppLogger.info('Switching root tab to Profile from Appointments');
+              ref.read(rootNavigationIndexProvider.notifier).state = 4;
             },
           ),
         ],
@@ -136,6 +151,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             patientName: nextUpPatientName,
                             clinicName: nextUpClinicName,
                             timeWindow: nextUpTimeWindow,
+                            patient: patientsMap[nextUpAppointment.patientId],
                           ),
                           const SizedBox(height: 24),
 
@@ -174,7 +190,15 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   clinicColor: clinicColor,
                                   isLast: isLast,
                                   onTap: () {
-                                    // TODO: Phase 6.2 - Open Case Sheet
+                                    AppLogger.info('Navigating to Patient Case Sheet for patient: ${apt.patientId}');
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (context) => PatientCaseSheetScreen(
+                                          patientId: apt.patientId,
+                                          patient: patientsMap[apt.patientId],
+                                        ),
+                                      ),
+                                    );
                                   },
                                 );
                               },
@@ -253,6 +277,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     required String patientName,
     required String clinicName,
     required String timeWindow,
+    Patient? patient,
   }) {
     return BaseCard(
       padding: const EdgeInsets.all(20.0),
@@ -323,7 +348,16 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             height: 42,
             borderColor: AppColors.outlineVariant,
             onPressed: () {
-              // TODO: Phase 6.2 - Open Patient Case Sheet
+              final patientId = appointment.patientId;
+              AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => PatientCaseSheetScreen(
+                    patientId: patientId,
+                    patient: patient,
+                  ),
+                ),
+              );
             },
           ),
         ],

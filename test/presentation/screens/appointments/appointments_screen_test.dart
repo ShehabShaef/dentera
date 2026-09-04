@@ -8,7 +8,19 @@ import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/appointments/appointments_screen.dart';
 import 'package:dentera/presentation/screens/appointments/widgets/widgets.dart';
+import 'package:dentera/presentation/screens/patients/patient_case_sheet_screen.dart';
 import 'package:dentera/presentation/state/state.dart';
+
+/// Test navigator observer to capture push transitions and inspect routes.
+class TestNavigatorObserver extends NavigatorObserver {
+  final List<Route<dynamic>> pushedRoutes = <Route<dynamic>>[];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedRoutes.add(route);
+    super.didPush(route, previousRoute);
+  }
+}
 
 void main() {
   group('AppointmentsScreen Reactive State Widget Tests', () {
@@ -160,6 +172,159 @@ void main() {
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Next Up'), findsOneWidget);
+    });
+
+    testWidgets('Tapping settings icon in AppBar mutates rootNavigationIndexProvider to Profile tab (4)',
+        (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          rootNavigationIndexProvider.overrideWith((ref) => 3),
+          dailyAppointmentsProvider.overrideWith((ref, date) async => dummyAppointments),
+          patientListProvider.overrideWith((ref) async => dummyPatients),
+          clinicListProvider.overrideWith((ref) async => dummyClinics),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const AppointmentsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(container.read(rootNavigationIndexProvider), 3);
+
+      final settingsBtnFinder = find.byIcon(Icons.settings_outlined);
+      expect(settingsBtnFinder, findsOneWidget);
+      await tester.tap(settingsBtnFinder);
+      await tester.pumpAndSettle();
+
+      expect(container.read(rootNavigationIndexProvider), 4);
+    });
+
+    testWidgets('Tapping "Open Case Sheet" on Next Up card pushes PatientCaseSheetScreen',
+        (WidgetTester tester) async {
+      final navObserver = TestNavigatorObserver();
+      final container = ProviderContainer(
+        overrides: [
+          dailyAppointmentsProvider.overrideWith((ref, date) async => dummyAppointments),
+          patientListProvider.overrideWith((ref) async => dummyPatients),
+          clinicListProvider.overrideWith((ref) async => dummyClinics),
+          patientByIdProvider.overrideWith((ref, id) {
+            return dummyPatients.firstWhere((p) => p.id == id, orElse: () => dummyPatients.first);
+          }),
+          casesByPatientProvider.overrideWith((ref, id) async => <CaseRecord>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            navigatorObservers: [navObserver],
+            home: const AppointmentsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final openCaseFinder = find.text('Open Case Sheet');
+      expect(openCaseFinder, findsOneWidget);
+      await tester.ensureVisible(openCaseFinder);
+      await tester.tap(openCaseFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PatientCaseSheetScreen), findsOneWidget);
+      expect(navObserver.pushedRoutes.length, greaterThanOrEqualTo(2));
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(PatientCaseSheetScreen), findsNothing);
+      expect(find.byType(AppointmentsScreen), findsOneWidget);
+    });
+
+    testWidgets('Tapping TimelineAppointmentCard in Later Today section pushes PatientCaseSheetScreen',
+        (WidgetTester tester) async {
+      final navObserver = TestNavigatorObserver();
+      final container = ProviderContainer(
+        overrides: [
+          dailyAppointmentsProvider.overrideWith((ref, date) async => dummyAppointments),
+          patientListProvider.overrideWith((ref) async => dummyPatients),
+          clinicListProvider.overrideWith((ref) async => dummyClinics),
+          patientByIdProvider.overrideWith((ref, id) {
+            return dummyPatients.firstWhere((p) => p.id == id, orElse: () => dummyPatients.first);
+          }),
+          casesByPatientProvider.overrideWith((ref, id) async => <CaseRecord>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            navigatorObservers: [navObserver],
+            home: const AppointmentsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final sarahCardFinder = find.text('Sarah Jenkins');
+      expect(sarahCardFinder, findsOneWidget);
+      await tester.ensureVisible(sarahCardFinder);
+      await tester.tap(sarahCardFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PatientCaseSheetScreen), findsOneWidget);
+      expect(navObserver.pushedRoutes.length, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('Standalone TimelineAppointmentCard default onTap pushes PatientCaseSheetScreen',
+        (WidgetTester tester) async {
+      final navObserver = TestNavigatorObserver();
+      final container = ProviderContainer(
+        overrides: [
+          patientByIdProvider.overrideWith((ref, id) {
+            return dummyPatients.firstWhere((p) => p.id == id, orElse: () => dummyPatients.first);
+          }),
+          casesByPatientProvider.overrideWith((ref, id) async => <CaseRecord>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            navigatorObservers: [navObserver],
+            home: Scaffold(
+              body: TimelineAppointmentCard(
+                appointment: dummyAppointments.first,
+                patientName: 'Ali Nasser',
+                clinicName: 'Endodontics',
+                timeFormatted: '09:30 AM',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ali Nasser'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PatientCaseSheetScreen), findsOneWidget);
+      expect(navObserver.pushedRoutes.length, greaterThanOrEqualTo(2));
     });
   });
 }
