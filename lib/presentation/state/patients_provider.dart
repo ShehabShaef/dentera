@@ -158,3 +158,12 @@ final filteredPatientListProvider = Provider<AsyncValue<List<Patient>>>((ref) {
 
   return AsyncValue.data(categoryFiltered);
 });
+
+/// Provides a single [Patient] by their unique ID directly from the SQLite database repository.
+///
+/// Thrown database exceptions automatically propagate into an [AsyncError] state,
+/// allowing calling widgets to trigger error recovery UI or handle missing records gracefully.
+final patientByIdProvider = FutureProvider.family<Patient?, String>((ref, patientId) async {
+  final repository = ref.watch(patientRepositoryProvider);
+  return await repository.getPatientById(patientId);
+});

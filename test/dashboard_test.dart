@@ -19,12 +19,14 @@ void main() {
   group('Dashboard Screen & Subwidgets Widget Tests', () {
     testWidgets('DashboardHeader renders doctor greeting and initials', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const Scaffold(
-            body: DashboardHeader(
-              doctorName: 'Dr. Shehab',
-              academicYear: '5th Year',
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const Scaffold(
+              body: DashboardHeader(
+                doctorName: 'Dr. Shehab',
+                academicYear: '5th Year',
+              ),
             ),
           ),
         ),
@@ -82,10 +84,12 @@ void main() {
 
     testWidgets('DashboardUpcomingSection renders tomorrow patient cards', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const Scaffold(
-            body: DashboardUpcomingSection(),
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const Scaffold(
+              body: DashboardUpcomingSection(),
+            ),
           ),
         ),
       );

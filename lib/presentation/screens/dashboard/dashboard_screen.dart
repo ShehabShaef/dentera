@@ -6,6 +6,7 @@ import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
+import '../patients/patient_case_sheet_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Main command center dashboard screen for Dentera wired to Riverpod SQLite state.
@@ -49,7 +50,8 @@ class DashboardScreen extends ConsumerWidget {
                         doctorName: doctorName,
                         academicYear: academicYear,
                         onAvatarTap: () {
-                          // TODO: Phase 5.5 - Navigate to Profile & Settings
+                          AppLogger.info('Switching root tab to Profile');
+                          ref.read(rootNavigationIndexProvider.notifier).state = 4;
                         },
                       ),
                       const SizedBox(height: 20),
@@ -123,15 +125,23 @@ class DashboardScreen extends ConsumerWidget {
                       todayAppointmentsAsync.when(
                         data: (appointments) {
                           if (appointments.isEmpty) {
+                            const patientId = 'PT-2049';
                             return DashboardAppointmentCard(
                               patientName: 'Ali Nasser',
-                              patientId: 'PT-2049',
+                              patientId: patientId,
                               patientDetails: 'Male • 45 Y',
                               timeWindow: '10:30 AM - 12:00 PM',
                               procedureTitle: 'Prosthodontics - Metal Denture',
                               clinicColor: AppColors.secondary,
                               onViewCase: () {
-                                // TODO: Phase 6.2 - Open Patient Case Sheet
+                                AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (context) => const PatientCaseSheetScreen(
+                                      patientId: patientId,
+                                    ),
+                                  ),
+                                );
                               },
                             );
                           }
@@ -145,19 +155,38 @@ class DashboardScreen extends ConsumerWidget {
                             procedureTitle: firstApt.procedureDescription ?? 'Clinical Procedure',
                             clinicColor: AppColors.secondary,
                             onViewCase: () {
-                              // TODO: Phase 6.2 - Open Patient Case Sheet
+                              AppLogger.info('Navigating to Patient Case Sheet for patient: ${firstApt.patientId}');
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) => PatientCaseSheetScreen(
+                                    patientId: firstApt.patientId,
+                                  ),
+                                ),
+                              );
                             },
                           );
                         },
-                        loading: () => DashboardAppointmentCard(
-                          patientName: 'Ali Nasser',
-                          patientId: 'PT-2049',
-                          patientDetails: 'Male • 45 Y',
-                          timeWindow: '10:30 AM - 12:00 PM',
-                          procedureTitle: 'Prosthodontics - Metal Denture',
-                          clinicColor: AppColors.secondary,
-                          onViewCase: () {},
-                        ),
+                        loading: () {
+                          const patientId = 'PT-2049';
+                          return DashboardAppointmentCard(
+                            patientName: 'Ali Nasser',
+                            patientId: patientId,
+                            patientDetails: 'Male • 45 Y',
+                            timeWindow: '10:30 AM - 12:00 PM',
+                            procedureTitle: 'Prosthodontics - Metal Denture',
+                            clinicColor: AppColors.secondary,
+                            onViewCase: () {
+                              AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) => const PatientCaseSheetScreen(
+                                    patientId: patientId,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                         error: (error, stackTrace) {
                           AppLogger.error(
                             '[DashboardScreen] Failed to load today\'s appointments: $error',
@@ -184,6 +213,7 @@ class DashboardScreen extends ConsumerWidget {
                           final List<UpcomingPatientItem> upcomingItems = upcomingList.isNotEmpty
                               ? upcomingList
                                   .map((apt) => UpcomingPatientItem(
+                                        patientId: apt.patientId,
                                         name: 'Patient #${apt.patientId}',
                                         timeAndClinic:
                                             '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
@@ -192,16 +222,19 @@ class DashboardScreen extends ConsumerWidget {
                                   .toList()
                               : const <UpcomingPatientItem>[
                                   UpcomingPatientItem(
+                                    patientId: 'PT-1001',
                                     name: 'Sara Ahmed',
                                     timeAndClinic: '09:00 AM • Endo',
                                     accentColor: AppColors.primary,
                                   ),
                                   UpcomingPatientItem(
+                                    patientId: 'PT-1002',
                                     name: 'Omar Khalid',
                                     timeAndClinic: '11:30 AM • Prosth',
                                     accentColor: AppColors.secondary,
                                   ),
                                   UpcomingPatientItem(
+                                    patientId: 'PT-1003',
                                     name: 'Lina Mahmoud',
                                     timeAndClinic: '01:00 PM • Checkup',
                                     accentColor: AppColors.tertiary,
@@ -211,10 +244,19 @@ class DashboardScreen extends ConsumerWidget {
                           return DashboardUpcomingSection(
                             patients: upcomingItems,
                             onViewFullSchedule: () {
-                              // TODO: Phase 5.4 - Navigate to Appointments Timeline
+                              AppLogger.info('Switching root tab to Appointments');
+                              ref.read(rootNavigationIndexProvider.notifier).state = 3;
                             },
                             onPatientTap: (patient) {
-                              // TODO: Phase 6.2 - Open Patient Case Sheet
+                              final patientId = patient.patientId ?? 'PT-1001';
+                              AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (context) => PatientCaseSheetScreen(
+                                    patientId: patientId,
+                                  ),
+                                ),
+                              );
                             },
                           );
                         },

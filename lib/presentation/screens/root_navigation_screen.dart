@@ -1,14 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../core/theme/theme.dart';
+import '../state/state.dart';
 import 'appointments/appointments_screen.dart';
 import 'clinics/clinics_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'patients/patients_screen.dart';
 import 'profile/profile_screen.dart';
 
-/// Root navigation screen maintaining an IndexedStack across the five core tabs.
+/// Root navigation screen maintaining an [IndexedStack] across the five core tabs.
+///
+/// ### Routing Mechanisms in Dentera:
+/// 1. **Tab Switching via Riverpod (`rootNavigationIndexProvider`):**
+///    The 5 core tabs (Dashboard, Clinics, Patients, Schedule, Profile) reside inside
+///    an [IndexedStack]. This preserves screen scroll positions, cached form states,
+///    and sub-widget lifecycles across tab changes. Any child widget in the application
+///    tree can declaratively switch the active tab without needing [BuildContext]
+///    route lookups by mutating [rootNavigationIndexProvider].
+///
+/// 2. **Deep Link / Detail Routing via [Navigator.push]:**
+///    Screens requiring drill-down views (e.g. [PatientCaseSheetScreen], modal sheets,
+///    or clinical evaluation records) are pushed onto the imperative [Navigator]
+///    stack as [MaterialPageRoute]s above the [RootNavigationScreen], providing standard
+///    OS back gestures and isolated sub-routes.
 class RootNavigationScreen extends ConsumerStatefulWidget {
   const RootNavigationScreen({
     super.key,
@@ -22,8 +38,6 @@ class RootNavigationScreen extends ConsumerStatefulWidget {
 }
 
 class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
-  late int _currentIndex;
-
   final List<Widget> _screens = const <Widget>[
     DashboardScreen(),
     ClinicsScreen(),
@@ -35,22 +49,30 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
+    // If an initialIndex other than the default was passed, sync the Riverpod provider.
+    if (widget.initialIndex != 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(rootNavigationIndexProvider.notifier).state = widget.initialIndex;
+        }
+      });
+    }
   }
 
   void _onTabSelected(int index) {
-    if (_currentIndex != index) {
-      setState(() {
-        _currentIndex = index;
-      });
+    if (ref.read(rootNavigationIndexProvider) != index) {
+      AppLogger.info('Switching root tab to index: $index');
+      ref.read(rootNavigationIndexProvider.notifier).state = index;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(rootNavigationIndexProvider);
+
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: Container(
@@ -74,7 +96,7 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
             topRight: Radius.circular(16),
           ),
           child: BottomNavigationBar(
-            currentIndex: _currentIndex,
+            currentIndex: currentIndex,
             onTap: _onTabSelected,
             type: BottomNavigationBarType.fixed,
             backgroundColor: AppColors.surfaceContainerLowest,

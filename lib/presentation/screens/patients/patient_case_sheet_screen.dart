@@ -9,31 +9,37 @@ import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
 
 /// Patient Case Sheet detailed record screen with multi-tab layout wired to Riverpod SQLite state.
+///
+/// Supports navigation either by directly passing a loaded [patient] entity,
+/// or deep-linking via [patientId], which asynchronously resolves the patient
+/// from SQLite via [patientByIdProvider].
 class PatientCaseSheetScreen extends ConsumerStatefulWidget {
   const PatientCaseSheetScreen({
     super.key,
-    required this.patient,
-  });
+    this.patient,
+    this.patientId,
+  }) : assert(patient != null || patientId != null, 'Either patient or patientId must be provided');
 
-  final Patient patient;
+  final Patient? patient;
+  final String? patientId;
 
   @override
   ConsumerState<PatientCaseSheetScreen> createState() => _PatientCaseSheetScreenState();
 }
 
 class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen> {
-  String get _initials {
-    final parts = widget.patient.name.trim().split(' ');
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
     if (parts.length > 1) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return widget.patient.name.substring(0, widget.patient.name.length >= 2 ? 2 : 1).toUpperCase();
+    return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
   }
 
-  Future<void> _logNewCase() async {
+  Future<void> _logNewCase(String patientId) async {
     final newCase = CaseRecord(
       id: 'case-${DateTime.now().millisecondsSinceEpoch % 10000}',
-      patientId: widget.patient.id,
+      patientId: patientId,
       requirementId: 'req-cd',
       status: 'In Progress',
       notes: 'Initial clinical evaluation & impression taking.',
@@ -41,7 +47,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
 
     await ref.read(caseRecordRepositoryProvider).addCaseRecord(newCase);
-    ref.invalidate(casesByPatientProvider(widget.patient.id));
+    ref.invalidate(casesByPatientProvider(patientId));
     ref.invalidate(allCasesProvider);
 
     if (!mounted) return;
@@ -55,7 +61,48 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
   @override
   Widget build(BuildContext context) {
-    final patientCasesAsync = ref.watch(casesByPatientProvider(widget.patient.id));
+    if (widget.patient != null) {
+      return _buildScaffold(context, widget.patient!);
+    }
+
+    final pid = widget.patientId!;
+    final patientAsync = ref.watch(patientByIdProvider(pid));
+
+    return patientAsync.when(
+      data: (patient) {
+        final effectivePatient = patient ??
+            Patient(
+              id: pid,
+              name: 'Patient #$pid',
+              age: 25,
+              gender: 'Unknown',
+              createdAt: DateTime.now(),
+            );
+        return _buildScaffold(context, effectivePatient);
+      },
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      ),
+      error: (_, _) {
+        final fallbackPatient = Patient(
+          id: pid,
+          name: 'Patient #$pid',
+          age: 25,
+          gender: 'Unknown',
+          createdAt: DateTime.now(),
+        );
+        return _buildScaffold(context, fallbackPatient);
+      },
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, Patient patient) {
+    final patientCasesAsync = ref.watch(casesByPatientProvider(patient.id));
 
     return DefaultTabController(
       length: 3,
@@ -63,7 +110,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text(
-            widget.patient.name,
+            patient.name,
             style: AppTextStyles.h1Mobile.copyWith(
               color: AppColors.primary,
               fontWeight: FontWeight.w600,
@@ -108,7 +155,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            _initials,
+                            _initials(patient.name),
                             style: AppTextStyles.h1.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -123,7 +170,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                widget.patient.name,
+                                patient.name,
                                 style: AppTextStyles.h2.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.onSurface,
@@ -131,7 +178,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${widget.patient.gender}, ${widget.patient.age} yrs • ${widget.patient.phoneNumber ?? 'No Phone'}',
+                                '${patient.gender}, ${patient.age} yrs • ${patient.phoneNumber ?? 'No Phone'}',
                                 style: AppTextStyles.caption.copyWith(
                                   color: AppColors.onSurfaceVariant,
                                 ),
@@ -182,13 +229,13 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                 child: TabBarView(
                   children: <Widget>[
                     // Tab 1: Clinical Cases
-                    _buildCasesTab(patientCasesAsync),
+                    _buildCasesTab(patientCasesAsync, patient),
 
                     // Tab 2: Treatment Plan
                     _buildTreatmentPlanTab(),
 
                     // Tab 3: Medical History
-                    _buildMedicalHistoryTab(),
+                    _buildMedicalHistoryTab(patient),
                   ],
                 ),
               ),
@@ -197,7 +244,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'fab_case_sheet',
-          onPressed: _logNewCase,
+          onPressed: () => _logNewCase(patient.id),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           elevation: 3,
@@ -213,11 +260,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
-  Widget _buildCasesTab(AsyncValue<List<CaseRecord>> casesAsync) {
+  Widget _buildCasesTab(AsyncValue<List<CaseRecord>> casesAsync, Patient patient) {
     return casesAsync.when(
       data: (cases) {
         if (cases.isEmpty) {
-          return _buildMockCasesTab();
+          return _buildMockCasesTab(patient);
         }
 
         return ListView.separated(
@@ -239,17 +286,17 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           },
         );
       },
-      loading: () => _buildMockCasesTab(),
-      error: (_, _) => _buildMockCasesTab(),
+      loading: () => _buildMockCasesTab(patient),
+      error: (_, _) => _buildMockCasesTab(patient),
     );
   }
 
-  Widget _buildMockCasesTab() {
+  Widget _buildMockCasesTab(Patient patient) {
     final mockCases = [
       {
         'caseRecord': CaseRecord(
           id: 'case-01',
-          patientId: widget.patient.id,
+          patientId: patient.id,
           requirementId: 'req-cd',
           dateStarted: DateTime.now().subtract(const Duration(days: 14)),
           status: 'In Progress',
@@ -262,7 +309,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
       {
         'caseRecord': CaseRecord(
           id: 'case-02',
-          patientId: widget.patient.id,
+          patientId: patient.id,
           requirementId: 'req-anterior-rct',
           dateStarted: DateTime.now().subtract(const Duration(days: 28)),
           dateCompleted: DateTime.now().subtract(const Duration(days: 7)),
@@ -428,9 +475,9 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
-  Widget _buildMedicalHistoryTab() {
-    final hasMedicalHistory = widget.patient.medicalHistory != null &&
-        widget.patient.medicalHistory!.isNotEmpty;
+  Widget _buildMedicalHistoryTab(Patient patient) {
+    final hasMedicalHistory = patient.medicalHistory != null &&
+        patient.medicalHistory!.isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
@@ -464,7 +511,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                 const SizedBox(height: 12),
                 Text(
                   hasMedicalHistory
-                      ? widget.patient.medicalHistory!
+                      ? patient.medicalHistory!
                       : 'No significant systemic medical history or drug allergies reported.',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: hasMedicalHistory ? AppColors.onSurface : AppColors.onSurfaceVariant,

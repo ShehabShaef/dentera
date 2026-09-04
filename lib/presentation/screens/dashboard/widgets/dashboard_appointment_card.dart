@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../widgets/widgets.dart';
+import '../../patients/patient_case_sheet_screen.dart';
 
 /// Card widget for highlighting the next upcoming patient appointment on the dashboard.
+///
+/// ### Routing Mechanism:
+/// Activating "View Case" pushes the detailed [PatientCaseSheetScreen] onto the
+/// imperative [Navigator] stack, passing the target [patientId].
+/// Unlike root tab switches (which mutate Riverpod's `rootNavigationIndexProvider`
+/// to preserve [IndexedStack] tab states), case sheet navigation creates an overlay route
+/// enabling back navigation and focused clinical record management.
 class DashboardAppointmentCard extends StatelessWidget {
   const DashboardAppointmentCard({
     super.key,
@@ -164,8 +174,19 @@ class DashboardAppointmentCard extends StatelessWidget {
                       size: 16,
                       color: AppColors.primary,
                     ),
-                    onPressed: onViewCase ?? () {
-                      // TODO: Phase 6.2 - Open Patient Case Sheet
+                    onPressed: () {
+                      if (onViewCase != null) {
+                        onViewCase!();
+                      } else {
+                        AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => PatientCaseSheetScreen(
+                              patientId: patientId,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ],

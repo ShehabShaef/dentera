@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../state/state.dart';
+import '../../patients/patient_case_sheet_screen.dart';
 
 /// Item representation for upcoming patient appointment list.
 class UpcomingPatientItem {
   const UpcomingPatientItem({
+    this.patientId,
     required this.name,
     required this.timeAndClinic,
     this.accentColor = AppColors.primary,
   });
 
+  final String? patientId;
   final String name;
   final String timeAndClinic;
   final Color accentColor;
@@ -23,21 +30,36 @@ class UpcomingPatientItem {
 }
 
 /// Section listing upcoming appointments with quick navigation.
-class DashboardUpcomingSection extends StatelessWidget {
+///
+/// ### Routing Mechanisms:
+/// 1. **Deep Link Routing ([Navigator.push]):**
+///    Tapping an individual patient item pushes [PatientCaseSheetScreen] onto the
+///    active [Navigator] stack, carrying the patient's ID or entity. This maintains
+///    full context isolation and standard back-stack functionality.
+///
+/// 2. **Tab Index Switching (Riverpod):**
+///    Tapping "View Full Schedule" mutates [rootNavigationIndexProvider] to index `3`
+///    (Appointments tab). This declaratively re-renders the root [IndexedStack],
+///    switching the user to the full appointment agenda without destroying the
+///    existing Dashboard scroll or state.
+class DashboardUpcomingSection extends ConsumerWidget {
   const DashboardUpcomingSection({
     super.key,
     this.patients = const <UpcomingPatientItem>[
       UpcomingPatientItem(
+        patientId: 'PT-1001',
         name: 'Sara Ahmed',
         timeAndClinic: '09:00 AM • Endo',
         accentColor: AppColors.primary,
       ),
       UpcomingPatientItem(
+        patientId: 'PT-1002',
         name: 'Omar Khalid',
         timeAndClinic: '11:30 AM • Prosth',
         accentColor: AppColors.secondary,
       ),
       UpcomingPatientItem(
+        patientId: 'PT-1003',
         name: 'Lina Mahmoud',
         timeAndClinic: '01:00 PM • Checkup',
         accentColor: AppColors.tertiary,
@@ -52,7 +74,7 @@ class DashboardUpcomingSection extends StatelessWidget {
   final ValueChanged<UpcomingPatientItem>? onPatientTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -84,7 +106,21 @@ class DashboardUpcomingSection extends StatelessWidget {
                 color: AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  onTap: () => onPatientTap?.call(item),
+                  onTap: () {
+                    if (onPatientTap != null) {
+                      onPatientTap!(item);
+                    } else {
+                      final targetPatientId = item.patientId ?? 'PT-1001';
+                      AppLogger.info('Navigating to Patient Case Sheet for patient: $targetPatientId');
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => PatientCaseSheetScreen(
+                            patientId: targetPatientId,
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -161,8 +197,13 @@ class DashboardUpcomingSection extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: TextButton(
-            onPressed: onViewFullSchedule ?? () {
-              // TODO: Phase 5.4 - Navigate to Appointments Tab
+            onPressed: () {
+              if (onViewFullSchedule != null) {
+                onViewFullSchedule!();
+              } else {
+                AppLogger.info('Switching root tab to Appointments');
+                ref.read(rootNavigationIndexProvider.notifier).state = 3;
+              }
             },
             child: Text(
               'View Full Schedule',

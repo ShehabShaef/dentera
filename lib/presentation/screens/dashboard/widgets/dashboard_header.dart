@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../state/state.dart';
 
 /// Top-level greeting and profile avatar header for the Dashboard.
-class DashboardHeader extends StatelessWidget {
+///
+/// ### Routing Mechanism:
+/// Tapping the student clinician avatar switches the active root navigation tab
+/// to the Profile & Settings tab (index = 4) by mutating Riverpod's
+/// [rootNavigationIndexProvider]. This preserves state across the application
+/// [IndexedStack] while seamlessly redirecting user focus. If a custom
+/// [onAvatarTap] callback is supplied, it takes precedence.
+class DashboardHeader extends ConsumerWidget {
   const DashboardHeader({
     super.key,
     required this.doctorName,
@@ -27,7 +38,7 @@ class DashboardHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final effectiveSubtitle = dateSubtitle ?? 'Today • $academicYear Clinics';
 
     return Row(
@@ -59,8 +70,13 @@ class DashboardHeader extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         GestureDetector(
-          onTap: onAvatarTap ?? () {
-            // TODO: Phase 5.5 - Navigate to Profile & Settings
+          onTap: () {
+            if (onAvatarTap != null) {
+              onAvatarTap!();
+            } else {
+              AppLogger.info('Switching root tab to Profile');
+              ref.read(rootNavigationIndexProvider.notifier).state = 4;
+            }
           },
           child: Container(
             width: 44,
