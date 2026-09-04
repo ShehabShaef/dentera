@@ -23,12 +23,38 @@ void main() {
     });
   });
 
+  final dummyPatients = <Patient>[
+    Patient(
+      id: 'PT-1001',
+      name: 'Sara Ahmed',
+      age: 23,
+      gender: 'Female',
+      phoneNumber: '+967-771234567',
+      medicalHistory: 'No known allergies',
+      createdAt: DateTime.parse('2026-08-20T10:00:00.000Z'),
+    ),
+    Patient(
+      id: 'PT-1002',
+      name: 'Omar Khalid',
+      age: 45,
+      gender: 'Male',
+      phoneNumber: '+967-772345678',
+      medicalHistory: 'Hypertension',
+      createdAt: DateTime.parse('2026-08-22T14:30:00.000Z'),
+    ),
+  ];
+
   group('RootNavigationScreen Widget Tests', () {
     testWidgets('Renders all 5 BottomNavigationBar items and switches tabs', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+            dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
+            upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+            patientListProvider.overrideWith((ref) => dummyPatients),
+            allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+            allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+            clinicListProvider.overrideWith((ref) => <Clinic>[]),
           ],
           child: const MaterialApp(
             home: RootNavigationScreen(),
@@ -78,7 +104,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+            dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
+            upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+            patientListProvider.overrideWith((ref) => dummyPatients),
+            allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+            allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+            clinicListProvider.overrideWith((ref) => <Clinic>[]),
           ],
           child: const MaterialApp(
             home: RootNavigationScreen(),

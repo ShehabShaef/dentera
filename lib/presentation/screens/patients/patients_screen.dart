@@ -18,7 +18,6 @@ class PatientsScreen extends ConsumerStatefulWidget {
 
 class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedFilter = 'All';
 
   static const List<String> _filters = <String>[
     'All',
@@ -27,45 +26,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     'Prosthodontics',
     'Endodontics',
     'Oral Surgery',
-  ];
-
-  static final List<Patient> _mockPatients = <Patient>[
-    Patient(
-      id: 'PT-1001',
-      name: 'Sara Ahmed',
-      age: 23,
-      gender: 'Female',
-      phoneNumber: '+967-771234567',
-      medicalHistory: 'No known allergies',
-      createdAt: DateTime.parse('2026-08-20T10:00:00.000Z'),
-    ),
-    Patient(
-      id: 'PT-1002',
-      name: 'Omar Khalid',
-      age: 45,
-      gender: 'Male',
-      phoneNumber: '+967-772345678',
-      medicalHistory: 'Hypertension',
-      createdAt: DateTime.parse('2026-08-22T14:30:00.000Z'),
-    ),
-    Patient(
-      id: 'PT-1003',
-      name: 'Lina Mahmoud',
-      age: 19,
-      gender: 'Female',
-      phoneNumber: '+967-773456789',
-      medicalHistory: 'None',
-      createdAt: DateTime.parse('2026-08-25T11:15:00.000Z'),
-    ),
-    Patient(
-      id: 'PT-2049',
-      name: 'Ali Nasser',
-      age: 45,
-      gender: 'Male',
-      phoneNumber: '+967-774567890',
-      medicalHistory: 'Penicillin allergy',
-      createdAt: DateTime.parse('2026-08-26T09:00:00.000Z'),
-    ),
   ];
 
   @override
@@ -78,6 +38,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   Widget build(BuildContext context) {
     final filteredPatientsAsync = ref.watch(filteredPatientListProvider);
     final searchQuery = ref.watch(patientSearchQueryProvider);
+    final selectedFilter = ref.watch(patientFilterCategoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -134,13 +95,11 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                           separatorBuilder: (_, _) => const SizedBox(width: 8),
                           itemBuilder: (context, index) {
                             final filter = _filters[index];
-                            final isSelected = filter == _selectedFilter;
+                            final isSelected = filter == selectedFilter;
 
                             return InkWell(
                               onTap: () {
-                                setState(() {
-                                  _selectedFilter = filter;
-                                });
+                                ref.read(patientFilterCategoryProvider.notifier).state = filter;
                               },
                               borderRadius: BorderRadius.circular(9999),
                               child: AnimatedContainer(
@@ -186,10 +145,23 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   if (patients.isNotEmpty) {
                     return _buildRosterList(patients);
                   }
-                  return _buildFilteredMockRoster(searchQuery);
+                  return _buildZeroState(searchQuery, selectedFilter);
                 },
-                loading: () => _buildFilteredMockRoster(searchQuery),
-                error: (_, _) => _buildFilteredMockRoster(searchQuery),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                  ),
+                ),
+                error: (error, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      'Failed to load patients: $error',
+                      style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -202,6 +174,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             context,
             onPatientAdded: (_) {
               ref.invalidate(patientListProvider);
+              ref.invalidate(allCasesProvider);
             },
           );
         },
@@ -217,22 +190,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildFilteredMockRoster(String query) {
-    final cleanQuery = query.trim().toLowerCase();
-    final List<Patient> list = cleanQuery.isEmpty
-        ? _mockPatients
-        : _mockPatients.where((p) {
-            return p.name.toLowerCase().contains(cleanQuery) ||
-                (p.phoneNumber?.toLowerCase().contains(cleanQuery) ?? false) ||
-                p.id.toLowerCase().contains(cleanQuery);
-          }).toList();
-
-    if (list.isEmpty) {
-      return _buildZeroState(query);
-    }
-    return _buildRosterList(list);
   }
 
   Widget _buildRosterList(List<Patient> patients) {
@@ -267,7 +224,16 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     );
   }
 
-  Widget _buildZeroState(String query) {
+  Widget _buildZeroState(String query, String filter) {
+    String subtitle;
+    if (query.isNotEmpty) {
+      subtitle = 'No patient records match "$query".';
+    } else if (filter != 'All') {
+      subtitle = 'No patients found under "$filter".';
+    } else {
+      subtitle = 'Add your first patient to start tracking clinical requirements.';
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -296,16 +262,14 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              query.isNotEmpty
-                  ? 'No patient records match "$query".'
-                  : 'Add your first patient to start tracking clinical requirements.',
+              subtitle,
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            if (query.isEmpty)
+            if (query.isEmpty && filter == 'All')
               PrimaryButton(
                 isFullWidth: false,
                 text: 'Add First Patient',
@@ -319,6 +283,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                     context,
                     onPatientAdded: (_) {
                       ref.invalidate(patientListProvider);
+                      ref.invalidate(allCasesProvider);
                     },
                   );
                 },

@@ -45,7 +45,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+            dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
+            upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+            patientListProvider.overrideWith((ref) => <Patient>[]),
+            allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+            allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+            clinicListProvider.overrideWith((ref) => <Clinic>[]),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,

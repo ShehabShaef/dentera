@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
@@ -65,6 +66,60 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     super.dispose();
   }
 
+  String _getClinicId(String clinicName) {
+    switch (clinicName.toLowerCase()) {
+      case 'prosthodontics':
+        return 'clinic-prosth';
+      case 'operative':
+      case 'operative dentistry':
+        return 'clinic-operative';
+      case 'endodontics':
+        return 'clinic-endo';
+      case 'oral surgery':
+        return 'clinic-surgery';
+      case 'periodontics':
+        return 'clinic-perio';
+      case 'pediatric dentistry':
+      case 'pediatric':
+        return 'clinic-pediatric';
+      default:
+        return 'clinic-prosth';
+    }
+  }
+
+  String _getDefaultRequirementId(String clinicId) {
+    switch (clinicId) {
+      case 'clinic-prosth':
+        return 'req-prosth-cd';
+      case 'clinic-operative':
+        return 'req-op-class1';
+      case 'clinic-endo':
+        return 'req-endo-anterior';
+      case 'clinic-surgery':
+        return 'req-surg-simple';
+      case 'clinic-perio':
+        return 'req-perio-srp';
+      case 'clinic-pediatric':
+        return 'req-peds-pulpotomy';
+      default:
+        return 'req-prosth-cd';
+    }
+  }
+
+  /// Persists a new patient and automatically creates an initial clinical [CaseRecord].
+  ///
+  /// **Why Sequential Insertion is Required:**
+  /// Under SQLite foreign key constraints (`PRAGMA foreign_keys = ON;`), a child
+  /// [CaseRecord] cannot reference a [patientId] that does not yet exist in the
+  /// `patients` table. We first insert the [Patient] entity. Once successfully written,
+  /// we extract the patient's generated UUID and insert the initial [CaseRecord]
+  /// linked to the user's selected clinic.
+  ///
+  /// **Preventing Orphaned Records:**
+  /// By creating the initial [CaseRecord] at patient registration time, the patient
+  /// is immediately associated with the clinical department chosen by the student.
+  /// This ensures the patient appears in clinic-specific roster filters and prevents
+  /// unassigned, orphaned patient records in the offline clinical database.
   Future<void> _savePatient() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -74,7 +129,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     final medHistory = _medicalHistoryController.text.trim();
 
     final newPatient = Patient(
-      id: 'PT-${DateTime.now().millisecondsSinceEpoch % 10000}',
+      id: 'PT-${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       age: age,
       gender: _selectedGender,
@@ -84,10 +139,53 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     );
 
     try {
+      // 1. Insert the parent Patient record first.
       await ref.read(patientRepositoryProvider).addPatient(newPatient);
+
+      // 2. Resolve the clinic ID and matching requirement ID for the initial case.
+      final clinicRepo = ref.read(clinicRepositoryProvider);
+      final allClinics = await clinicRepo.getAllClinics();
+      final clinic = allClinics.where(
+        (c) =>
+            c.name.toLowerCase() == _selectedClinic.toLowerCase() ||
+            c.name.toLowerCase().contains(_selectedClinic.toLowerCase()) ||
+            _selectedClinic.toLowerCase().contains(c.name.toLowerCase()),
+      ).firstOrNull;
+
+      final clinicId = clinic?.id ?? _getClinicId(_selectedClinic);
+
+      final reqRepo = ref.read(requirementRepositoryProvider);
+      final clinicReqs = await reqRepo.getRequirementsByClinicId(clinicId);
+      final requirementId = clinicReqs.isNotEmpty
+          ? clinicReqs.first.id
+          : _getDefaultRequirementId(clinicId);
+
+      // 3. Insert the child CaseRecord referencing the new patient's ID.
+      final initialCase = CaseRecord(
+        id: 'case-${DateTime.now().millisecondsSinceEpoch}',
+        patientId: newPatient.id,
+        requirementId: requirementId,
+        status: 'In Progress',
+        notes: 'Initial registration case for $_selectedClinic clinic.',
+        dateStarted: DateTime.now(),
+      );
+
+      await ref.read(caseRecordRepositoryProvider).addCaseRecord(initialCase);
+
+      AppLogger.info(
+        '[AddPatientModal] Relational SQLite insert: created Patient (${newPatient.id}: "${newPatient.name}") and initial CaseRecord (${initialCase.id}) linked to clinic "$_selectedClinic" (requirement: $requirementId).',
+      );
+
+      // 4. Invalidate affected providers to update state across the app.
       ref.invalidate(patientListProvider);
-    } catch (_) {
-      // Offline fallback handling
+      ref.invalidate(allCasesProvider);
+      ref.invalidate(casesByPatientProvider(newPatient.id));
+    } catch (e, stack) {
+      AppLogger.error(
+        '[AddPatientModal] Failed to register patient and link initial case record: $e',
+        e,
+        stack,
+      );
     }
 
     widget.onPatientAdded?.call(newPatient);
@@ -98,6 +196,10 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final clinicsAsync = ref.watch(clinicListProvider);
+    final availableClinics = clinicsAsync.valueOrNull != null && clinicsAsync.value!.isNotEmpty
+        ? clinicsAsync.value!.map((c) => c.name).toList()
+        : _clinics;
 
     return Container(
       constraints: BoxConstraints(
@@ -245,8 +347,9 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _clinics.map((clinic) {
-                          final isSelected = clinic == _selectedClinic;
+                        children: availableClinics.map((clinic) {
+                          final isSelected = clinic == _selectedClinic ||
+                              clinic.toLowerCase() == _selectedClinic.toLowerCase();
                           return InkWell(
                             onTap: () {
                               setState(() {

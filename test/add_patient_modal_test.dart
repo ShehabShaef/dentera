@@ -1,9 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/domain/entities/entities.dart';
+import 'package:dentera/data/database/database_providers.dart';
+import 'package:dentera/domain/repositories/repositories.dart';
+import 'package:dentera/presentation/state/state.dart';
 import 'package:dentera/presentation/widgets/widgets.dart';
+
+class _FakePatientRepo implements PatientRepository {
+  @override
+  Future<void> addPatient(Patient patient) async {}
+  @override
+  Future<void> deletePatient(String id) async {}
+  @override
+  Future<List<Patient>> getAllPatients() async => [];
+  @override
+  Future<Patient?> getPatientById(String id) async => null;
+  @override
+  Future<void> updatePatient(Patient patient) async {}
+}
+
+class _FakeCaseRecordRepo implements CaseRecordRepository {
+  @override
+  Future<void> addCaseRecord(CaseRecord caseRecord) async {}
+  @override
+  Future<void> deleteCaseRecord(String id) async {}
+  @override
+  Future<List<CaseRecord>> getAllCaseRecords() async => [];
+  @override
+  Future<List<CaseRecord>> getCaseRecordsByPatientId(String patientId) async => [];
+  @override
+  Future<List<CaseRecord>> getCaseRecordsByRequirementId(String requirementId) async => [];
+  @override
+  Future<void> updateCaseRecord(CaseRecord caseRecord) async {}
+}
+
+class _FakeClinicRepo implements ClinicRepository {
+  @override
+  Future<void> addClinic(Clinic clinic) async {}
+  @override
+  Future<List<Clinic>> getAllClinics() async => [];
+  @override
+  Future<Clinic?> getClinicById(String id) async => null;
+}
+
+class _FakeRequirementRepo implements RequirementRepository {
+  @override
+  Future<void> addRequirement(Requirement requirement) async {}
+  @override
+  Future<List<Requirement>> getAllRequirements() async => [];
+  @override
+  Future<List<Requirement>> getRequirementsByClinicId(String clinicId) async => [];
+  @override
+  Future<void> updateRequirementProgress(String requirementId, int completedCount) async {}
+}
 
 void main() {
   group('AddPatientModal Widget Tests', () {
@@ -11,21 +63,30 @@ void main() {
       Patient? createdPatient;
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    AddPatientModal.show(
-                      context,
-                      onPatientAdded: (patient) => createdPatient = patient,
-                    );
-                  },
-                  child: const Text('Open Modal'),
-                );
-              },
+        ProviderScope(
+          overrides: [
+            patientRepositoryProvider.overrideWithValue(_FakePatientRepo()),
+            caseRecordRepositoryProvider.overrideWithValue(_FakeCaseRecordRepo()),
+            clinicRepositoryProvider.overrideWithValue(_FakeClinicRepo()),
+            requirementRepositoryProvider.overrideWithValue(_FakeRequirementRepo()),
+            clinicListProvider.overrideWith((ref) async => <Clinic>[]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      AddPatientModal.show(
+                        context,
+                        onPatientAdded: (patient) => createdPatient = patient,
+                      );
+                    },
+                    child: const Text('Open Modal'),
+                  );
+                },
+              ),
             ),
           ),
         ),
