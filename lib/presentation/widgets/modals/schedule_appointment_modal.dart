@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
@@ -10,6 +11,11 @@ import '../buttons/buttons.dart';
 import '../inputs/inputs.dart';
 
 /// Bottom sheet modal to schedule clinical appointments with patients.
+///
+/// Reactively watches [patientListProvider] and [clinicListProvider] to populate
+/// dynamic dropdown selectors with active database records, ensuring extracted
+/// relational keys ([patientId] and [clinicId]) adhere strictly to SQLite foreign
+/// key constraints without mock fallbacks or orphaned entries.
 class ScheduleAppointmentModal extends ConsumerStatefulWidget {
   const ScheduleAppointmentModal({
     super.key,
@@ -49,24 +55,8 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
   late DateTime _selectedDate;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 30);
 
-  String _selectedPatient = 'Sara Ahmed (PT-1001)';
-  String _selectedProcedure = 'Prosthodontics - Complete Denture';
-
-  static const List<String> _mockPatients = <String>[
-    'Sara Ahmed (PT-1001)',
-    'Ahmed Ali (PT-1002)',
-    'Omar Khalid (PT-1003)',
-    'Layla Al-Yamani (PT-1004)',
-    'Fatima Hassan (PT-1005)',
-  ];
-
-  static const List<Map<String, String>> _procedures = <Map<String, String>>[
-    {'clinic': 'Prostho', 'procedure': 'Complete Denture', 'clinicId': 'c-pros'},
-    {'clinic': 'Operative', 'procedure': 'Class II Composite', 'clinicId': 'c-op'},
-    {'clinic': 'Endo', 'procedure': 'Root Canal (Tooth 46)', 'clinicId': 'c-endo'},
-    {'clinic': 'Perio', 'procedure': 'Scaling & Root Planing', 'clinicId': 'c-perio'},
-    {'clinic': 'Oral Surgery', 'procedure': 'Simple Extraction', 'clinicId': 'c-surg'},
-  ];
+  Patient? _selectedPatient;
+  Clinic? _selectedClinic;
 
   @override
   void initState() {
@@ -142,7 +132,25 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     }
   }
 
+  /// Persists a newly scheduled clinical appointment to the local SQLite database.
+  ///
+  /// Extracts the foreign relational keys ([patientId] and [clinicId]) directly
+  /// from the selected [Patient] and [Clinic] domain entities. Mapping these verified
+  /// entity IDs directly into the [Appointment] record ensures database referential
+  /// integrity and prevents orphaned records under SQLite foreign key constraints.
   Future<void> _saveAppointment() async {
+    final patient = _selectedPatient;
+    final clinic = _selectedClinic;
+
+    // Validation Guard: Ensure both relational entities are selected.
+    if (patient == null || clinic == null) {
+      AppLogger.warning(
+        '[ScheduleAppointmentModal] Attempted to save appointment without selecting both a patient and a clinic.',
+      );
+      _formKey.currentState?.validate();
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final scheduledDateTime = DateTime(
@@ -153,19 +161,25 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
       _selectedTime.minute,
     );
 
-    final patientIdMatch = RegExp(r'\((PT-\d+)\)').firstMatch(_selectedPatient);
-    final patientId = patientIdMatch?.group(1) ?? 'PT-1001';
+    // Extract true relational entity IDs
+    final patientId = patient.id;
+    final clinicId = clinic.id;
 
     final notes = _notesController.text.trim();
-    final procedureText = notes.isNotEmpty ? '$_selectedProcedure - $notes' : _selectedProcedure;
+    final procedureText = notes.isNotEmpty ? '${clinic.name} - $notes' : clinic.name;
 
     final newAppointment = Appointment(
-      id: 'apt-${DateTime.now().millisecondsSinceEpoch % 10000}',
+      id: 'apt-${DateTime.now().millisecondsSinceEpoch}',
       patientId: patientId,
-      clinicId: 'c-pros',
+      clinicId: clinicId,
       scheduledDate: scheduledDateTime,
       procedureDescription: procedureText,
       status: 'Scheduled',
+    );
+
+    // Trace relational foreign keys immediately prior to SQLite insertion
+    AppLogger.info(
+      '[ScheduleAppointmentModal] Inserting appointment: patientId=$patientId, clinicId=$clinicId, scheduledDate=$scheduledDateTime',
     );
 
     try {
@@ -177,10 +191,14 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
       // Phase 7.2 - Schedule local notification reminder for this appointment
       await ref.read(notificationServiceProvider).scheduleAppointmentReminder(
             newAppointment,
-            clinicName: _selectedProcedure.split(' - ').first,
+            clinicName: clinic.name,
           );
-    } catch (_) {
-      // Offline fallback handling
+    } catch (e, stack) {
+      AppLogger.error(
+        '[ScheduleAppointmentModal] Failed to insert appointment into SQLite',
+        e,
+        stack,
+      );
     }
 
     widget.onAppointmentScheduled?.call(newAppointment);
@@ -188,9 +206,24 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     Navigator.of(context).pop(newAppointment);
   }
 
+  Color _parseColor(String? hexString, {Color fallback = AppColors.secondary}) {
+    if (hexString == null || hexString.isEmpty) return fallback;
+    try {
+      final hex = hexString.replaceAll('#', '');
+      if (hex.length == 6) {
+        return Color(int.parse('0xFF$hex'));
+      } else if (hex.length == 8) {
+        return Color(int.parse('0x$hex'));
+      }
+    } catch (_) {}
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final patientsAsync = ref.watch(patientListProvider);
+    final clinicsAsync = ref.watch(clinicListProvider);
 
     return Container(
       constraints: BoxConstraints(
@@ -263,99 +296,120 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      // Patient Dropdown Selection
-                      DenteraDropdown<String>(
-                        label: 'Patient *',
-                        value: _selectedPatient,
-                        items: _mockPatients
-                            .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                            .toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() {
-                              _selectedPatient = val;
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Procedure / Requirement Carousel Selection
-                      Text(
-                        'Procedure / Requirement *',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: _procedures.map((item) {
-                            final fullTitle = '${item['clinic']} - ${item['procedure']}';
-                            final isSelected = _selectedProcedure == fullTitle;
-
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedProcedure = fullTitle;
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppColors.secondaryContainer.withValues(alpha: 0.25)
-                                        : AppColors.surfaceContainerLowest,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppColors.secondary
-                                          : AppColors.outlineVariant,
-                                      width: isSelected ? 1.5 : 1.0,
+                      // 1. Patient Dropdown Selection
+                      patientsAsync.when(
+                        data: (patients) {
+                          return DenteraDropdown<Patient>(
+                            key: const Key('patient_dropdown'),
+                            label: 'Patient *',
+                            hintText: patients.isEmpty ? 'No patients available' : 'Select patient...',
+                            value: patients.contains(_selectedPatient) ? _selectedPatient : null,
+                            items: patients
+                                .map(
+                                  (p) => DropdownMenuItem<Patient>(
+                                    value: p,
+                                    child: Text(
+                                      '${p.name} (${p.id})',
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        item['clinic']!.toUpperCase(),
-                                        style: AppTextStyles.labelCaps.copyWith(
-                                          color: isSelected
-                                              ? AppColors.secondary
-                                              : AppColors.outline,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        item['procedure']!,
-                                        style: AppTextStyles.bodyMd.copyWith(
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
-                                          color: AppColors.onSurface,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                                )
+                                .toList(),
+                            validator: (val) {
+                              if (val == null) {
+                                return 'Please select a patient';
+                              }
+                              return null;
+                            },
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedPatient = val;
+                              });
+                            },
+                          );
+                        },
+                        loading: () => DenteraDropdown<Patient>(
+                          key: const Key('patient_dropdown_loading'),
+                          label: 'Patient *',
+                          hintText: 'Loading patients...',
+                          items: const <DropdownMenuItem<Patient>>[],
+                          onChanged: null,
+                        ),
+                        error: (_, _) => DenteraDropdown<Patient>(
+                          key: const Key('patient_dropdown_error'),
+                          label: 'Patient *',
+                          hintText: 'Failed to load patients',
+                          items: const <DropdownMenuItem<Patient>>[],
+                          onChanged: null,
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      // Date & Time Selectors Row
+                      // 2. Clinic Dropdown Selection
+                      clinicsAsync.when(
+                        data: (clinics) {
+                          return DenteraDropdown<Clinic>(
+                            key: const Key('clinic_dropdown'),
+                            label: 'Clinic / Department *',
+                            hintText: clinics.isEmpty ? 'No clinics available' : 'Select clinic...',
+                            value: clinics.contains(_selectedClinic) ? _selectedClinic : null,
+                            items: clinics
+                                .map(
+                                  (c) => DropdownMenuItem<Clinic>(
+                                    value: c,
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: BoxDecoration(
+                                            color: _parseColor(c.colorHex),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            c.name,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            validator: (val) {
+                              if (val == null) {
+                                return 'Please select a clinic';
+                              }
+                              return null;
+                            },
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedClinic = val;
+                              });
+                            },
+                          );
+                        },
+                        loading: () => DenteraDropdown<Clinic>(
+                          key: const Key('clinic_dropdown_loading'),
+                          label: 'Clinic / Department *',
+                          hintText: 'Loading clinics...',
+                          items: const <DropdownMenuItem<Clinic>>[],
+                          onChanged: null,
+                        ),
+                        error: (_, _) => DenteraDropdown<Clinic>(
+                          key: const Key('clinic_dropdown_error'),
+                          label: 'Clinic / Department *',
+                          hintText: 'Failed to load clinics',
+                          items: const <DropdownMenuItem<Clinic>>[],
+                          onChanged: null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 3. Date & Time Selectors Row
                       Row(
                         children: <Widget>[
                           // Date Selector
@@ -462,7 +516,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                       ),
                       const SizedBox(height: 16),
 
-                      // Procedure Description / Notes
+                      // 4. Clinical Notes / Tooth Number
                       DenteraTextField(
                         label: 'Clinical Notes / Tooth Number (Optional)',
                         hintText: 'e.g. Tooth 46, Secondary impression',
@@ -493,7 +547,8 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                   Expanded(
                     flex: 2,
                     child: PrimaryButton(
-                      text: 'Confirm Appointment',
+                      key: const Key('save_appointment_button'),
+                      text: 'Save Appointment',
                       icon: const Icon(
                         Icons.calendar_month_rounded,
                         size: 18,
