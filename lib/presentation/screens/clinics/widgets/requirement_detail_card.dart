@@ -19,6 +19,15 @@ class LinkedPatientCase {
 }
 
 /// Detailed card displaying a procedural requirement, quota progress, and linked patient cases.
+///
+/// ### Modal Invocation & Navigation:
+/// Tapping this card triggers [onTap], which typically invokes [RequirementCasesBottomSheet.show].
+/// This presents a modal bottom sheet overlay with the complete relational log of all [CaseRecord]
+/// entities linked to this specific requirement.
+///
+/// ### Relational Case Aggregation:
+/// The card renders a preview of [linkedCases] (or a clean zero-state message if unassigned),
+/// showing active progress before the student drills down into individual patient case histories.
 class RequirementDetailCard extends StatelessWidget {
   const RequirementDetailCard({
     super.key,
@@ -35,42 +44,55 @@ class RequirementDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BaseCard(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Header: Requirement Title & Quota Pill
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: BaseCard(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  requirement.title,
-                  style: AppTextStyles.h2.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+              // Header: Requirement Title & Quota Pill
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      requirement.title,
+                      style: AppTextStyles.h2.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${requirement.completedCount} / ${requirement.targetCount}',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurfaceVariant,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${requirement.completedCount} / ${requirement.targetCount}',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: AppColors.outline,
+                  ),
+                ],
               ),
-            ],
-          ),
           const SizedBox(height: 12),
 
           // Progress Bar
@@ -153,7 +175,10 @@ class RequirementDetailCard extends StatelessWidget {
                   ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
 }
+

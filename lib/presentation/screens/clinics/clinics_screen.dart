@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
+import '../../widgets/modals/modals.dart';
 import 'clinic_details_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Clinics & Requirements tracking screen for departmental quotas wired to Riverpod SQLite state.
+///
+/// ### Modal Invocation & Quota Administration:
+/// Tapping the floating action button triggers [AddClinicModal.show], enabling students
+/// to register custom departments with specialized academic year quotas and theme colors.
+/// All additions persist to the local SQLite database and automatically refresh [clinicListProvider].
 class ClinicsScreen extends ConsumerStatefulWidget {
   const ClinicsScreen({super.key});
 
@@ -275,7 +282,8 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_clinics',
         onPressed: () {
-          // TODO: Phase 6 - Add Custom Requirement/Clinic
+          AppLogger.info('Opened AddClinicModal from ClinicsScreen');
+          AddClinicModal.show(context);
         },
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,

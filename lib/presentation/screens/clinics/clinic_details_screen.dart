@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
-import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
 
 /// Clinic Details & Quotas breakdown screen wired to Riverpod SQLite state.
+///
+/// ### Modal Invocation & Administration:
+/// - **Requirement Definition ([AddRequirementModal]):** Tapping the screen's Floating Action Button
+///   opens [AddRequirementModal], allowing dental students to define new clinical procedures and target quotas
+///   for this specific clinic without hardcoded placeholders.
+/// - **Relational Case Inspection ([RequirementCasesBottomSheet]):** Tapping any [RequirementDetailCard]
+///   triggers [RequirementCasesBottomSheet], fetching and displaying all clinical [CaseRecord] entries
+///   belonging to that requirement via [casesByRequirementProvider].
+///
+/// ### Relational Querying & State Management:
+/// Clinical requirements are queried reactively using [requirementsByClinicProvider(clinic.id)].
+/// When new requirements or case records are submitted, state providers are invalidated,
+/// triggering immediate local recalculation of overall clinic completion percentages and UI cards.
 class ClinicDetailsScreen extends ConsumerWidget {
   const ClinicDetailsScreen({
     super.key,
@@ -95,22 +108,13 @@ class ClinicDetailsScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_clinic_details',
-        onPressed: () async {
-          final newReq = Requirement(
-            id: 'req-${DateTime.now().millisecondsSinceEpoch % 10000}',
+        onPressed: () {
+          AppLogger.info('Opened AddRequirementModal for clinic: ${clinic.id}');
+          AddRequirementModal.show(
+            context,
             clinicId: clinic.id,
-            title: 'Custom Clinical Case',
-            targetCount: 1,
-            completedCount: 0,
+            clinicName: clinic.name,
           );
-
-          try {
-            await ref.read(requirementRepositoryProvider).addRequirement(newReq);
-            ref.invalidate(requirementsByClinicProvider(clinic.id));
-            ref.invalidate(allRequirementsProvider);
-          } catch (_) {
-            // Offline fallback
-          }
         },
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
@@ -269,7 +273,12 @@ class ClinicDetailsScreen extends ConsumerWidget {
                     accentColor: _clinicColor,
                     linkedCases: linkedCases,
                     onTap: () {
-                      // TODO: Phase 7 - Filter CaseRecords by this RequirementId
+                      AppLogger.info('Opened requirement cases bottom sheet for requirement: ${req.id}');
+                      RequirementCasesBottomSheet.show(
+                        context,
+                        requirement: req,
+                        accentColor: _clinicColor,
+                      );
                     },
                   );
                 },

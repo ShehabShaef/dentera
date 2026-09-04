@@ -21,3 +21,14 @@ final allCasesProvider = FutureProvider<List<CaseRecord>>((ref) async {
   final repository = ref.watch(caseRecordRepositoryProvider);
   return await repository.getAllCaseRecords();
 });
+
+/// Provides case records logged for a specific clinical requirement.
+///
+/// **Error Propagation Architecture:**
+/// Database exceptions propagate directly to Riverpod's [FutureProvider.family] wrapped in [AsyncError].
+final casesByRequirementProvider =
+    FutureProvider.family<List<CaseRecord>, String>((ref, requirementId) async {
+  final repository = ref.watch(caseRecordRepositoryProvider);
+  return await repository.getCaseRecordsByRequirementId(requirementId);
+});
+
