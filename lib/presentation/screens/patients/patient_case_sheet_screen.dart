@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
-import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -36,41 +35,15 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
   }
 
-  Future<void> _logNewCase(String patientId) async {
-    final newCase = CaseRecord(
-      id: 'case-${DateTime.now().millisecondsSinceEpoch % 10000}',
-      patientId: patientId,
-      requirementId: 'req-cd',
-      status: 'In Progress',
-      notes: 'Initial clinical evaluation & impression taking.',
-      dateStarted: DateTime.now(),
-    );
-
-    await ref.read(caseRecordRepositoryProvider).addCaseRecord(newCase);
-    ref.invalidate(casesByPatientProvider(patientId));
-    ref.invalidate(allCasesProvider);
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('New clinical case logged successfully.'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (widget.patient != null) {
-      return _buildScaffold(context, widget.patient!);
-    }
-
-    final pid = widget.patientId!;
+    final pid = widget.patient?.id ?? widget.patientId!;
     final patientAsync = ref.watch(patientByIdProvider(pid));
 
     return patientAsync.when(
       data: (patient) {
         final effectivePatient = patient ??
+            widget.patient ??
             Patient(
               id: pid,
               name: 'Patient #$pid',
@@ -80,22 +53,25 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
             );
         return _buildScaffold(context, effectivePatient);
       },
-      loading: () => const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        ),
-      ),
+      loading: () => widget.patient != null
+          ? _buildScaffold(context, widget.patient!)
+          : const Scaffold(
+              backgroundColor: AppColors.background,
+              body: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              ),
+            ),
       error: (_, _) {
-        final fallbackPatient = Patient(
-          id: pid,
-          name: 'Patient #$pid',
-          age: 25,
-          gender: 'Unknown',
-          createdAt: DateTime.now(),
-        );
+        final fallbackPatient = widget.patient ??
+            Patient(
+              id: pid,
+              name: 'Patient #$pid',
+              age: 25,
+              gender: 'Unknown',
+              createdAt: DateTime.now(),
+            );
         return _buildScaffold(context, fallbackPatient);
       },
     );
@@ -119,9 +95,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () {
-                // TODO: Phase 6.1 - Edit Patient details
-              },
+              tooltip: 'Edit Patient',
+              onPressed: () => EditPatientModal.show(
+                context,
+                patient: patient,
+              ),
             ),
           ],
         ),
@@ -244,7 +222,12 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'fab_case_sheet',
-          onPressed: () => _logNewCase(patient.id),
+          tooltip: 'Log Case Record',
+          onPressed: () => LogCaseRecordModal.show(
+            context,
+            patientId: patient.id,
+            patientName: patient.name,
+          ),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
           elevation: 3,
@@ -279,9 +262,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
               requirementTitle: 'Clinical Requirement #${item.requirementId}',
               clinicName: 'Dental Department',
               clinicColor: AppColors.secondary,
-              onTap: () {
-                // TODO: Phase 6.2 - Open Case Record evaluation sheet
-              },
+              onTap: () => EvaluateCaseModal.show(
+                context,
+                caseRecord: item,
+                patientName: patient.name,
+              ),
             );
           },
         );
@@ -334,9 +319,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           requirementTitle: item['requirementTitle'] as String,
           clinicName: item['clinicName'] as String,
           clinicColor: item['clinicColor'] as Color? ?? AppColors.secondary,
-          onTap: () {
-            // TODO: Phase 6.2 - Open Case Record evaluation sheet
-          },
+          onTap: () => EvaluateCaseModal.show(
+            context,
+            caseRecord: item['caseRecord'] as CaseRecord,
+            patientName: patient.name,
+          ),
         );
       },
     );

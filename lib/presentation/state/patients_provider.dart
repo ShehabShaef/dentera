@@ -31,7 +31,18 @@ final patientSearchQueryProvider = StateProvider<String>((ref) => '');
 /// Tracks the active category/status filter for the patients list.
 final patientFilterCategoryProvider = StateProvider<String>((ref) => 'All');
 
-/// Provides the filtered list of patients based on search query, category, and relational clinic cases.
+/// Sorting criteria for the clinical patient roster.
+enum PatientSortOption {
+  name,
+  dateAdded,
+  activeCaseCount,
+}
+
+/// Tracks the active sorting preference for the patient roster.
+final patientSortOptionProvider =
+    StateProvider<PatientSortOption>((ref) => PatientSortOption.dateAdded);
+
+/// Provides the filtered list of patients based on search query, category, relational clinic cases, and sorting order.
 ///
 /// Filters the master patient roster across multiple clinical criteria:
 /// - `'All'`: Returns all patients matching the search query.
@@ -39,10 +50,16 @@ final patientFilterCategoryProvider = StateProvider<String>((ref) => 'All');
 /// - `'Completed'`: Returns patients possessing at least one completed [CaseRecord].
 /// - Clinic Department (e.g. `'Prosthodontics'`, `'Endodontics'`): Returns patients with active
 ///   or logged cases belonging to requirements in the selected clinic department.
+///
+/// Then sorts according to [patientSortOptionProvider]:
+/// - [PatientSortOption.name]: Alphabetical order A to Z.
+/// - [PatientSortOption.dateAdded]: Most recently registered first (`createdAt DESC`).
+/// - [PatientSortOption.activeCaseCount]: Highest volume of active in-progress cases first.
 final filteredPatientListProvider = Provider<AsyncValue<List<Patient>>>((ref) {
   final patientListAsync = ref.watch(patientListProvider);
   final query = ref.watch(patientSearchQueryProvider).trim().toLowerCase();
   final category = ref.watch(patientFilterCategoryProvider).trim();
+  final sortOption = ref.watch(patientSortOptionProvider);
 
   // If patient list is still loading or has an error, propagate state directly.
   if (patientListAsync.isLoading) {
@@ -65,98 +82,125 @@ final filteredPatientListProvider = Provider<AsyncValue<List<Patient>>>((ref) {
     }).toList();
   }
 
-  // 2. If 'All', no relational case filtering is necessary.
-  if (category == 'All' || category.isEmpty) {
-    AppLogger.debug(
-      '[filteredPatientListProvider] Category: "$category", Query: "$query" -> ${queriedPatients.length} matching patients',
-    );
-    return AsyncValue.data(queriedPatients);
-  }
+  // 2. Inspect case records only if relational category filtering or activeCaseCount sorting is requested.
+  final needsCaseRecords = (category != 'All' && category.isNotEmpty) ||
+      sortOption == PatientSortOption.activeCaseCount;
 
-  // 3. For relational category filters, inspect logged case records.
-  final allCasesAsync = ref.watch(allCasesProvider);
-  if (allCasesAsync.isLoading) {
-    return const AsyncValue.loading();
+  List<CaseRecord> allCases = const <CaseRecord>[];
+  if (needsCaseRecords) {
+    final allCasesAsync = ref.watch(allCasesProvider);
+    if (allCasesAsync.isLoading) {
+      return const AsyncValue.loading();
+    }
+    if (allCasesAsync.hasError) {
+      return AsyncValue.error(allCasesAsync.error!, allCasesAsync.stackTrace!);
+    }
+    allCases = allCasesAsync.value ?? <CaseRecord>[];
   }
-  if (allCasesAsync.hasError) {
-    return AsyncValue.error(allCasesAsync.error!, allCasesAsync.stackTrace!);
-  }
-
-  final allCases = allCasesAsync.value ?? <CaseRecord>[];
 
   List<Patient> categoryFiltered = queriedPatients;
 
-  if (category.toLowerCase() == 'active cases') {
-    final activePatientIds = allCases
-        .where((c) => c.status.toLowerCase() != 'completed')
-        .map((c) => c.patientId)
-        .toSet();
-    categoryFiltered = categoryFiltered.where((p) => activePatientIds.contains(p.id)).toList();
-  } else if (category.toLowerCase() == 'completed') {
-    final completedPatientIds = allCases
-        .where((c) => c.status.toLowerCase() == 'completed')
-        .map((c) => c.patientId)
-        .toSet();
-    categoryFiltered = categoryFiltered.where((p) => completedPatientIds.contains(p.id)).toList();
-  } else {
-    // Specific clinical department filter (e.g. 'Prosthodontics', 'Endodontics', 'Oral Surgery')
-    final clinicsAsync = ref.watch(clinicListProvider);
-    final requirementsAsync = ref.watch(allRequirementsProvider);
+  // 3. For relational category filters, inspect logged case records.
+  if (category != 'All' && category.isNotEmpty) {
+    if (category.toLowerCase() == 'active cases') {
+      final activePatientIds = allCases
+          .where((c) => c.status.toLowerCase() != 'completed')
+          .map((c) => c.patientId)
+          .toSet();
+      categoryFiltered = categoryFiltered.where((p) => activePatientIds.contains(p.id)).toList();
+    } else if (category.toLowerCase() == 'completed') {
+      final completedPatientIds = allCases
+          .where((c) => c.status.toLowerCase() == 'completed')
+          .map((c) => c.patientId)
+          .toSet();
+      categoryFiltered = categoryFiltered.where((p) => completedPatientIds.contains(p.id)).toList();
+    } else {
+      // Specific clinical department filter (e.g. 'Prosthodontics', 'Endodontics', 'Oral Surgery')
+      final clinicsAsync = ref.watch(clinicListProvider);
+      final requirementsAsync = ref.watch(allRequirementsProvider);
 
-    if (clinicsAsync.isLoading || requirementsAsync.isLoading) {
-      return const AsyncValue.loading();
-    }
-    if (clinicsAsync.hasError) {
-      return AsyncValue.error(clinicsAsync.error!, clinicsAsync.stackTrace!);
-    }
-    if (requirementsAsync.hasError) {
-      return AsyncValue.error(requirementsAsync.error!, requirementsAsync.stackTrace!);
-    }
-
-    final clinics = clinicsAsync.value ?? <Clinic>[];
-    final requirements = requirementsAsync.value ?? <Requirement>[];
-
-    // Find clinics matching the selected category name or alias
-    final matchingClinics = clinics.where((c) {
-      final cName = c.name.toLowerCase();
-      final cat = category.toLowerCase();
-      return cName == cat || cName.contains(cat) || cat.contains(cName);
-    }).toList();
-
-    final matchingClinicIds = matchingClinics.map((c) => c.id).toSet();
-
-    // Fallback heuristic for standard seeded clinic slugs if custom lookup differs
-    final normalizedCat = category.toLowerCase();
-    if (normalizedCat.contains('prosth')) matchingClinicIds.add('clinic-prosth');
-    if (normalizedCat.contains('operat')) matchingClinicIds.add('clinic-operative');
-    if (normalizedCat.contains('endo')) matchingClinicIds.add('clinic-endo');
-    if (normalizedCat.contains('surg')) matchingClinicIds.add('clinic-surgery');
-    if (normalizedCat.contains('perio')) matchingClinicIds.add('clinic-perio');
-    if (normalizedCat.contains('ped') || normalizedCat.contains('peds')) matchingClinicIds.add('clinic-pediatric');
-
-    final matchingRequirementIds = requirements
-        .where((r) => matchingClinicIds.contains(r.clinicId))
-        .map((r) => r.id)
-        .toSet();
-
-    final clinicPatientIds = allCases.where((c) {
-      if (matchingRequirementIds.contains(c.requirementId)) return true;
-      final reqId = c.requirementId.toLowerCase();
-      for (final cid in matchingClinicIds) {
-        final slug = cid.replaceFirst('clinic-', '');
-        if (reqId.contains(slug)) return true;
+      if (clinicsAsync.isLoading || requirementsAsync.isLoading) {
+        return const AsyncValue.loading();
       }
-      return false;
-    }).map((c) => c.patientId).toSet();
+      if (clinicsAsync.hasError) {
+        return AsyncValue.error(clinicsAsync.error!, clinicsAsync.stackTrace!);
+      }
+      if (requirementsAsync.hasError) {
+        return AsyncValue.error(requirementsAsync.error!, requirementsAsync.stackTrace!);
+      }
 
-    categoryFiltered = categoryFiltered.where((p) => clinicPatientIds.contains(p.id)).toList();
+      final clinics = clinicsAsync.value ?? <Clinic>[];
+      final requirements = requirementsAsync.value ?? <Requirement>[];
+
+      // Find clinics matching the selected category name or alias
+      final matchingClinics = clinics.where((c) {
+        final cName = c.name.toLowerCase();
+        final cat = category.toLowerCase();
+        return cName == cat || cName.contains(cat) || cat.contains(cName);
+      }).toList();
+
+      final matchingClinicIds = matchingClinics.map((c) => c.id).toSet();
+
+      // Fallback heuristic for standard seeded clinic slugs if custom lookup differs
+      final normalizedCat = category.toLowerCase();
+      if (normalizedCat.contains('prosth')) matchingClinicIds.add('clinic-prosth');
+      if (normalizedCat.contains('operat')) matchingClinicIds.add('clinic-operative');
+      if (normalizedCat.contains('endo')) matchingClinicIds.add('clinic-endo');
+      if (normalizedCat.contains('surg')) matchingClinicIds.add('clinic-surgery');
+      if (normalizedCat.contains('perio')) matchingClinicIds.add('clinic-perio');
+      if (normalizedCat.contains('ped') || normalizedCat.contains('peds')) {
+        matchingClinicIds.add('clinic-pediatric');
+      }
+
+      final matchingRequirementIds = requirements
+          .where((r) => matchingClinicIds.contains(r.clinicId))
+          .map((r) => r.id)
+          .toSet();
+
+      final clinicPatientIds = allCases.where((c) {
+        if (matchingRequirementIds.contains(c.requirementId)) return true;
+        final reqId = c.requirementId.toLowerCase();
+        for (final cid in matchingClinicIds) {
+          final slug = cid.replaceFirst('clinic-', '');
+          if (reqId.contains(slug)) return true;
+        }
+        return false;
+      }).map((c) => c.patientId).toSet();
+
+      categoryFiltered = categoryFiltered.where((p) => clinicPatientIds.contains(p.id)).toList();
+    }
+  }
+
+  // 4. Apply sorting according to active patientSortOptionProvider
+  final sortedPatients = List<Patient>.from(categoryFiltered);
+  switch (sortOption) {
+    case PatientSortOption.name:
+      sortedPatients.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      break;
+    case PatientSortOption.dateAdded:
+      sortedPatients.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      break;
+    case PatientSortOption.activeCaseCount:
+      final activeCounts = <String, int>{};
+      for (final c in allCases) {
+        if (c.status.toLowerCase() != 'completed') {
+          activeCounts[c.patientId] = (activeCounts[c.patientId] ?? 0) + 1;
+        }
+      }
+      sortedPatients.sort((a, b) {
+        final countA = activeCounts[a.id] ?? 0;
+        final countB = activeCounts[b.id] ?? 0;
+        final cmp = countB.compareTo(countA);
+        return cmp != 0 ? cmp : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+      break;
   }
 
   AppLogger.debug(
-    '[filteredPatientListProvider] Category: "$category", Query: "$query" -> ${categoryFiltered.length} matching patients',
+    '[filteredPatientListProvider] Category: "$category", Query: "$query", Sort: "$sortOption" -> ${sortedPatients.length} matching patients',
   );
 
-  return AsyncValue.data(categoryFiltered);
+  return AsyncValue.data(sortedPatients);
 });
 
 /// Provides a single [Patient] by their unique ID directly from the SQLite database repository.

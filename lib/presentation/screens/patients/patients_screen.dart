@@ -54,9 +54,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.sort_rounded),
-            onPressed: () {
-              // TODO: Phase 6 - Sort Options Modal
-            },
+            tooltip: 'Sort Patients',
+            onPressed: () => SortPatientsModal.show(context),
           ),
         ],
       ),
