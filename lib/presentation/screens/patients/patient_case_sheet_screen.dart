@@ -14,6 +14,12 @@ import 'widgets/widgets.dart';
 /// [patientByIdProvider] and [casesByPatientProvider], handling empty case histories natively
 /// without visual mock fallbacks.
 ///
+/// **Architecture Note (v0.4 UI Scope Reduction):**
+/// In v0.4, unbacked visual components (the static "Treatment Plan" tab and hardcoded "Dental History" card)
+/// were pruned to eliminate visual hallucinations without SQLite database backing.
+/// Phased treatment planning will be restored in a future phase once a dedicated `TreatmentPlan` entity
+/// and database schema are introduced. Patient history is now strictly backed by [patient.medicalHistory].
+///
 /// Supports navigation either by directly passing a loaded [patient] entity,
 /// or deep-linking via [patientId], which asynchronously resolves the patient
 /// from SQLite via [patientByIdProvider].
@@ -86,7 +92,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     final patientCasesAsync = ref.watch(casesByPatientProvider(patient.id));
 
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -201,7 +207,6 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                   ),
                   tabs: const <Widget>[
                     Tab(text: 'Clinical Cases'),
-                    Tab(text: 'Treatment Plan'),
                     Tab(text: 'Medical History'),
                   ],
                 ),
@@ -214,10 +219,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                     // Tab 1: Clinical Cases
                     _buildCasesTab(patientCasesAsync, patient),
 
-                    // Tab 2: Treatment Plan
-                    _buildTreatmentPlanTab(),
-
-                    // Tab 3: Medical History
+                    // Tab 2: Medical History
                     _buildMedicalHistoryTab(patient),
                   ],
                 ),
@@ -359,139 +361,6 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
-  Widget _buildTreatmentPlanTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Chief Complaint Card
-          BaseCard(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Icon(
-                      Icons.record_voice_over_outlined,
-                      size: 20,
-                      color: AppColors.secondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Chief Complaint & Findings',
-                      style: AppTextStyles.h2.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Patient reports missing lower molars and difficulty chewing.',
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(
-                        Icons.info_outline_rounded,
-                        size: 18,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Oral Lesions: Negative • Periodontal Status: Fair',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Phased Treatment Plan Card
-          BaseCard(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        const Icon(
-                          Icons.format_list_numbered_rounded,
-                          size: 20,
-                          color: AppColors.secondary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Phased Treatment Plan',
-                          style: AppTextStyles.h2.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '2 Phases',
-                        style: AppTextStyles.labelCaps.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const _TreatmentPhaseItem(
-                  phaseNumber: 'Phase 1',
-                  description: 'Endodontic therapy on tooth 36 (Anterior/Premolar)',
-                  phaseColor: AppColors.secondary,
-                ),
-                const SizedBox(height: 12),
-                const _TreatmentPhaseItem(
-                  phaseNumber: 'Phase 2',
-                  description: 'Prosthetic rehabilitation: Metal Denture / Overdenture',
-                  phaseColor: AppColors.primary,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMedicalHistoryTab(Patient patient) {
     final hasMedicalHistory = patient.medicalHistory != null &&
         patient.medicalHistory!.isNotEmpty;
@@ -502,7 +371,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Systemic Conditions & Allergies Card
+          // Systemic Conditions & Allergies Card (strictly backed by SQLite)
           BaseCard(
             padding: const EdgeInsets.all(18.0),
             child: Column(
@@ -532,41 +401,6 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                       : 'No significant systemic medical history or drug allergies reported.',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: hasMedicalHistory ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Dental History Card
-          BaseCard(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Icon(
-                      Icons.history_edu_outlined,
-                      size: 20,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Dental History',
-                      style: AppTextStyles.h2.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Previous extractions under local anesthesia without complications. Last visit over 1 year ago.',
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -609,64 +443,3 @@ class _ClinicBadge extends StatelessWidget {
   }
 }
 
-class _TreatmentPhaseItem extends StatelessWidget {
-  const _TreatmentPhaseItem({
-    required this.phaseNumber,
-    required this.description,
-    required this.phaseColor,
-  });
-
-  final String phaseNumber;
-  final String description;
-  final Color phaseColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: 18,
-            height: 18,
-            margin: const EdgeInsets.only(top: 2),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: AppColors.outline, width: 1.5),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  phaseNumber.toUpperCase(),
-                  style: AppTextStyles.labelCaps.copyWith(
-                    color: phaseColor,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

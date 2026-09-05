@@ -264,6 +264,11 @@ void main() {
       expect(find.text('Ali Nasser'), findsNothing);
       expect(find.text('Sara Ahmed'), findsNothing);
       expect(find.text('Omar Khalid'), findsNothing);
+
+      // Verify unbacked visual mock reminders were pruned
+      expect(find.text('Review clinical quota targets'), findsNothing);
+      expect(find.text('Sign completed charts by EOD'), findsNothing);
+      expect(find.text('Restock procedural supplies'), findsNothing);
     });
 
     testWidgets('Standalone DashboardUpcomingSection default callbacks function without throwing', (WidgetTester tester) async {
@@ -311,5 +316,65 @@ void main() {
       await tester.pumpAndSettle();
       expect(container.read(rootNavigationIndexProvider), 4);
     });
+
+    testWidgets('DashboardReminders returns SizedBox.shrink when empty and renders dynamic pills when appointments exist', (WidgetTester tester) async {
+      // Test 1: Empty state -> collapses to SizedBox.shrink()
+      final emptyContainer = ProviderContainer(
+        overrides: [
+          dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+        ],
+      );
+      addTearDown(emptyContainer.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: emptyContainer,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: DashboardReminders(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListView), findsNothing);
+      expect(find.text('appointment(s) scheduled today'), findsNothing);
+
+      // Test 2: Populated state -> renders dynamic reminder pills
+      final populatedContainer = ProviderContainer(
+        overrides: [
+          dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[dummyAppointment]),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[
+            Appointment(
+              id: 'apt-up-99',
+              patientId: 'PT-1001',
+              clinicId: 'clinic-endo',
+              scheduledDate: DateTime.now().add(const Duration(days: 1)),
+              status: 'Scheduled',
+            ),
+          ]),
+        ],
+      );
+      addTearDown(populatedContainer.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: populatedContainer,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: DashboardReminders(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListView), findsOneWidget);
+      expect(find.text('1 appointment(s) scheduled today'), findsOneWidget);
+      expect(find.text('1 upcoming appointment(s) scheduled'), findsOneWidget);
+    });
   });
 }
+

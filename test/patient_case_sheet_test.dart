@@ -115,22 +115,20 @@ void main() {
       expect(find.text('Clinical Requirement #r-01'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
-      // Switch to Treatment Plan Tab
-      await tester.tap(find.text('Treatment Plan'));
-      await tester.pumpAndSettle();
+      // Assert unbacked Treatment Plan tab was pruned
+      expect(find.text('Treatment Plan'), findsNothing);
 
-      expect(find.text('Chief Complaint & Findings'), findsOneWidget);
-      expect(find.text('Phased Treatment Plan'), findsOneWidget);
-      expect(find.text('PHASE 1'), findsOneWidget);
-      expect(find.text('PHASE 2'), findsOneWidget);
+      // Verify exactly 2 tabs exist in TabBar (Clinical Cases and Medical History)
+      expect(find.byType(Tab), findsNWidgets(2));
 
       // Switch to Medical History Tab
       await tester.tap(find.text('Medical History'));
       await tester.pumpAndSettle();
 
+      // Assert dynamic medical history renders and unbacked Dental History is pruned
       expect(find.text('Medical History & Allergies'), findsOneWidget);
       expect(find.text('Penicillin Allergy'), findsOneWidget);
-      expect(find.text('Dental History'), findsOneWidget);
+      expect(find.text('Dental History'), findsNothing);
     });
   });
 }
