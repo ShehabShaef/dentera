@@ -45,26 +45,7 @@ class UpcomingPatientItem {
 class DashboardUpcomingSection extends ConsumerWidget {
   const DashboardUpcomingSection({
     super.key,
-    this.patients = const <UpcomingPatientItem>[
-      UpcomingPatientItem(
-        patientId: 'PT-1001',
-        name: 'Sara Ahmed',
-        timeAndClinic: '09:00 AM • Endo',
-        accentColor: AppColors.primary,
-      ),
-      UpcomingPatientItem(
-        patientId: 'PT-1002',
-        name: 'Omar Khalid',
-        timeAndClinic: '11:30 AM • Prosth',
-        accentColor: AppColors.secondary,
-      ),
-      UpcomingPatientItem(
-        patientId: 'PT-1003',
-        name: 'Lina Mahmoud',
-        timeAndClinic: '01:00 PM • Checkup',
-        accentColor: AppColors.tertiary,
-      ),
-    ],
+    this.patients = const <UpcomingPatientItem>[],
     this.onViewFullSchedule,
     this.onPatientTap,
   });
@@ -97,8 +78,33 @@ class DashboardUpcomingSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Patient Items List
-        Column(
+        // Patient Items List or Zero State
+        if (patients.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  width: 1.0,
+                ),
+                boxShadow: AppColors.cardShadow,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'No upcoming patients scheduled for tomorrow.',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          )
+        else
+          Column(
           children: patients.map((item) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8.0),

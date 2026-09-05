@@ -5,11 +5,15 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
-import '../../widgets/modals/modals.dart';
+import '../../widgets/widgets.dart';
 import 'clinic_details_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Clinics & Requirements tracking screen for departmental quotas wired to Riverpod SQLite state.
+///
+/// Dynamically builds clinical department lists and procedural quota progress strictly from
+/// [clinicListProvider] and [allRequirementsProvider], handling empty states natively without
+/// visual mock fallbacks.
 ///
 /// ### Modal Invocation & Quota Administration:
 /// Tapping the floating action button triggers [AddClinicModal.show], enabling students
@@ -33,129 +37,6 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     'Oral Surgery',
     'Periodontics',
     'Orthodontics',
-  ];
-
-  static const List<Map<String, dynamic>> _mockClinicsData = [
-    {
-      'clinic': Clinic(
-        id: 'clinic-prosth',
-        name: 'Prosthodontics',
-        academicYear: '5th Year',
-        colorHex: '#003E6F',
-      ),
-      'requirements': <Requirement>[
-        Requirement(
-          id: 'req-cd',
-          clinicId: 'clinic-prosth',
-          title: 'Complete Denture',
-          targetCount: 2,
-          completedCount: 1,
-        ),
-        Requirement(
-          id: 'req-rpd',
-          clinicId: 'clinic-prosth',
-          title: 'Metal Denture',
-          targetCount: 3,
-          completedCount: 2,
-        ),
-      ],
-    },
-    {
-      'clinic': Clinic(
-        id: 'clinic-operative',
-        name: 'Operative Dentistry',
-        academicYear: '5th Year',
-        colorHex: '#006A64',
-      ),
-      'requirements': <Requirement>[
-        Requirement(
-          id: 'req-comp',
-          clinicId: 'clinic-operative',
-          title: 'Class I Composite',
-          targetCount: 8,
-          completedCount: 4,
-        ),
-        Requirement(
-          id: 'req-amalgam',
-          clinicId: 'clinic-operative',
-          title: 'Class II Amalgam',
-          targetCount: 4,
-          completedCount: 1,
-        ),
-      ],
-    },
-    {
-      'clinic': Clinic(
-        id: 'clinic-endo',
-        name: 'Endodontics',
-        academicYear: '5th Year',
-        colorHex: '#1E568C',
-      ),
-      'requirements': <Requirement>[
-        Requirement(
-          id: 'req-anterior-rct',
-          clinicId: 'clinic-endo',
-          title: 'Anterior RCT',
-          targetCount: 6,
-          completedCount: 4,
-        ),
-        Requirement(
-          id: 'req-molar-rct',
-          clinicId: 'clinic-endo',
-          title: 'Premolar / Molar RCT',
-          targetCount: 4,
-          completedCount: 2,
-        ),
-      ],
-    },
-    {
-      'clinic': Clinic(
-        id: 'clinic-surgery',
-        name: 'Oral Surgery',
-        academicYear: '5th Year',
-        colorHex: '#2E3F50',
-      ),
-      'requirements': <Requirement>[
-        Requirement(
-          id: 'req-simple-ext',
-          clinicId: 'clinic-surgery',
-          title: 'Simple Extraction',
-          targetCount: 20,
-          completedCount: 14,
-        ),
-        Requirement(
-          id: 'req-surg-ext',
-          clinicId: 'clinic-surgery',
-          title: 'Surgical Extraction',
-          targetCount: 4,
-          completedCount: 1,
-        ),
-      ],
-    },
-    {
-      'clinic': Clinic(
-        id: 'clinic-perio',
-        name: 'Periodontics',
-        academicYear: '5th Year',
-        colorHex: '#37485A',
-      ),
-      'requirements': <Requirement>[
-        Requirement(
-          id: 'req-srp',
-          clinicId: 'clinic-perio',
-          title: 'Scaling & Root Planing',
-          targetCount: 10,
-          completedCount: 8,
-        ),
-        Requirement(
-          id: 'req-gingivectomy',
-          clinicId: 'clinic-perio',
-          title: 'Gingivectomy',
-          targetCount: 2,
-          completedCount: 1,
-        ),
-      ],
-    },
   ];
 
   @override
@@ -242,21 +123,24 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 2. Clinics Grid/List from State or Mock
+                  // 2. Clinics Grid/List from Riverpod SQLite State
                   clinicsAsync.when(
                     data: (clinics) {
-                      final List<Map<String, dynamic>> dataset = clinics.isNotEmpty
-                          ? clinics.map((c) {
-                              final reqs = allReqsAsync.maybeWhen(
-                                data: (list) => list.where((r) => r.clinicId == c.id).toList(),
-                                orElse: () => const <Requirement>[],
-                              );
-                              return <String, dynamic>{
-                                'clinic': c,
-                                'requirements': reqs,
-                              };
-                            }).toList()
-                          : _mockClinicsData;
+                      if (clinics.isEmpty) {
+                        AppLogger.debug('Clinics screen rendering zero state - SQLite returned 0 records');
+                        return _buildZeroState();
+                      }
+
+                      final List<Map<String, dynamic>> dataset = clinics.map((c) {
+                        final reqs = allReqsAsync.maybeWhen(
+                          data: (list) => list.where((r) => r.clinicId == c.id).toList(),
+                          orElse: () => const <Requirement>[],
+                        );
+                        return <String, dynamic>{
+                          'clinic': c,
+                          'requirements': reqs,
+                        };
+                      }).toList();
 
                       final filteredData = _selectedCategory == 'All'
                           ? dataset
@@ -267,10 +151,32 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                                   .contains(_selectedCategory.toLowerCase());
                             }).toList();
 
+                      if (filteredData.isEmpty) {
+                        return _buildEmptyFilterState();
+                      }
+
                       return _buildClinicsGridOrList(filteredData);
                     },
-                    loading: _buildFilteredMockClinics,
-                    error: (_, _) => _buildFilteredMockClinics(),
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48.0),
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        ),
+                      ),
+                    ),
+                    error: (error, stackTrace) {
+                      AppLogger.error(
+                        '[ClinicsScreen] Failed to retrieve clinics: $error',
+                        error,
+                        stackTrace,
+                      );
+                      return DenteraErrorState(
+                        title: 'Failed to load clinics',
+                        message: error.toString(),
+                        onRetry: () => ref.invalidate(clinicListProvider),
+                      );
+                    },
                   ),
                   const SizedBox(height: 80), // Padding for Floating Action Button
                 ],
@@ -299,14 +205,90 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     );
   }
 
-  Widget _buildFilteredMockClinics() {
-    final filtered = _selectedCategory == 'All'
-        ? _mockClinicsData
-        : _mockClinicsData.where((entry) {
-            final Clinic clinic = entry['clinic'] as Clinic;
-            return clinic.name.toLowerCase().contains(_selectedCategory.toLowerCase());
-          }).toList();
-    return _buildClinicsGridOrList(filtered);
+  Widget _buildZeroState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surfaceContainerHigh,
+              ),
+              child: const Icon(
+                Icons.account_balance_outlined,
+                size: 36,
+                color: AppColors.outline,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No clinics added yet',
+              style: AppTextStyles.h2.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Register your clinical departments to track quotas and case progress.',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              isFullWidth: false,
+              text: 'Add Dental Clinic',
+              icon: const Icon(
+                Icons.add_chart_rounded,
+                color: AppColors.onPrimary,
+                size: 18,
+              ),
+              onPressed: () {
+                AppLogger.info('Opened AddClinicModal from zero state in ClinicsScreen');
+                AddClinicModal.show(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyFilterState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+        child: Column(
+          children: <Widget>[
+            const Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: AppColors.outline,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No clinics found in "$_selectedCategory"',
+              style: AppTextStyles.h2.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Try selecting "All" or a different clinical category.',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildClinicsGridOrList(List<Map<String, dynamic>> data) {

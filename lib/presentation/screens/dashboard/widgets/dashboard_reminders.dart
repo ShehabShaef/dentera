@@ -22,17 +22,17 @@ class DashboardReminders extends StatelessWidget {
     super.key,
     this.reminders = const <ClinicalReminderItem>[
       ClinicalReminderItem(
-        message: 'Lab work due: Crown prep (Sara A.)',
-        icon: Icons.warning_amber_rounded,
+        message: 'Review clinical quota targets',
+        icon: Icons.assignment_outlined,
         type: ReminderType.warning,
       ),
       ClinicalReminderItem(
-        message: 'Sign 2 endo charts by EOD',
+        message: 'Sign completed charts by EOD',
         icon: Icons.info_outline_rounded,
         type: ReminderType.info,
       ),
       ClinicalReminderItem(
-        message: 'Restock matrix bands',
+        message: 'Restock procedural supplies',
         icon: Icons.inventory_2_outlined,
         type: ReminderType.neutral,
       ),
@@ -43,6 +43,10 @@ class DashboardReminders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (reminders.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return SizedBox(
       height: 38,
       child: ListView.separated(

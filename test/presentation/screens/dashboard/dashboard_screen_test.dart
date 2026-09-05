@@ -184,10 +184,19 @@ void main() {
 
     testWidgets('Tapping an upcoming patient item pushes PatientCaseSheetScreen for that patient', (WidgetTester tester) async {
       final navObserver = TestNavigatorObserver();
+      final upcomingApt = Appointment(
+        id: 'apt-up-01',
+        patientId: 'PT-1001',
+        clinicId: 'clinic-endo',
+        scheduledDate: DateTime.now().add(const Duration(days: 1)),
+        status: 'Scheduled',
+        procedureDescription: 'Root Canal Therapy',
+      );
+
       final container = ProviderContainer(
         overrides: [
           dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
-          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[upcomingApt]),
           patientListProvider.overrideWith((ref) => dummyPatients),
           patientByIdProvider.overrideWith((ref, id) {
             return dummyPatients.firstWhere((p) => p.id == id, orElse: () => dummyPatients.first);
@@ -211,8 +220,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Find "Sara Ahmed" in Tomorrow's Patients
-      final patientFinder = find.text('Sara Ahmed');
+      // Find "Patient #PT-1001" in Tomorrow's Patients
+      final patientFinder = find.text('Patient #PT-1001');
       expect(patientFinder, findsOneWidget);
       await tester.ensureVisible(patientFinder);
       await tester.tap(patientFinder);
@@ -221,6 +230,40 @@ void main() {
       // Assert PatientCaseSheetScreen was pushed
       expect(find.byType(PatientCaseSheetScreen), findsOneWidget);
       expect(navObserver.pushedRoutes.length, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('DashboardScreen renders zero states gracefully when SQLite providers return empty lists', (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          dailyAppointmentsProvider.overrideWith((ref, date) => <Appointment>[]),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+          patientListProvider.overrideWith((ref) => <Patient>[]),
+          allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+          allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+          clinicListProvider.overrideWith((ref) => <Clinic>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DashboardScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Zero-state verification
+      expect(find.text('No appointments scheduled today'), findsOneWidget);
+      expect(find.text('Scheduled clinical procedures will appear here.'), findsOneWidget);
+      expect(find.text('No upcoming patients scheduled for tomorrow.'), findsOneWidget);
+      expect(find.text('No active requirements'), findsOneWidget);
+      expect(find.text('0%'), findsOneWidget);
+      expect(find.text('Ali Nasser'), findsNothing);
+      expect(find.text('Sara Ahmed'), findsNothing);
+      expect(find.text('Omar Khalid'), findsNothing);
     });
 
     testWidgets('Standalone DashboardUpcomingSection default callbacks function without throwing', (WidgetTester tester) async {

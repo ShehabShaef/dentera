@@ -7,6 +7,8 @@ import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/patients/patient_case_sheet_screen.dart';
 import 'package:dentera/presentation/screens/patients/widgets/widgets.dart';
 
+import 'package:dentera/presentation/state/state.dart';
+
 void main() {
   group('PatientCaseSheetScreen & CaseRecordCard Widget Tests', () {
     final patient = Patient(
@@ -17,6 +19,15 @@ void main() {
       phoneNumber: '+967-771234567',
       medicalHistory: 'Penicillin Allergy',
       createdAt: DateTime.parse('2026-08-20T10:00:00.000Z'),
+    );
+
+    final testCaseRecord = CaseRecord(
+      id: 'c-01',
+      patientId: 'PT-1001',
+      requirementId: 'r-01',
+      dateStarted: DateTime(2026, 8, 1),
+      dateCompleted: DateTime(2026, 8, 15),
+      status: 'Evaluated',
     );
 
     testWidgets('CaseRecordCard renders case details and completion date', (WidgetTester tester) async {
@@ -54,9 +65,38 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('PatientCaseSheetScreen renders persistent header and switches tabs', (WidgetTester tester) async {
+    testWidgets('PatientCaseSheetScreen renders zero state when no clinical cases exist', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            casesByPatientProvider(patient.id).overrideWith((ref) async => <CaseRecord>[]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: PatientCaseSheetScreen(patient: patient),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Header Demographic Information
+      expect(find.text('Sara Ahmed'), findsNWidgets(2)); // AppBar + Summary Header
+      expect(find.text('Female, 23 yrs • +967-771234567'), findsOneWidget);
+
+      // Default Active Tab: Clinical Cases (Zero State)
+      expect(find.text('Clinical Cases'), findsOneWidget);
+      expect(find.text('No clinical cases logged yet'), findsOneWidget);
+      expect(find.text('Start logging procedural cases and treatments completed for Sara Ahmed.'), findsOneWidget);
+      expect(find.text('Log First Case'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
+
+    testWidgets('PatientCaseSheetScreen renders persistent header and switches tabs when populated', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
+          ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
             home: PatientCaseSheetScreen(patient: patient),
@@ -70,10 +110,9 @@ void main() {
       expect(find.text('Female, 23 yrs • +967-771234567'), findsOneWidget);
       expect(find.text('SA'), findsOneWidget);
 
-      // Default Active Tab: Clinical Cases
+      // Default Active Tab: Clinical Cases (Populated)
       expect(find.text('Clinical Cases'), findsOneWidget);
-      expect(find.text('Complete Denture'), findsOneWidget);
-      expect(find.text('Anterior Root Canal (Tooth 11)'), findsOneWidget);
+      expect(find.text('Clinical Requirement #r-01'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
       // Switch to Treatment Plan Tab

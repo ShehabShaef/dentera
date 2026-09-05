@@ -10,6 +10,10 @@ import 'widgets/widgets.dart';
 
 /// Clinic Details & Quotas breakdown screen wired to Riverpod SQLite state.
 ///
+/// Dynamically builds clinic quotas and linked case records strictly from
+/// [requirementsByClinicProvider] and [allCasesProvider], handling empty states natively without
+/// visual mock fallbacks.
+///
 /// ### Modal Invocation & Administration:
 /// - **Requirement Definition ([AddRequirementModal]):** Tapping the screen's Floating Action Button
 ///   opens [AddRequirementModal], allowing dental students to define new clinical procedures and target quotas
@@ -42,7 +46,6 @@ class ClinicDetailsScreen extends ConsumerWidget {
   List<LinkedPatientCase> _resolveLinkedCases(
     List<CaseRecord>? cases,
     Requirement req,
-    int index,
   ) {
     if (cases != null && cases.isNotEmpty) {
       final matched = cases.where((c) => c.requirementId == req.id).toList();
@@ -56,21 +59,6 @@ class ClinicDetailsScreen extends ConsumerWidget {
                 ))
             .toList();
       }
-    }
-
-    if (index == 0) {
-      return const <LinkedPatientCase>[
-        LinkedPatientCase(patientName: 'Ahmed Ali', status: 'Completed', isCompleted: true),
-        LinkedPatientCase(patientName: 'Omar Khalid', status: 'In Progress', isCompleted: false),
-      ];
-    } else if (index == 1) {
-      return const <LinkedPatientCase>[
-        LinkedPatientCase(patientName: 'Sara Ahmed', status: 'In Progress', isCompleted: false),
-      ];
-    } else if (index == 3) {
-      return const <LinkedPatientCase>[
-        LinkedPatientCase(patientName: 'Fatima Hassan', status: 'Completed', isCompleted: true),
-      ];
     }
 
     return const <LinkedPatientCase>[];
@@ -102,8 +90,26 @@ class ClinicDetailsScreen extends ConsumerWidget {
       body: SafeArea(
         child: clinicReqsAsync.when(
           data: (requirements) => _buildContent(context, ref, requirements),
-          loading: () => _buildContent(context, ref, const <Requirement>[]),
-          error: (_, _) => _buildContent(context, ref, const <Requirement>[]),
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 48.0),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ),
+          ),
+          error: (error, stackTrace) {
+            AppLogger.error(
+              '[ClinicDetailsScreen] Failed to load requirements for clinic ${clinic.id}: $error',
+              error,
+              stackTrace,
+            );
+            return DenteraErrorState(
+              title: 'Requirements Unavailable',
+              message: error.toString(),
+              onRetry: () => ref.invalidate(requirementsByClinicProvider(clinic.id)),
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -131,43 +137,14 @@ class ClinicDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, List<Requirement> requirements) {
+    if (requirements.isEmpty) {
+      AppLogger.debug('Clinic details screen rendering zero state - SQLite returned 0 records for clinic ${clinic.id}');
+    }
+
     final allCasesAsync = ref.watch(allCasesProvider);
 
-    final List<Requirement> effectiveReqs = requirements.isNotEmpty
-        ? requirements
-        : <Requirement>[
-            Requirement(
-              id: 'req-cd',
-              clinicId: clinic.id,
-              title: 'Complete Denture',
-              targetCount: 3,
-              completedCount: 2,
-            ),
-            Requirement(
-              id: 'req-rpd',
-              clinicId: clinic.id,
-              title: 'Removable Partial Denture (RPD)',
-              targetCount: 2,
-              completedCount: 1,
-            ),
-            Requirement(
-              id: 'req-overdenture',
-              clinicId: clinic.id,
-              title: 'Overdenture / Single Arch',
-              targetCount: 2,
-              completedCount: 0,
-            ),
-            Requirement(
-              id: 'req-repair',
-              clinicId: clinic.id,
-              title: 'Denture Relining / Repair',
-              targetCount: 1,
-              completedCount: 1,
-            ),
-          ];
-
-    final int totalTarget = effectiveReqs.fold(0, (sum, item) => sum + item.targetCount);
-    final int totalCompleted = effectiveReqs.fold(0, (sum, item) => sum + item.completedCount);
+    final int totalTarget = requirements.fold(0, (sum, item) => sum + item.targetCount);
+    final int totalCompleted = requirements.fold(0, (sum, item) => sum + item.completedCount);
     final double overallProgress = totalTarget > 0 ? (totalCompleted / totalTarget) : 0.0;
 
     return SingleChildScrollView(
@@ -254,35 +231,65 @@ class ClinicDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // 3. Requirements List
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: effectiveReqs.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 14),
-                itemBuilder: (context, index) {
-                  final req = effectiveReqs[index];
-                  final List<LinkedPatientCase> linkedCases = _resolveLinkedCases(
-                    allCasesAsync.value,
-                    req,
-                    index,
-                  );
+              // 3. Requirements List or Zero State
+              if (requirements.isEmpty)
+                BaseCard(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Center(
+                    child: Column(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.checklist_rounded,
+                          size: 40,
+                          color: AppColors.outline,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No requirements added yet',
+                          style: AppTextStyles.h2.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Define clinical quotas and procedural targets for ${clinic.name}.',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: requirements.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final req = requirements[index];
+                    final List<LinkedPatientCase> linkedCases = _resolveLinkedCases(
+                      allCasesAsync.value,
+                      req,
+                    );
 
-                  return RequirementDetailCard(
-                    requirement: req,
-                    accentColor: _clinicColor,
-                    linkedCases: linkedCases,
-                    onTap: () {
-                      AppLogger.info('Opened requirement cases bottom sheet for requirement: ${req.id}');
-                      RequirementCasesBottomSheet.show(
-                        context,
-                        requirement: req,
-                        accentColor: _clinicColor,
-                      );
-                    },
-                  );
-                },
-              ),
+                    return RequirementDetailCard(
+                      requirement: req,
+                      accentColor: _clinicColor,
+                      linkedCases: linkedCases,
+                      onTap: () {
+                        AppLogger.info('Opened requirement cases bottom sheet for requirement: ${req.id}');
+                        RequirementCasesBottomSheet.show(
+                          context,
+                          requirement: req,
+                          accentColor: _clinicColor,
+                        );
+                      },
+                    );
+                  },
+                ),
               const SizedBox(height: 80), // Padding for FAB
             ],
           ),

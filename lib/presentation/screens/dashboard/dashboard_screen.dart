@@ -68,23 +68,15 @@ class DashboardScreen extends ConsumerWidget {
                                       total: r.targetCount,
                                     ))
                                 .toList(),
-                            orElse: () => const <ClinicQuotaSummary>[
-                              ClinicQuotaSummary(clinicName: 'Prosthodontics', completed: 8, total: 10),
-                              ClinicQuotaSummary(clinicName: 'Endodontics', completed: 4, total: 5),
-                            ],
+                            orElse: () => const <ClinicQuotaSummary>[],
                           );
 
                           return DashboardProgressCard(
-                            overallProgress: stats.totalTarget > 0 ? stats.progressFraction : 0.68,
+                            overallProgress: stats.totalTarget > 0 ? stats.progressFraction : 0.0,
                             overallPercentageText: stats.totalTarget > 0
                                 ? '${(stats.progressFraction * 100).round()}%'
-                                : '68%',
-                            requirements: breakdowns.isNotEmpty
-                                ? breakdowns
-                                : const <ClinicQuotaSummary>[
-                                    ClinicQuotaSummary(clinicName: 'Prosthodontics', completed: 8, total: 10),
-                                    ClinicQuotaSummary(clinicName: 'Endodontics', completed: 4, total: 5),
-                                  ],
+                                : '0%',
+                            requirements: breakdowns,
                           );
                         },
                         loading: () => const DashboardProgressCard(),
@@ -125,24 +117,48 @@ class DashboardScreen extends ConsumerWidget {
                       todayAppointmentsAsync.when(
                         data: (appointments) {
                           if (appointments.isEmpty) {
-                            const patientId = 'PT-2049';
-                            return DashboardAppointmentCard(
-                              patientName: 'Ali Nasser',
-                              patientId: patientId,
-                              patientDetails: 'Male • 45 Y',
-                              timeWindow: '10:30 AM - 12:00 PM',
-                              procedureTitle: 'Prosthodontics - Metal Denture',
-                              clinicColor: AppColors.secondary,
-                              onViewCase: () {
-                                AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (context) => const PatientCaseSheetScreen(
-                                      patientId: patientId,
+                            AppLogger.debug('Dashboard screen rendering zero state - SQLite returned 0 appointments today');
+                            return BaseCard(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                              child: Row(
+                                children: <Widget>[
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.surfaceContainerHigh,
+                                    ),
+                                    child: const Icon(
+                                      Icons.event_available_outlined,
+                                      size: 22,
+                                      color: AppColors.outline,
                                     ),
                                   ),
-                                );
-                              },
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          'No appointments scheduled today',
+                                          style: AppTextStyles.bodyMd.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Scheduled clinical procedures will appear here.',
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: AppColors.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             );
                           }
 
@@ -166,27 +182,14 @@ class DashboardScreen extends ConsumerWidget {
                             },
                           );
                         },
-                        loading: () {
-                          const patientId = 'PT-2049';
-                          return DashboardAppointmentCard(
-                            patientName: 'Ali Nasser',
-                            patientId: patientId,
-                            patientDetails: 'Male • 45 Y',
-                            timeWindow: '10:30 AM - 12:00 PM',
-                            procedureTitle: 'Prosthodontics - Metal Denture',
-                            clinicColor: AppColors.secondary,
-                            onViewCase: () {
-                              AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (context) => const PatientCaseSheetScreen(
-                                    patientId: patientId,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                        loading: () => const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24.0),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            ),
+                          ),
+                        ),
                         error: (error, stackTrace) {
                           AppLogger.error(
                             '[DashboardScreen] Failed to load today\'s appointments: $error',
@@ -210,36 +213,19 @@ class DashboardScreen extends ConsumerWidget {
                       // 5. Tomorrow's Patients Section
                       upcomingAppointmentsAsync.when(
                         data: (upcomingList) {
-                          final List<UpcomingPatientItem> upcomingItems = upcomingList.isNotEmpty
-                              ? upcomingList
-                                  .map((apt) => UpcomingPatientItem(
-                                        patientId: apt.patientId,
-                                        name: 'Patient #${apt.patientId}',
-                                        timeAndClinic:
-                                            '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
-                                        accentColor: AppColors.primary,
-                                      ))
-                                  .toList()
-                              : const <UpcomingPatientItem>[
-                                  UpcomingPatientItem(
-                                    patientId: 'PT-1001',
-                                    name: 'Sara Ahmed',
-                                    timeAndClinic: '09:00 AM • Endo',
+                          if (upcomingList.isEmpty) {
+                            AppLogger.debug('Dashboard screen rendering zero state - SQLite returned 0 upcoming appointments');
+                          }
+
+                          final List<UpcomingPatientItem> upcomingItems = upcomingList
+                              .map((apt) => UpcomingPatientItem(
+                                    patientId: apt.patientId,
+                                    name: 'Patient #${apt.patientId}',
+                                    timeAndClinic:
+                                        '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
                                     accentColor: AppColors.primary,
-                                  ),
-                                  UpcomingPatientItem(
-                                    patientId: 'PT-1002',
-                                    name: 'Omar Khalid',
-                                    timeAndClinic: '11:30 AM • Prosth',
-                                    accentColor: AppColors.secondary,
-                                  ),
-                                  UpcomingPatientItem(
-                                    patientId: 'PT-1003',
-                                    name: 'Lina Mahmoud',
-                                    timeAndClinic: '01:00 PM • Checkup',
-                                    accentColor: AppColors.tertiary,
-                                  ),
-                                ];
+                                  ))
+                              .toList();
 
                           return DashboardUpcomingSection(
                             patients: upcomingItems,
@@ -248,12 +234,12 @@ class DashboardScreen extends ConsumerWidget {
                               ref.read(rootNavigationIndexProvider.notifier).state = 3;
                             },
                             onPatientTap: (patient) {
-                              final patientId = patient.patientId ?? 'PT-1001';
-                              AppLogger.info('Navigating to Patient Case Sheet for patient: $patientId');
+                              if (patient.patientId == null) return;
+                              AppLogger.info('Navigating to Patient Case Sheet for patient: ${patient.patientId}');
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                   builder: (context) => PatientCaseSheetScreen(
-                                    patientId: patientId,
+                                    patientId: patient.patientId!,
                                   ),
                                 ),
                               );

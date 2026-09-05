@@ -6,12 +6,9 @@ import '../../../widgets/widgets.dart';
 class DashboardProgressCard extends StatelessWidget {
   const DashboardProgressCard({
     super.key,
-    this.overallProgress = 0.68,
-    this.overallPercentageText = '68%',
-    this.requirements = const <ClinicQuotaSummary>[
-      ClinicQuotaSummary(clinicName: 'Prosthodontics', completed: 8, total: 10),
-      ClinicQuotaSummary(clinicName: 'Endodontics', completed: 4, total: 5),
-    ],
+    this.overallProgress = 0.0,
+    this.overallPercentageText = '0%',
+    this.requirements = const <ClinicQuotaSummary>[],
   });
 
   final double overallProgress;
@@ -51,24 +48,31 @@ class DashboardProgressCard extends StatelessWidget {
           ),
           const SizedBox(width: 20),
 
-          // Clinic Quota Progress Bars
+          // Clinic Quota Progress Bars or Zero State
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: requirements.map((quota) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: RequirementProgressBar.fromQuota(
-                    label: quota.clinicName,
-                    completed: quota.completed,
-                    total: quota.total,
-                    height: 8.0,
-                    trackColor: AppColors.surfaceContainerHighest,
-                    progressColor: AppColors.secondary,
+            child: requirements.isEmpty
+                ? Text(
+                    'No active requirements',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: requirements.map((quota) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: RequirementProgressBar.fromQuota(
+                          label: quota.clinicName,
+                          completed: quota.completed,
+                          total: quota.total,
+                          height: 8.0,
+                          trackColor: AppColors.surfaceContainerHighest,
+                          progressColor: AppColors.secondary,
+                        ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
-            ),
           ),
         ],
       ),

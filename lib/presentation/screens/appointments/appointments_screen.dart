@@ -118,6 +118,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       );
 
                       if (appointments.isEmpty) {
+                        AppLogger.debug('Appointments screen rendering zero state - SQLite returned 0 records for date $_selectedDate');
                         return _buildEmptyState();
                       }
 

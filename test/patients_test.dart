@@ -154,5 +154,29 @@ void main() {
       // With no cases, zero state is shown for Active Cases
       expect(find.text('No patients found under "Active Cases".'), findsOneWidget);
     });
+
+    testWidgets('PatientsScreen renders zero state and Add First Patient button when patient list is empty', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            patientListProvider.overrideWith((ref) async => <Patient>[]),
+            allCasesProvider.overrideWith((ref) async => <CaseRecord>[]),
+            allRequirementsProvider.overrideWith((ref) async => <Requirement>[]),
+            clinicListProvider.overrideWith((ref) async => <Clinic>[]),
+          ],
+          child: const MaterialApp(
+            home: PatientsScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Patients'), findsOneWidget);
+      expect(find.text('No patients found'), findsOneWidget);
+      expect(find.text('Add your first patient to start tracking clinical requirements.'), findsOneWidget);
+      expect(find.text('Add First Patient'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
   });
 }

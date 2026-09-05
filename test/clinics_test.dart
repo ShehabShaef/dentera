@@ -6,9 +6,31 @@ import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/clinics/clinics_screen.dart';
 import 'package:dentera/presentation/screens/clinics/widgets/widgets.dart';
+import 'package:dentera/presentation/state/state.dart';
 
 void main() {
   group('Clinics & Requirements Widget Tests', () {
+    const testClinics = <Clinic>[
+      Clinic(
+        id: 'c-prosth',
+        name: 'Prosthodontics',
+        academicYear: '5th Year',
+        colorHex: '#003E6F',
+      ),
+      Clinic(
+        id: 'c-op',
+        name: 'Operative Dentistry',
+        academicYear: '5th Year',
+        colorHex: '#006A64',
+      ),
+      Clinic(
+        id: 'c-endo',
+        name: 'Endodontics',
+        academicYear: '5th Year',
+        colorHex: '#1E568C',
+      ),
+    ];
+
     testWidgets('ClinicSummaryCard renders department data and handles View Cases', (WidgetTester tester) async {
       bool viewCasesTapped = false;
 
@@ -62,14 +84,40 @@ void main() {
       expect(viewCasesTapped, isTrue);
     });
 
-    testWidgets('ClinicsScreen renders categories and filters clinic cards', (WidgetTester tester) async {
+    testWidgets('ClinicsScreen renders zero state when clinicListProvider returns empty list', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            clinicListProvider.overrideWith((ref) async => <Clinic>[]),
+            allRequirementsProvider.overrideWith((ref) async => <Requirement>[]),
+          ],
+          child: const MaterialApp(
             home: ClinicsScreen(),
           ),
         ),
       );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clinics & Requirements'), findsOneWidget);
+      expect(find.text('No clinics added yet'), findsOneWidget);
+      expect(find.text('Register your clinical departments to track quotas and case progress.'), findsOneWidget);
+      expect(find.text('Add Dental Clinic'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
+
+    testWidgets('ClinicsScreen renders categories and filters clinic cards when populated', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            clinicListProvider.overrideWith((ref) async => testClinics),
+            allRequirementsProvider.overrideWith((ref) async => <Requirement>[]),
+          ],
+          child: const MaterialApp(
+            home: ClinicsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       expect(find.text('Clinics & Requirements'), findsOneWidget);
       expect(find.text('All'), findsOneWidget);

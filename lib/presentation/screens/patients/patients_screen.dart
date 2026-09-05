@@ -10,6 +10,10 @@ import 'patient_case_sheet_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Patient roster and management screen wired to Riverpod SQLite state.
+///
+/// Dynamically builds patient list and search/filter states strictly from
+/// [filteredPatientListProvider], handling empty lists and zero results natively
+/// without visual mock fallbacks.
 class PatientsScreen extends ConsumerStatefulWidget {
   const PatientsScreen({super.key});
 
@@ -145,6 +149,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   if (patients.isNotEmpty) {
                     return _buildRosterList(patients);
                   }
+                  AppLogger.debug('Patients screen rendering zero state - SQLite returned 0 records');
                   return _buildZeroState(searchQuery, selectedFilter);
                 },
                 loading: () => const Center(

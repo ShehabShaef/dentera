@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
@@ -8,6 +9,10 @@ import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
 
 /// Patient Case Sheet detailed record screen with multi-tab layout wired to Riverpod SQLite state.
+///
+/// Dynamically loads patient demographics and clinical case records strictly from
+/// [patientByIdProvider] and [casesByPatientProvider], handling empty case histories natively
+/// without visual mock fallbacks.
 ///
 /// Supports navigation either by directly passing a loaded [patient] entity,
 /// or deep-linking via [patientId], which asynchronously resolves the patient
@@ -247,7 +252,8 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     return casesAsync.when(
       data: (cases) {
         if (cases.isEmpty) {
-          return _buildMockCasesTab(patient);
+          AppLogger.debug('Patient case sheet rendering zero state - SQLite returned 0 records for patient ${patient.id}');
+          return _buildEmptyCasesState(patient);
         }
 
         return ListView.separated(
@@ -271,61 +277,85 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           },
         );
       },
-      loading: () => _buildMockCasesTab(patient),
-      error: (_, _) => _buildMockCasesTab(patient),
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 48.0),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      ),
+      error: (error, stackTrace) {
+        AppLogger.error(
+          '[PatientCaseSheetScreen] Failed to load clinical cases for patient ${patient.id}: $error',
+          error,
+          stackTrace,
+        );
+        return DenteraErrorState(
+          title: 'Cases Unavailable',
+          message: error.toString(),
+          onRetry: () => ref.invalidate(casesByPatientProvider(patient.id)),
+        );
+      },
     );
   }
 
-  Widget _buildMockCasesTab(Patient patient) {
-    final mockCases = [
-      {
-        'caseRecord': CaseRecord(
-          id: 'case-01',
-          patientId: patient.id,
-          requirementId: 'req-cd',
-          dateStarted: DateTime.now().subtract(const Duration(days: 14)),
-          status: 'In Progress',
-          notes: 'Primary impression completed. Border molding next.',
+  Widget _buildEmptyCasesState(Patient patient) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surfaceContainerHigh,
+              ),
+              child: const Icon(
+                Icons.assignment_late_outlined,
+                size: 36,
+                color: AppColors.outline,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No clinical cases logged yet',
+              style: AppTextStyles.h2.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Start logging procedural cases and treatments completed for ${patient.name}.',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              isFullWidth: false,
+              text: 'Log First Case',
+              icon: const Icon(
+                Icons.add_rounded,
+                color: AppColors.onPrimary,
+                size: 18,
+              ),
+              onPressed: () {
+                AppLogger.info('Opened LogCaseRecordModal from empty cases state for patient: ${patient.id}');
+                LogCaseRecordModal.show(
+                  context,
+                  patientId: patient.id,
+                  patientName: patient.name,
+                );
+              },
+            ),
+          ],
         ),
-        'requirementTitle': 'Complete Denture',
-        'clinicName': 'Prosthodontics',
-        'clinicColor': AppColors.primary,
-      },
-      {
-        'caseRecord': CaseRecord(
-          id: 'case-02',
-          patientId: patient.id,
-          requirementId: 'req-anterior-rct',
-          dateStarted: DateTime.now().subtract(const Duration(days: 28)),
-          dateCompleted: DateTime.now().subtract(const Duration(days: 7)),
-          status: 'Evaluated',
-          notes: 'Obturation successful. Signed off with score 9.0/10.',
-        ),
-        'requirementTitle': 'Anterior Root Canal (Tooth 11)',
-        'clinicName': 'Endodontics',
-        'clinicColor': AppColors.secondary,
-      },
-    ];
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
-      physics: const BouncingScrollPhysics(),
-      itemCount: mockCases.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = mockCases[index];
-        return CaseRecordCard(
-          caseRecord: item['caseRecord'] as CaseRecord,
-          requirementTitle: item['requirementTitle'] as String,
-          clinicName: item['clinicName'] as String,
-          clinicColor: item['clinicColor'] as Color? ?? AppColors.secondary,
-          onTap: () => EvaluateCaseModal.show(
-            context,
-            caseRecord: item['caseRecord'] as CaseRecord,
-            patientName: patient.name,
-          ),
-        );
-      },
+      ),
     );
   }
 
