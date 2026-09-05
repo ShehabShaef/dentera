@@ -17,37 +17,102 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _agendaRemindersEnabled = true;
-  bool _followUpAlertsEnabled = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final prefsRepo = ref.read(preferencesRepositoryProvider);
-    final reminders = await prefsRepo.getRemindersEnabled();
-    if (mounted) {
-      setState(() {
-        _agendaRemindersEnabled = reminders;
-      });
-    }
-  }
-
   Future<void> _onToggleAgendaReminders(bool value) async {
-    setState(() {
-      _agendaRemindersEnabled = value;
-    });
-
-    final prefsRepo = ref.read(preferencesRepositoryProvider);
-    await prefsRepo.setRemindersEnabled(value);
-
+    await ref.read(agendaRemindersProvider.notifier).setRemindersEnabled(value);
     if (!value) {
       // Opt-out: cancel all pending notification intents
       await ref.read(notificationServiceProvider).cancelAllReminders();
     }
+  }
+
+  Future<void> _showThemeSelectionDialog(BuildContext context) async {
+    final current = ref.read(themeModeProvider);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Choose App Theme',
+            style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.w600),
+          ),
+          content: RadioGroup<ThemeMode>(
+            groupValue: current,
+            onChanged: (mode) {
+              if (mode != null) {
+                ref.read(themeModeProvider.notifier).setThemeMode(mode);
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text('System Default'),
+                  value: ThemeMode.system,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Light'),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text('Dark'),
+                  value: ThemeMode.dark,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showLanguageSelectionDialog(BuildContext context) async {
+    final current = ref.read(localeProvider);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Choose Language',
+            style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.w600),
+          ),
+          content: RadioGroup<String>(
+            groupValue: current,
+            onChanged: (locale) {
+              if (locale != null) {
+                ref.read(localeProvider.notifier).setLocale(locale);
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text('English'),
+                  value: 'en',
+                ),
+                RadioListTile<String>(
+                  title: Text('العربية (Arabic)'),
+                  value: 'ar',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _onExportDatabase() async {
@@ -187,7 +252,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prefsRepo = ref.watch(preferencesRepositoryProvider);
+    final userProfileAsync = ref.watch(userProfileProvider);
+    final userProfile = userProfileAsync.valueOrNull ??
+        const UserProfile(
+          name: 'Dr. Shehab Shaif',
+          university: 'Dental School',
+          academicYear: '5th Year',
+        );
+    final doctorName = userProfile.name;
+    final academicYear = userProfile.academicYear;
+    final university = userProfile.university;
+    final subtitle = '$academicYear Clinical Student • $university';
+
+    final currentThemeMode = ref.watch(themeModeProvider);
+    final themeLabel = switch (currentThemeMode) {
+      ThemeMode.system => 'System Default',
+      ThemeMode.light => 'Light',
+      ThemeMode.dark => 'Dark',
+    };
+
+    final currentLocale = ref.watch(localeProvider);
+    final languageLabel = switch (currentLocale) {
+      'ar' => 'العربية (Arabic)',
+      _ => 'English',
+    };
+
+    final agendaRemindersEnabled = ref.watch(agendaRemindersProvider);
+    final followUpAlertsEnabled = ref.watch(followUpAlertsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -201,222 +292,196 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
       body: SafeArea(
-        child: FutureBuilder<Map<String, String?>>(
-          future: Future.wait([
-            prefsRepo.getDoctorName(),
-            prefsRepo.getAcademicYear(),
-            prefsRepo.getUniversity(),
-          ]).then((results) => {
-                'name': results[0],
-                'year': results[1],
-                'university': results[2],
-              }),
-          builder: (context, snapshot) {
-            final doctorName = snapshot.data?['name'] ?? 'Dr. Shehab Shaif';
-            final academicYear = snapshot.data?['year'] ?? '5th Year';
-            final university = snapshot.data?['university'] ?? 'Dental School';
-            final subtitle = '$academicYear Clinical Student • $university';
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          physics: const BouncingScrollPhysics(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // 1. Profile Header Card
+                  ProfileHeaderCard(
+                    name: doctorName,
+                    subtitle: subtitle,
+                    onEdit: () => EditProfileModal.show(context),
+                  ),
+                  const SizedBox(height: 24),
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              physics: const BouncingScrollPhysics(),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // 2. Preferences
+                  SettingsGroupCard(
+                    title: 'Preferences',
                     children: <Widget>[
-                      // 1. Profile Header Card
-                      ProfileHeaderCard(
-                        name: doctorName,
-                        subtitle: subtitle,
-                        onEdit: () {
-                          // TODO: Phase 5.5 - Edit Profile Modal
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 2. Preferences
-                      SettingsGroupCard(
-                        title: 'Preferences',
-                        children: <Widget>[
-                          SettingsListTile(
-                            icon: Icons.dark_mode_outlined,
-                            title: 'App Theme',
-                            showDivider: true,
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text(
-                                  'System Default',
-                                  style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 20,
-                                  color: AppColors.outlineVariant,
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              // TODO: Theme selection modal
-                            },
-                          ),
-                          SettingsListTile(
-                            icon: Icons.language_outlined,
-                            title: 'Language',
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text(
-                                  'English',
-                                  style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 20,
-                                  color: AppColors.outlineVariant,
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              // TODO: Language selection modal
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 3. Local Notifications
-                      SettingsGroupCard(
-                        title: 'Local Notifications',
-                        children: <Widget>[
-                          SettingsListTile(
-                            icon: Icons.event_outlined,
-                            title: 'Next-Day Agenda Reminders',
-                            showDivider: true,
-                            trailing: Switch.adaptive(
-                              value: _agendaRemindersEnabled,
-                              activeTrackColor: AppColors.secondary,
-                              onChanged: _onToggleAgendaReminders,
-                            ),
-                          ),
-                          SettingsListTile(
-                            icon: Icons.notifications_active_outlined,
-                            title: 'Patient Follow-up Alerts',
-                            trailing: Switch.adaptive(
-                              value: _followUpAlertsEnabled,
-                              activeTrackColor: AppColors.secondary,
-                              onChanged: (val) {
-                                setState(() {
-                                  _followUpAlertsEnabled = val;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 4. Data & Offline Backup
-                      SettingsGroupCard(
-                        title: 'Data & Offline Backup',
-                        children: <Widget>[
-                          SettingsListTile(
-                            icon: Icons.download_rounded,
-                            title: 'Export Local Backup',
-                            subtitle: 'Save an encrypted SQLite copy to your device',
-                            showDivider: true,
-                            trailing: const Icon(
-                              Icons.chevron_right_rounded,
-                              size: 20,
-                              color: AppColors.outlineVariant,
-                            ),
-                            onTap: _onExportDatabase,
-                          ),
-                          SettingsListTile(
-                            icon: Icons.upload_rounded,
-                            title: 'Restore from Backup',
-                            subtitle: 'Import data from a local backup file',
-                            trailing: const Icon(
-                              Icons.chevron_right_rounded,
-                              size: 20,
-                              color: AppColors.outlineVariant,
-                            ),
-                            onTap: _onRestoreDatabase,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 5. About & Security
-                      SettingsGroupCard(
-                        title: 'About',
-                        children: <Widget>[
-                          SettingsListTile(
-                            icon: Icons.info_outline_rounded,
-                            title: 'App Version',
-                            showDivider: true,
-                            trailing: Text(
-                              'v0.1.0 (Offline Build)',
-                              style: AppTextStyles.caption.copyWith(
+                      SettingsListTile(
+                        icon: Icons.dark_mode_outlined,
+                        title: 'App Theme',
+                        showDivider: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              themeLabel,
+                              style: AppTextStyles.bodyMd.copyWith(
                                 color: AppColors.onSurfaceVariant,
                               ),
                             ),
-                          ),
-                          SettingsListTile(
-                            icon: Icons.lock_outline_rounded,
-                            title: 'Privacy & Security',
-                            trailing: Text(
-                              '100% On-Device',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.secondary,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              size: 20,
+                              color: AppColors.outlineVariant,
+                            ),
+                          ],
+                        ),
+                        onTap: () => _showThemeSelectionDialog(context),
+                      ),
+                      SettingsListTile(
+                        icon: Icons.language_outlined,
+                        title: 'Language',
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              languageLabel,
+                              style: AppTextStyles.bodyMd.copyWith(
+                                color: AppColors.onSurfaceVariant,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              size: 20,
+                              color: AppColors.outlineVariant,
+                            ),
+                          ],
+                        ),
+                        onTap: () => _showLanguageSelectionDialog(context),
                       ),
-                      const SizedBox(height: 32),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-                      // 6. Danger Zone
-                      Center(
-                        child: OutlinedButton.icon(
-                          onPressed: _onResetAllData,
-                          icon: const Icon(
-                            Icons.delete_forever_rounded,
-                            color: AppColors.error,
-                            size: 20,
-                          ),
-                          label: Text(
-                            'Reset All Clinical Data',
-                            style: AppTextStyles.bodyMd.copyWith(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.error, width: 1.0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  // 3. Local Notifications
+                  SettingsGroupCard(
+                    title: 'Local Notifications',
+                    children: <Widget>[
+                      SettingsListTile(
+                        icon: Icons.event_outlined,
+                        title: 'Next-Day Agenda Reminders',
+                        showDivider: true,
+                        trailing: Switch.adaptive(
+                          value: agendaRemindersEnabled,
+                          activeTrackColor: AppColors.secondary,
+                          onChanged: _onToggleAgendaReminders,
+                        ),
+                      ),
+                      SettingsListTile(
+                        icon: Icons.notifications_active_outlined,
+                        title: 'Patient Follow-up Alerts',
+                        trailing: Switch.adaptive(
+                          value: followUpAlertsEnabled,
+                          activeTrackColor: AppColors.secondary,
+                          onChanged: (val) {
+                            ref.read(followUpAlertsProvider.notifier).setAlertsEnabled(val);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Data & Offline Backup
+                  SettingsGroupCard(
+                    title: 'Data & Offline Backup',
+                    children: <Widget>[
+                      SettingsListTile(
+                        icon: Icons.download_rounded,
+                        title: 'Export Local Backup',
+                        subtitle: 'Save an encrypted SQLite copy to your device',
+                        showDivider: true,
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AppColors.outlineVariant,
+                        ),
+                        onTap: _onExportDatabase,
+                      ),
+                      SettingsListTile(
+                        icon: Icons.upload_rounded,
+                        title: 'Restore from Backup',
+                        subtitle: 'Import data from a local backup file',
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AppColors.outlineVariant,
+                        ),
+                        onTap: _onRestoreDatabase,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 5. About & Security
+                  SettingsGroupCard(
+                    title: 'About',
+                    children: <Widget>[
+                      SettingsListTile(
+                        icon: Icons.info_outline_rounded,
+                        title: 'App Version',
+                        showDivider: true,
+                        trailing: Text(
+                          'v0.1.0 (Offline Build)',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      SettingsListTile(
+                        icon: Icons.lock_outline_rounded,
+                        title: 'Privacy & Security',
+                        trailing: Text(
+                          '100% On-Device',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.secondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 32),
+
+                  // 6. Danger Zone
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: _onResetAllData,
+                      icon: const Icon(
+                        Icons.delete_forever_rounded,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                      label: Text(
+                        'Reset All Clinical Data',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.error, width: 1.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

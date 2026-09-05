@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/services/database_backup_service.dart';
 import 'package:dentera/core/theme/theme.dart';
+import 'package:dentera/data/repositories/preferences_repository.dart';
 import 'package:dentera/presentation/screens/profile/profile_screen.dart';
 import 'package:dentera/presentation/screens/profile/widgets/widgets.dart';
 
@@ -189,6 +190,100 @@ void main() {
       expect(find.text('Danger Zone'), findsOneWidget);
       expect(find.text('Type "RESET" in all caps below to confirm:'), findsOneWidget);
       expect(find.text('Wipe All Data'), findsOneWidget);
+    });
+
+    testWidgets('Tapping edit on ProfileHeaderCard opens EditProfileModal', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final editButton = find.byIcon(Icons.edit_outlined);
+      await tester.tap(editButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Clinician Profile'), findsOneWidget);
+    });
+
+    testWidgets('Tapping App Theme opens theme selection dialog and updates themeMode', (WidgetTester tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final themeTile = find.text('App Theme');
+      await tester.tap(themeTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose App Theme'), findsOneWidget);
+      expect(find.text('Dark'), findsOneWidget);
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(themeModeProvider), equals(ThemeMode.dark));
+    });
+
+    testWidgets('Tapping Language opens language selection dialog and updates locale', (WidgetTester tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final languageTile = find.text('Language');
+      await tester.tap(languageTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose Language'), findsOneWidget);
+      expect(find.text('العربية (Arabic)'), findsOneWidget);
+
+      await tester.tap(find.text('العربية (Arabic)'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(localeProvider), equals('ar'));
+    });
+
+    testWidgets('Toggling Patient Follow-up Alerts updates provider', (WidgetTester tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(container.read(followUpAlertsProvider), isTrue);
+
+      final switches = find.byType(Switch);
+      await tester.tap(switches.at(1));
+      await tester.pumpAndSettle();
+
+      expect(container.read(followUpAlertsProvider), isFalse);
     });
   });
 }

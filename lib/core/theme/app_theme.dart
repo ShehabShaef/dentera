@@ -218,4 +218,45 @@ abstract final class AppTheme {
       ),
     );
   }
+
+  /// Global dark ThemeData configuration for Dentera based on DESIGN.md
+  static ThemeData get darkTheme {
+    final ColorScheme colorScheme = const ColorScheme.dark(
+      primary: AppColors.inversePrimary,
+      onPrimary: AppColors.onPrimaryFixed,
+      primaryContainer: AppColors.primaryContainer,
+      onPrimaryContainer: AppColors.onPrimaryContainer,
+      inversePrimary: AppColors.primary,
+      secondary: AppColors.secondaryFixedDim,
+      onSecondary: AppColors.onSecondaryFixed,
+      secondaryContainer: AppColors.secondary,
+      onSecondaryContainer: AppColors.secondaryContainer,
+      tertiary: AppColors.tertiaryFixedDim,
+      onTertiary: AppColors.onTertiaryFixed,
+      tertiaryContainer: AppColors.tertiary,
+      onTertiaryContainer: AppColors.tertiaryContainer,
+      error: AppColors.error,
+      onError: AppColors.onError,
+      errorContainer: AppColors.errorContainer,
+      onErrorContainer: AppColors.onErrorContainer,
+      surface: AppColors.inverseSurface,
+      onSurface: AppColors.inverseOnSurface,
+      onSurfaceVariant: AppColors.surfaceDim,
+      outline: AppColors.outline,
+      outlineVariant: AppColors.outlineVariant,
+      inverseSurface: AppColors.surface,
+      onInverseSurface: AppColors.onSurface,
+      surfaceTint: AppColors.surfaceTint,
+    );
+
+    return lightTheme.copyWith(
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColors.inverseSurface,
+      appBarTheme: lightTheme.appBarTheme.copyWith(
+        backgroundColor: AppColors.inverseSurface,
+        foregroundColor: AppColors.inverseOnSurface,
+      ),
+    );
+  }
 }
+
