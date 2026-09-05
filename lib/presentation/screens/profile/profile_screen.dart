@@ -5,6 +5,7 @@ import '../../../core/services/database_backup_service.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../../widgets/modals/database_reset_modal.dart';
 import 'widgets/widgets.dart';
 
 /// Profile & Settings screen managing user profile, preferences, and offline backups.
@@ -159,6 +160,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         SnackBar(
           content: Text(
             'Restore failed: $e',
+            style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onResetAllData() async {
+    final didReset = await DatabaseResetModal.show(context);
+    if (didReset == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'All clinical data and preferences have been successfully reset.',
             style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
           ),
           backgroundColor: AppColors.error,
@@ -371,9 +388,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       // 6. Danger Zone
                       Center(
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            // TODO: Phase 7 - Confirm reset clinical database
-                          },
+                          onPressed: _onResetAllData,
                           icon: const Icon(
                             Icons.delete_forever_rounded,
                             color: AppColors.error,

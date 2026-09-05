@@ -165,6 +165,31 @@ void main() {
       expect(fakeService.importCalled, isTrue);
       expect(find.text('Database restored successfully. Clinical records reloaded.'), findsOneWidget);
     });
+
+    testWidgets('Tapping Reset All Clinical Data button opens DatabaseResetModal', (WidgetTester tester) async {
+      final fakeService = FakeDatabaseBackupService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseBackupServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final resetButton = find.text('Reset All Clinical Data');
+      await tester.ensureVisible(resetButton);
+      await tester.tap(resetButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Danger Zone'), findsOneWidget);
+      expect(find.text('Type "RESET" in all caps below to confirm:'), findsOneWidget);
+      expect(find.text('Wipe All Data'), findsOneWidget);
+    });
   });
 }
 
@@ -179,6 +204,7 @@ class FakeDatabaseBackupService extends DatabaseBackupService {
 
   bool exportCalled = false;
   bool importCalled = false;
+  bool resetCalled = false;
 
   @override
   Future<BackupResult> exportDatabase({
@@ -194,5 +220,9 @@ class FakeDatabaseBackupService extends DatabaseBackupService {
     importCalled = true;
     return restoreResult ?? RestoreResult.success('/mock/dentera.db');
   }
-}
 
+  @override
+  Future<void> resetAllData({dynamic preferencesRepository}) async {
+    resetCalled = true;
+  }
+}

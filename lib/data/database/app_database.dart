@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/error/exceptions.dart';
+import '../repositories/preferences_repository.dart';
 import 'database_seeder.dart';
 
 /// Singleton manager for the local SQLite database in Dentera.
@@ -144,5 +145,45 @@ class AppDatabase {
       await _database!.close();
       _database = null;
     }
+  }
+
+  /// Completely resets all operational SQLite tables while preserving the underlying relational schema.
+  ///
+  /// **Foreign Key Deletion Ordering:**
+  /// Foreign key referential integrity is strictly enforced (`PRAGMA foreign_keys = ON;`).
+  /// Attempting to delete records from parent tables (`clinics` or `patients`) before their referencing
+  /// child tables are cleared will trigger an SQLite foreign key constraint failure (`FOREIGN KEY constraint failed`).
+  /// To ensure atomic and constraint-safe deletion, records must be deleted in strict leaf-to-root order:
+  /// 1. `appointments` - references `patients(id)` and `clinics(id)`
+  /// 2. `case_records` - references `patients(id)` and `requirements(id)`
+  /// 3. `requirements` - references `clinics(id)`
+  /// 4. `clinics` - root academic clinic department records
+  /// 5. `patients` - root patient profile records
+  ///
+  /// **Transaction Safety:**
+  /// All `DELETE FROM` statements are enclosed within an atomic transaction. If any error occurs,
+  /// the transaction rolls back cleanly without leaving partial deletions.
+  ///
+  /// **Local Preferences Reset:**
+  /// Also clears persisted device settings in [PreferencesRepository], ensuring onboarding status,
+  /// doctor credentials, and notification preferences are wiped in synchronization with the database.
+  ///
+  /// **UI Ghost Data Prevention via Riverpod:**
+  /// Following this database purge, calling components or services must invalidate all
+  /// cached Riverpod providers (`patientListProvider`, `clinicListProvider`, etc.).
+  /// Without systematic provider invalidation, in-memory Riverpod caches would continue serving
+  /// obsolete "ghost data" until the application process is terminated.
+  Future<void> resetAllData({PreferencesRepository? preferencesRepository}) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.rawDelete('DELETE FROM appointments;');
+      await txn.rawDelete('DELETE FROM case_records;');
+      await txn.rawDelete('DELETE FROM requirements;');
+      await txn.rawDelete('DELETE FROM clinics;');
+      await txn.rawDelete('DELETE FROM patients;');
+    });
+
+    final prefsRepo = preferencesRepository ?? PreferencesRepository();
+    await prefsRepo.clearAll();
   }
 }

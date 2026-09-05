@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/database/app_database.dart';
 import '../../data/database/database_providers.dart';
+import '../../data/repositories/preferences_repository.dart';
 import '../../presentation/state/appointments_provider.dart';
 import '../../presentation/state/cases_provider.dart';
 import '../../presentation/state/clinics_provider.dart';
@@ -356,8 +357,30 @@ class DatabaseBackupService {
 
   /// Systematically invalidates all database and domain Riverpod providers.
   ///
-  /// Executing this after an import forces Riverpod to tear down cached repository
-  /// instances and re-fetch records from the newly placed database file, preventing
+  /// Destructively wipes all clinical database records and preferences, then invalidates Riverpod state.
+  ///
+  /// **Destructive Operations & Transaction Safety:**
+  /// Wipes all tables (`appointments`, `case_records`, `requirements`, `clinics`, `patients`)
+  /// in safe referential integrity order within an atomic SQLite transaction, clears all
+  /// SharedPreferences device settings, and systematically invalidates all Riverpod state providers
+  /// to eliminate cached UI "ghost data".
+  Future<void> resetAllData({PreferencesRepository? preferencesRepository}) async {
+    AppLogger.warning('CRITICAL: Executing complete database wipe. All clinical records cleared.');
+    try {
+      await _appDatabase.resetAllData(preferencesRepository: preferencesRepository);
+      invalidateRiverpodState();
+      AppLogger.info('Complete database reset and preference wipe executed successfully.');
+    } catch (e, stackTrace) {
+      final errorMsg = 'Failed to execute complete database wipe: $e';
+      AppLogger.error(errorMsg, e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Systematically invalidates all database and domain Riverpod providers.
+  ///
+  /// Executing this after an import or database reset forces Riverpod to tear down
+  /// cached repository instances and re-fetch records from the database file, preventing
   /// the UI from rendering obsolete or inconsistent "ghost" data.
   void invalidateRiverpodState() {
     final activeRef = ref;
@@ -366,7 +389,7 @@ class DatabaseBackupService {
       return;
     }
 
-    AppLogger.info('Invalidating all Riverpod database and clinical state providers...');
+    AppLogger.info('Invalidating all Riverpod database, domain, and preference providers...');
 
     // Invalidate database singleton & repositories
     activeRef.invalidate(appDatabaseProvider);
@@ -375,6 +398,7 @@ class DatabaseBackupService {
     activeRef.invalidate(requirementRepositoryProvider);
     activeRef.invalidate(caseRecordRepositoryProvider);
     activeRef.invalidate(appointmentRepositoryProvider);
+    activeRef.invalidate(preferencesRepositoryProvider);
 
     // Invalidate domain query providers
     activeRef.invalidate(patientListProvider);
@@ -385,6 +409,8 @@ class DatabaseBackupService {
     activeRef.invalidate(upcomingAppointmentsProvider);
     activeRef.invalidate(globalQuotaSummaryProvider);
     activeRef.invalidate(filteredPatientListProvider);
+    activeRef.invalidate(onboardingStatusProvider);
+    activeRef.invalidate(remindersEnabledProvider);
 
     AppLogger.debug('All clinical providers successfully invalidated.');
   }

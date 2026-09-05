@@ -1,6 +1,7 @@
 export 'add_clinic_modal.dart';
 export 'add_patient_modal.dart';
 export 'add_requirement_modal.dart';
+export 'database_reset_modal.dart';
 export 'edit_patient_modal.dart';
 export 'evaluate_case_modal.dart';
 export 'log_case_record_modal.dart';
