@@ -7,6 +7,7 @@ import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/patients/patients_screen.dart';
 import 'package:dentera/presentation/screens/patients/widgets/widgets.dart';
 import 'package:dentera/presentation/state/state.dart';
+import 'package:dentera/presentation/widgets/widgets.dart';
 
 void main() {
   group('Patients Roster Screen Widget Tests', () {
@@ -121,8 +122,10 @@ void main() {
       await tester.enterText(find.byType(TextField), 'NonExistentPatientXYZ');
       await tester.pumpAndSettle();
 
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('No patients found'), findsOneWidget);
       expect(find.text('No patient records match "NonExistentPatientXYZ".'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('PatientsScreen changes filter category on pill tap', (WidgetTester tester) async {
@@ -152,7 +155,9 @@ void main() {
 
       expect(container.read(patientFilterCategoryProvider), 'Active Cases');
       // With no cases, zero state is shown for Active Cases
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('No patients found under "Active Cases".'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('PatientsScreen renders zero state and Add First Patient button when patient list is empty', (WidgetTester tester) async {
@@ -172,11 +177,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('Patients'), findsOneWidget);
       expect(find.text('No patients found'), findsOneWidget);
       expect(find.text('Add your first patient to start tracking clinical requirements.'), findsOneWidget);
       expect(find.text('Add First Patient'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

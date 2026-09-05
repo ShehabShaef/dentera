@@ -127,7 +127,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                   clinicsAsync.when(
                     data: (clinics) {
                       if (clinics.isEmpty) {
-                        AppLogger.debug('Clinics screen rendering zero state - SQLite returned 0 records');
+                        AppLogger.debug('ClinicsScreen rendered zero state: SQLite returned 0 records for academic year');
                         return _buildZeroState();
                       }
 
@@ -205,89 +205,39 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     );
   }
 
+  /// Builds the standardized zero state display when the SQLite repository returns no clinics.
+  ///
+  /// The Riverpod consumer for [clinicListProvider] explicitly falls back to the
+  /// [DenteraEmptyState] widget when the SQLite database query returns an empty list
+  /// for the selected academic year. This guides the student to register their clinical
+  /// departments and track their requirements.
   Widget _buildZeroState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
-              ),
-              child: const Icon(
-                Icons.account_balance_outlined,
-                size: 36,
-                color: AppColors.outline,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No clinics added yet',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Register your clinical departments to track quotas and case progress.',
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              isFullWidth: false,
-              text: 'Add Dental Clinic',
-              icon: const Icon(
-                Icons.add_chart_rounded,
-                color: AppColors.onPrimary,
-                size: 18,
-              ),
-              onPressed: () {
-                AppLogger.info('Opened AddClinicModal from zero state in ClinicsScreen');
-                AddClinicModal.show(context);
-              },
-            ),
-          ],
+    return DenteraEmptyState(
+      icon: Icons.account_balance_outlined,
+      title: 'No clinics added yet',
+      subtitle: 'Register your clinical departments to track quotas and case progress.',
+      actionButton: PrimaryButton(
+        isFullWidth: false,
+        text: 'Add Dental Clinic',
+        icon: const Icon(
+          Icons.add_chart_rounded,
+          color: AppColors.onPrimary,
+          size: 18,
         ),
+        onPressed: () {
+          AppLogger.info('Opened AddClinicModal from zero state in ClinicsScreen');
+          AddClinicModal.show(context);
+        },
       ),
     );
   }
 
+  /// Builds the standardized zero state display when a category filter yields zero clinics.
   Widget _buildEmptyFilterState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          children: <Widget>[
-            const Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: AppColors.outline,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No clinics found in "$_selectedCategory"',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Try selecting "All" or a different clinical category.',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return DenteraEmptyState(
+      icon: Icons.search_off_rounded,
+      title: 'No clinics found in "$_selectedCategory"',
+      subtitle: 'Try selecting "All" or a different clinical category.',
     );
   }
 

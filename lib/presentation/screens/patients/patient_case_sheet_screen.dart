@@ -254,7 +254,9 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     return casesAsync.when(
       data: (cases) {
         if (cases.isEmpty) {
-          AppLogger.debug('Patient case sheet rendering zero state - SQLite returned 0 records for patient ${patient.id}');
+          AppLogger.debug(
+            'PatientCaseSheetScreen rendered zero state: No clinical cases logged for patient ${patient.id}',
+          );
           return _buildEmptyCasesState(patient);
         }
 
@@ -302,61 +304,33 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
+  /// Builds the standardized zero state display when no clinical cases exist for this patient.
+  ///
+  /// The Riverpod consumer for [casesByPatientProvider] explicitly falls back to the
+  /// [DenteraEmptyState] widget when the SQLite repository returns an empty list for the
+  /// patient. This informs the student that no cases have been recorded yet and provides
+  /// a direct CTA to log their first procedure.
   Widget _buildEmptyCasesState(Patient patient) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
-              ),
-              child: const Icon(
-                Icons.assignment_late_outlined,
-                size: 36,
-                color: AppColors.outline,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No clinical cases logged yet',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Start logging procedural cases and treatments completed for ${patient.name}.',
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              isFullWidth: false,
-              text: 'Log First Case',
-              icon: const Icon(
-                Icons.add_rounded,
-                color: AppColors.onPrimary,
-                size: 18,
-              ),
-              onPressed: () {
-                AppLogger.info('Opened LogCaseRecordModal from empty cases state for patient: ${patient.id}');
-                LogCaseRecordModal.show(
-                  context,
-                  patientId: patient.id,
-                  patientName: patient.name,
-                );
-              },
-            ),
-          ],
+    return DenteraEmptyState(
+      icon: Icons.assignment_late_outlined,
+      title: 'No clinical cases logged yet',
+      subtitle: 'Start logging procedural cases and treatments completed for ${patient.name}.',
+      actionButton: PrimaryButton(
+        isFullWidth: false,
+        text: 'Log First Case',
+        icon: const Icon(
+          Icons.add_rounded,
+          color: AppColors.onPrimary,
+          size: 18,
         ),
+        onPressed: () {
+          AppLogger.info('Opened LogCaseRecordModal from empty cases state for patient: ${patient.id}');
+          LogCaseRecordModal.show(
+            context,
+            patientId: patient.id,
+            patientName: patient.name,
+          );
+        },
       ),
     );
   }

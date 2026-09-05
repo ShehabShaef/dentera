@@ -149,7 +149,15 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   if (patients.isNotEmpty) {
                     return _buildRosterList(patients);
                   }
-                  AppLogger.debug('Patients screen rendering zero state - SQLite returned 0 records');
+                  if (searchQuery.isNotEmpty) {
+                    AppLogger.debug(
+                      'PatientsScreen rendered zero state: Search query returned 0 matches',
+                    );
+                  } else {
+                    AppLogger.debug(
+                      'PatientsScreen rendered zero state: Patient roster is empty',
+                    );
+                  }
                   return _buildZeroState(searchQuery, selectedFilter);
                 },
                 loading: () => const Center(
@@ -234,73 +242,53 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     );
   }
 
+  /// Builds the standardized zero state display when the patient roster or search query returns empty.
+  ///
+  /// The Riverpod consumer for [filteredPatientListProvider] explicitly falls back to the
+  /// [DenteraEmptyState] widget when the SQLite repository yields no records, either because
+  /// no patients have been registered yet or because an active search or category filter
+  /// matches zero records. When the roster is entirely empty, an action button is rendered
+  /// to guide the student to register their first patient.
   Widget _buildZeroState(String query, String filter) {
     String subtitle;
+    IconData icon;
     if (query.isNotEmpty) {
       subtitle = 'No patient records match "$query".';
+      icon = Icons.search_off_rounded;
     } else if (filter != 'All') {
       subtitle = 'No patients found under "$filter".';
+      icon = Icons.people_outline_rounded;
     } else {
       subtitle = 'Add your first patient to start tracking clinical requirements.';
+      icon = Icons.people_outline_rounded;
     }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
+    final bool isRosterEmpty = query.isEmpty && filter == 'All';
+
+    return DenteraEmptyState(
+      icon: icon,
+      title: 'No patients found',
+      subtitle: subtitle,
+      actionButton: isRosterEmpty
+          ? PrimaryButton(
+              isFullWidth: false,
+              text: 'Add First Patient',
+              icon: const Icon(
+                Icons.add_rounded,
+                color: AppColors.onPrimary,
+                size: 18,
               ),
-              child: const Icon(
-                Icons.people_outline_rounded,
-                size: 36,
-                color: AppColors.outline,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No patients found',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            if (query.isEmpty && filter == 'All')
-              PrimaryButton(
-                isFullWidth: false,
-                text: 'Add First Patient',
-                icon: const Icon(
-                  Icons.add_rounded,
-                  color: AppColors.onPrimary,
-                  size: 18,
-                ),
-                onPressed: () {
-                  AddPatientModal.show(
-                    context,
-                    onPatientAdded: (_) {
-                      ref.invalidate(patientListProvider);
-                      ref.invalidate(allCasesProvider);
-                    },
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
+              onPressed: () {
+                AddPatientModal.show(
+                  context,
+                  onPatientAdded: (_) {
+                    ref.invalidate(patientListProvider);
+                    ref.invalidate(allCasesProvider);
+                  },
+                );
+              },
+            )
+          : null,
     );
   }
 }

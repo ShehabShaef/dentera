@@ -117,7 +117,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       );
 
                       if (appointments.isEmpty) {
-                        AppLogger.debug('Appointments screen rendering zero state - SQLite returned 0 records for date $_selectedDate');
+                        AppLogger.debug(
+                          'AppointmentsScreen rendered zero state: No appointments scheduled for selected timeline date $_selectedDate',
+                        );
                         return _buildEmptyState();
                       }
 
@@ -362,54 +364,25 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     );
   }
 
+  /// Builds the standardized zero state display when no appointments are scheduled.
+  ///
+  /// The Riverpod consumer for [dailyAppointmentsProvider] explicitly falls back to the
+  /// [DenteraEmptyState] widget when the SQLite repository returns an empty list for the
+  /// selected date. This provides clear guidance and a direct action to schedule a patient.
   Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
-              ),
-              child: const Icon(
-                Icons.event_available_outlined,
-                size: 36,
-                color: AppColors.outline,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No appointments scheduled',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Enjoy your day off or schedule a new patient.',
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              isFullWidth: false,
-              text: 'Schedule Patient',
-              icon: const Icon(
-                Icons.add_rounded,
-                color: AppColors.onPrimary,
-                size: 18,
-              ),
-              onPressed: _openScheduleAppointmentModal,
-            ),
-          ],
+    return DenteraEmptyState(
+      icon: Icons.event_available_outlined,
+      title: 'No appointments scheduled',
+      subtitle: 'Enjoy your day off or schedule a new patient.',
+      actionButton: PrimaryButton(
+        isFullWidth: false,
+        text: 'Schedule Patient',
+        icon: const Icon(
+          Icons.add_rounded,
+          color: AppColors.onPrimary,
+          size: 18,
         ),
+        onPressed: _openScheduleAppointmentModal,
       ),
     );
   }

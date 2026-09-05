@@ -10,6 +10,7 @@ import 'package:dentera/presentation/screens/appointments/appointments_screen.da
 import 'package:dentera/presentation/screens/appointments/widgets/widgets.dart';
 import 'package:dentera/presentation/screens/patients/patient_case_sheet_screen.dart';
 import 'package:dentera/presentation/state/state.dart';
+import 'package:dentera/presentation/widgets/widgets.dart';
 
 /// Test navigator observer to capture push transitions and inspect routes.
 class TestNavigatorObserver extends NavigatorObserver {
@@ -138,10 +139,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('No appointments scheduled'), findsOneWidget);
       expect(find.text('Enjoy your day off or schedule a new patient.'), findsOneWidget);
       expect(find.text('Schedule Patient'), findsOneWidget);
       expect(find.byType(TimelineAppointmentCard), findsNothing);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('displays CircularProgressIndicator while dailyAppointmentsProvider is loading',

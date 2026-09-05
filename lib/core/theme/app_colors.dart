@@ -14,6 +14,8 @@ abstract final class AppColors {
   static const Color surfaceVariant = Color(0xFFE0E3E5);
   static const Color onSurface = Color(0xFF181C1E);
   static const Color onSurfaceVariant = Color(0xFF42474F);
+  /// Standard alias for secondary / muted body text across Clinical Linearity components.
+  static const Color textSecondary = onSurfaceVariant;
   static const Color inverseSurface = Color(0xFF2D3133);
   static const Color inverseOnSurface = Color(0xFFEEF1F3);
   static const Color surfaceTint = Color(0xFF2C6197);

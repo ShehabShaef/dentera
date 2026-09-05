@@ -6,8 +6,8 @@ import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/patients/patient_case_sheet_screen.dart';
 import 'package:dentera/presentation/screens/patients/widgets/widgets.dart';
-
 import 'package:dentera/presentation/state/state.dart';
+import 'package:dentera/presentation/widgets/widgets.dart';
 
 void main() {
   group('PatientCaseSheetScreen & CaseRecordCard Widget Tests', () {
@@ -84,11 +84,13 @@ void main() {
       expect(find.text('Female, 23 yrs • +967-771234567'), findsOneWidget);
 
       // Default Active Tab: Clinical Cases (Zero State)
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('Clinical Cases'), findsOneWidget);
       expect(find.text('No clinical cases logged yet'), findsOneWidget);
       expect(find.text('Start logging procedural cases and treatments completed for Sara Ahmed.'), findsOneWidget);
       expect(find.text('Log First Case'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('PatientCaseSheetScreen renders persistent header and switches tabs when populated', (WidgetTester tester) async {

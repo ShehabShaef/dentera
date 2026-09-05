@@ -7,6 +7,7 @@ import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/presentation/screens/clinics/clinics_screen.dart';
 import 'package:dentera/presentation/screens/clinics/widgets/widgets.dart';
 import 'package:dentera/presentation/state/state.dart';
+import 'package:dentera/presentation/widgets/widgets.dart';
 
 void main() {
   group('Clinics & Requirements Widget Tests', () {
@@ -98,11 +99,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.byType(DenteraEmptyState), findsOneWidget);
       expect(find.text('Clinics & Requirements'), findsOneWidget);
       expect(find.text('No clinics added yet'), findsOneWidget);
       expect(find.text('Register your clinical departments to track quotas and case progress.'), findsOneWidget);
       expect(find.text('Add Dental Clinic'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('ClinicsScreen renders categories and filters clinic cards when populated', (WidgetTester tester) async {
