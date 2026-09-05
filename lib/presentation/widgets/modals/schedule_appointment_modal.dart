@@ -20,16 +20,19 @@ class ScheduleAppointmentModal extends ConsumerStatefulWidget {
     super.key,
     this.initialDate,
     this.onAppointmentScheduled,
+    this.referenceDateTime,
   });
 
   final DateTime? initialDate;
   final ValueChanged<Appointment>? onAppointmentScheduled;
+  final DateTime? referenceDateTime;
 
   /// Convenience static method to show the ScheduleAppointmentModal.
   static Future<Appointment?> show(
     BuildContext context, {
     DateTime? initialDate,
     ValueChanged<Appointment>? onAppointmentScheduled,
+    DateTime? referenceDateTime,
   }) {
     return showModalBottomSheet<Appointment>(
       context: context,
@@ -38,8 +41,30 @@ class ScheduleAppointmentModal extends ConsumerStatefulWidget {
       builder: (context) => ScheduleAppointmentModal(
         initialDate: initialDate,
         onAppointmentScheduled: onAppointmentScheduled,
+        referenceDateTime: referenceDateTime,
       ),
     );
+  }
+
+  /// Synchronously validates that an appointment is not scheduled in the past.
+  ///
+  /// **Business Rules & Data Integrity:**
+  /// - Compares [appointmentDateTime] against [referenceNow] (defaulting to [DateTime.now]).
+  /// - Explicitly blocks past dates and past times (`appointmentDateTime.isBefore(now)`).
+  /// - When validation fails, logs a warning via [AppLogger.warning] and returns
+  ///   `'Cannot schedule appointments in the past'`.
+  ///
+  /// Enforces chronological consistency in the local SQLite `appointments` timeline.
+  static String? validateAppointmentDateTime(
+    DateTime appointmentDateTime, [
+    DateTime? referenceNow,
+  ]) {
+    final now = referenceNow ?? DateTime.now();
+    if (appointmentDateTime.isBefore(now)) {
+      AppLogger.warning('Validation failed: Attempted to schedule appointment in the past');
+      return 'Cannot schedule appointments in the past';
+    }
+    return null;
   }
 
   @override
@@ -53,9 +78,12 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
 
   late DateTime _selectedDate;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 30);
+  String? _dateTimeError;
 
   Patient? _selectedPatient;
   Clinic? _selectedClinic;
+
+  DateTime get _effectiveNow => widget.referenceDateTime ?? DateTime.now();
 
   @override
   void initState() {
@@ -78,11 +106,12 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
   }
 
   Future<void> _pickDate() async {
+    final today = DateTime(_effectiveNow.year, _effectiveNow.month, _effectiveNow.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: _selectedDate.isBefore(today) ? today : _selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -101,6 +130,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        _dateTimeError = null;
       });
     }
   }
@@ -127,6 +157,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
+        _dateTimeError = null;
       });
     }
   }
@@ -159,6 +190,15 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
       _selectedTime.hour,
       _selectedTime.minute,
     );
+
+    // Validation Guard: Enforce that appointment is not scheduled in the past.
+    final dateError = ScheduleAppointmentModal.validateAppointmentDateTime(scheduledDateTime, _effectiveNow);
+    if (dateError != null) {
+      setState(() {
+        _dateTimeError = dateError;
+      });
+      return;
+    }
 
     // Extract true relational entity IDs
     final patientId = patient.id;
@@ -513,6 +553,19 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                           ),
                         ],
                       ),
+                      if (_dateTimeError != null) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0),
+                          child: Text(
+                            _dateTimeError!,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
 
                       // 4. Clinical Notes / Tooth Number

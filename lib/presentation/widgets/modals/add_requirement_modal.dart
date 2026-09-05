@@ -50,6 +50,40 @@ class AddRequirementModal extends ConsumerStatefulWidget {
     );
   }
 
+  /// Synchronously validates the target quota count for a clinic requirement.
+  ///
+  /// **Business Rules & Data Integrity:**
+  /// - Field cannot be empty (`'Please enter target quota'`).
+  /// - Must parse to a valid integer (`'Quota must be a valid number'`).
+  /// - Explicitly blocks negative numbers (`count < 0`); logs a warning and returns `'Quota cannot be negative'`.
+  /// - Requires strictly positive target count (`count == 0`); logs a warning and returns `'Quota must be greater than 0'`.
+  /// - Enforces maximum quota cap (`count > 999`); logs a warning and returns `'Quota count cannot exceed 999'`.
+  ///
+  /// Enforces valid quota targets prior to SQLite record creation.
+  static String? validateQuota(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter target quota';
+    }
+    final count = int.tryParse(value.trim());
+    if (count == null) {
+      AppLogger.warning('Validation failed: Quota target must be a valid integer ("$value")');
+      return 'Quota must be a valid number';
+    }
+    if (count < 0) {
+      AppLogger.warning('Validation failed: Quota target cannot be negative ($count)');
+      return 'Quota cannot be negative';
+    }
+    if (count == 0) {
+      AppLogger.warning('Validation failed: Quota target must be greater than 0');
+      return 'Quota must be greater than 0';
+    }
+    if (count > 999) {
+      AppLogger.warning('Validation failed: Quota count exceeds limit of 999 ($count)');
+      return 'Quota count cannot exceed 999';
+    }
+    return null;
+  }
+
   @override
   ConsumerState<AddRequirementModal> createState() => _AddRequirementModalState();
 }
@@ -209,21 +243,9 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                 prefixIcon: const Icon(Icons.track_changes_rounded, size: 20),
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
+                  FilteringTextInputFormatter.allow(RegExp(r'^-?[0-9]*')),
                 ],
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter target quota';
-                  }
-                  final count = int.tryParse(value.trim());
-                  if (count == null || count <= 0) {
-                    return 'Quota must be greater than 0';
-                  }
-                  if (count > 999) {
-                    return 'Quota count cannot exceed 999';
-                  }
-                  return null;
-                },
+                validator: AddRequirementModal.validateQuota,
               ),
               const SizedBox(height: 28),
 

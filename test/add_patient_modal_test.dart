@@ -148,5 +148,58 @@ void main() {
       expect(createdPatient!.phoneNumber, '+967-771122334');
       expect(createdPatient!.medicalHistory, 'No known drug allergies');
     });
+
+    testWidgets('AddPatientModal rejects negative age inputs and blocks submission', (WidgetTester tester) async {
+      Patient? createdPatient;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            patientRepositoryProvider.overrideWithValue(_FakePatientRepo()),
+            caseRecordRepositoryProvider.overrideWithValue(_FakeCaseRecordRepo()),
+            clinicRepositoryProvider.overrideWithValue(_FakeClinicRepo()),
+            requirementRepositoryProvider.overrideWithValue(_FakeRequirementRepo()),
+            clinicListProvider.overrideWith((ref) async => <Clinic>[]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      AddPatientModal.show(
+                        context,
+                        onPatientAdded: (patient) => createdPatient = patient,
+                      );
+                    },
+                    child: const Text('Open Modal'),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open modal
+      await tester.tap(find.text('Open Modal'));
+      await tester.pumpAndSettle();
+
+      // Enter valid name, but negative age
+      await tester.enterText(find.widgetWithText(DenteraTextField, 'Patient Name *'), 'Invalid Age Patient');
+      await tester.enterText(find.widgetWithText(DenteraTextField, 'Age *'), '-5');
+      await tester.pumpAndSettle();
+
+      // Tap Save Patient
+      await tester.tap(find.text('Save Patient'));
+      await tester.pumpAndSettle();
+
+      // Assert error message is displayed
+      expect(find.text('Cannot be negative'), findsOneWidget);
+      // Assert modal remains open and no patient was created
+      expect(find.text('New Patient'), findsOneWidget);
+      expect(createdPatient, isNull);
+    });
   });
 }

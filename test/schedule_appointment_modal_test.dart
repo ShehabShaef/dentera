@@ -95,6 +95,7 @@ void main() {
                       ScheduleAppointmentModal.show(
                         context,
                         initialDate: DateTime(2026, 9, 2),
+                        referenceDateTime: DateTime(2026, 9, 1),
                         onAppointmentScheduled: (apt) => scheduledAppointment = apt,
                       );
                     },
@@ -155,6 +156,66 @@ void main() {
       expect(scheduledAppointment!.scheduledDate.year, 2026);
       expect(scheduledAppointment!.scheduledDate.month, 9);
       expect(scheduledAppointment!.scheduledDate.day, 2);
+    });
+
+    testWidgets('ScheduleAppointmentModal rejects past date/time scheduling and renders validation error', (WidgetTester tester) async {
+      Appointment? scheduledAppointment;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            patientListProvider.overrideWith((ref) async => dummyPatients),
+            clinicListProvider.overrideWith((ref) async => dummyClinics),
+            appointmentRepositoryProvider.overrideWithValue(_FakeAppointmentRepository()),
+            notificationServiceProvider.overrideWithValue(_FakeNotificationService()),
+            dailyAppointmentsProvider.overrideWith((ref, date) async => <Appointment>[]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      ScheduleAppointmentModal.show(
+                        context,
+                        initialDate: DateTime(2026, 8, 15),
+                        referenceDateTime: DateTime(2026, 9, 1),
+                        onAppointmentScheduled: (apt) => scheduledAppointment = apt,
+                      );
+                    },
+                    child: const Text('Open Modal'),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open modal
+      await tester.tap(find.text('Open Modal'));
+      await tester.pumpAndSettle();
+
+      // Select Patient
+      await tester.tap(find.byKey(const Key('patient_dropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sara Ahmed (PT-1001)').last);
+      await tester.pumpAndSettle();
+
+      // Select Clinic
+      await tester.tap(find.byKey(const Key('clinic_dropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Endodontics').last);
+      await tester.pumpAndSettle();
+
+      // Tap Save Appointment -> Fails validation due to past date
+      await tester.tap(find.text('Save Appointment'));
+      await tester.pumpAndSettle();
+
+      // Error message is displayed on screen
+      expect(find.text('Cannot schedule appointments in the past'), findsOneWidget);
+      expect(scheduledAppointment, isNull);
     });
   });
 }

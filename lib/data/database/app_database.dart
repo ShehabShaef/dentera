@@ -49,7 +49,13 @@ class AppDatabase {
     }
   }
 
-  /// Ensures foreign key integrity constraints are strictly enforced.
+  /// Ensures foreign key integrity constraints and cascade deletions are strictly enforced.
+  ///
+  /// Executing `PRAGMA foreign_keys = ON;` in [_onConfigure] ensures that SQLite's
+  /// relational engine actively honors foreign key constraints across all open connections.
+  /// This guarantees that deleting a parent entity (such as a [Patient] or [Clinic])
+  /// automatically cascades and deletes all associated child records (such as [CaseRecord]
+  /// or [Appointment] rows), preventing orphaned entries in the offline database.
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON;');
   }

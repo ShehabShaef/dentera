@@ -32,6 +32,35 @@ class AddPatientModal extends ConsumerStatefulWidget {
     );
   }
 
+  /// Synchronously validates the patient age input.
+  ///
+  /// **Business Rules & Data Integrity:**
+  /// - Age is a mandatory field (`'Enter age'`).
+  /// - Input must parse to a valid signed 32-bit integer (`'Invalid'`).
+  /// - Explicitly blocks negative values (`age < 0`); logs a warning and returns `'Cannot be negative'`.
+  /// - Guards against unreasonable ages (`age > 130`); logs a warning and returns `'Invalid age'`.
+  ///
+  /// Prevents corrupt or nonsensical demographic data from entering the local SQLite database.
+  static String? validateAge(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Enter age';
+    }
+    final age = int.tryParse(value.trim());
+    if (age == null) {
+      AppLogger.warning('Validation failed: Age must be a valid integer ("$value")');
+      return 'Invalid';
+    }
+    if (age < 0) {
+      AppLogger.warning('Validation failed: Attempted to enter negative age ($age)');
+      return 'Cannot be negative';
+    }
+    if (age > 130) {
+      AppLogger.warning('Validation failed: Age exceeds realistic limit ($age)');
+      return 'Invalid age';
+    }
+    return null;
+  }
+
   @override
   ConsumerState<AddPatientModal> createState() => _AddPatientModalState();
 }
@@ -311,15 +340,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                               controller: _ageController,
                               keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Enter age';
-                                }
-                                if (int.tryParse(value.trim()) == null) {
-                                  return 'Invalid';
-                                }
-                                return null;
-                              },
+                              validator: AddPatientModal.validateAge,
                             ),
                           ),
                           const SizedBox(width: 14),

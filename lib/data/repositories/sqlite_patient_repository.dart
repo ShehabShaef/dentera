@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/logging/app_logger.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/patient_repository.dart';
 import '../database/app_database.dart';
@@ -58,6 +59,7 @@ class SqlitePatientRepository implements PatientRepository {
       if (count == 0) {
         throw RecordNotFoundException('Patient not found with id: $id');
       }
+      AppLogger.info('Patient $id deleted; cascade execution triggered for child case records and appointments');
     } catch (e) {
       if (e is RecordNotFoundException) rethrow;
       throw LocalDatabaseException('Failed to delete patient: $id', e);
