@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/services/local_notification_service.dart';
 import 'package:dentera/core/theme/theme.dart';
@@ -48,6 +49,10 @@ class _FakeNotificationService implements LocalNotificationService {
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('ScheduleAppointmentModal Widget Tests', () {
     final dummyPatients = [
       Patient(

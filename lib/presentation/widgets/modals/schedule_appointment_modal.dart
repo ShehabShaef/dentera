@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
-import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
-import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
@@ -190,13 +188,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     );
 
     try {
-      await ref.read(appointmentRepositoryProvider).addAppointment(newAppointment);
-      ref.invalidate(dailyAppointmentsProvider(scheduledDateTime));
-      ref.invalidate(allAppointmentsProvider);
-      ref.invalidate(upcomingAppointmentsProvider);
-
-      // Phase 7.2 - Schedule local notification reminder for this appointment
-      await ref.read(notificationServiceProvider).scheduleAppointmentReminder(
+      await ref.read(appointmentsNotifierProvider.notifier).addAppointment(
             newAppointment,
             clinicName: clinic.name,
           );

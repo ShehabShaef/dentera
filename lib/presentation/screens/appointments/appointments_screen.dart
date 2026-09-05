@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
-import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -259,10 +258,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     await ScheduleAppointmentModal.show(
       context,
       initialDate: _selectedDate,
-      onAppointmentScheduled: (newApt) async {
-        try {
-          await ref.read(appointmentRepositoryProvider).addAppointment(newApt);
-        } catch (_) {}
+      onAppointmentScheduled: (newApt) {
         ref.invalidate(dailyAppointmentsProvider(_selectedDate));
         ref.invalidate(allAppointmentsProvider);
         ref.invalidate(upcomingAppointmentsProvider);
