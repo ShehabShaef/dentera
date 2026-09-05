@@ -138,6 +138,10 @@ void main() {
 
       // Patient was created properly
       expect(createdPatient, isNotNull);
+      expect(createdPatient!.id, isNotNull);
+      expect(createdPatient!.id.length, 36);
+      final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+      expect(uuidRegex.hasMatch(createdPatient!.id), isTrue);
       expect(createdPatient!.name, 'Layla Al-Yamani');
       expect(createdPatient!.age, 28);
       expect(createdPatient!.gender, 'Male');

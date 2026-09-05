@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
@@ -128,8 +129,14 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     final phone = _phoneController.text.trim();
     final medHistory = _medicalHistoryController.text.trim();
 
+    // Generate collision-free UUID v4 for the new patient record.
+    // Offline-first SQLite requires client-side primary key generation that guarantees
+    // global uniqueness without requiring a central server or roundtrip network coordination.
+    final patientId = const Uuid().v4();
+    AppLogger.debug('Generated collision-free UUID [$patientId] for new patient record.');
+
     final newPatient = Patient(
-      id: 'PT-${DateTime.now().millisecondsSinceEpoch}',
+      id: patientId,
       name: name,
       age: age,
       gender: _selectedGender,
@@ -161,8 +168,12 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
           : _getDefaultRequirementId(clinicId);
 
       // 3. Insert the child CaseRecord referencing the new patient's ID.
+      // Generate collision-free UUID v4 for the initial case record.
+      final initialCaseId = const Uuid().v4();
+      AppLogger.debug('Generated collision-free UUID [$initialCaseId] for initial case record.');
+
       final initialCase = CaseRecord(
-        id: 'case-${DateTime.now().millisecondsSinceEpoch}',
+        id: initialCaseId,
         patientId: newPatient.id,
         requirementId: requirementId,
         status: 'In Progress',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
@@ -89,11 +90,12 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
     setState(() => _isSubmitting = true);
 
     final clinicName = _nameController.text.trim();
-    final slug = clinicName
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
-    final clinicId = 'clinic-${slug.isNotEmpty ? slug : 'dept'}-${DateTime.now().millisecondsSinceEpoch % 10000}';
+
+    // Generate collision-free UUID v4 for the new clinic department record.
+    // Offline-first SQLite requires client-side primary key generation that guarantees
+    // global uniqueness without requiring a central server or roundtrip network coordination.
+    final clinicId = const Uuid().v4();
+    AppLogger.debug('Generated collision-free UUID [$clinicId] for new clinic record.');
 
     final newClinic = Clinic(
       id: clinicId,

@@ -165,6 +165,10 @@ void main() {
       // 5. Verify modal dismissed and state mutation triggered on repository
       expect(find.byType(AddClinicModal), findsNothing);
       expect(mockClinicRepo.lastAddedClinic, isNotNull);
+      expect(mockClinicRepo.lastAddedClinic!.id, isNotNull);
+      expect(mockClinicRepo.lastAddedClinic!.id.length, 36);
+      final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+      expect(uuidRegex.hasMatch(mockClinicRepo.lastAddedClinic!.id), isTrue);
       expect(mockClinicRepo.lastAddedClinic!.name, 'Orthodontics');
       expect(mockClinicRepo.lastAddedClinic!.academicYear, '5th Year');
     });
@@ -244,6 +248,10 @@ void main() {
       // 6. Verify modal dismissed and requirement added
       expect(find.byType(AddRequirementModal), findsNothing);
       expect(mockReqRepo.lastAddedRequirement, isNotNull);
+      expect(mockReqRepo.lastAddedRequirement!.id, isNotNull);
+      expect(mockReqRepo.lastAddedRequirement!.id.length, 36);
+      final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+      expect(uuidRegex.hasMatch(mockReqRepo.lastAddedRequirement!.id), isTrue);
       expect(mockReqRepo.lastAddedRequirement!.title, 'Removable Partial Denture');
       expect(mockReqRepo.lastAddedRequirement!.targetCount, 4);
       expect(mockReqRepo.lastAddedRequirement!.clinicId, testClinic.id);

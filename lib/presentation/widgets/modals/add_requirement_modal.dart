@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
@@ -74,11 +75,12 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
 
     final title = _titleController.text.trim();
     final targetCount = int.parse(_quotaController.text.trim());
-    final slug = title
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-+|-+$'), '');
-    final reqId = 'req-${slug.isNotEmpty ? slug : 'case'}-${DateTime.now().millisecondsSinceEpoch % 10000}';
+
+    // Generate collision-free UUID v4 for the new requirement record.
+    // Offline-first SQLite requires client-side primary key generation that guarantees
+    // global uniqueness without requiring a central server or roundtrip network coordination.
+    final reqId = const Uuid().v4();
+    AppLogger.debug('Generated collision-free UUID [$reqId] for new requirement record.');
 
     final newReq = Requirement(
       id: reqId,

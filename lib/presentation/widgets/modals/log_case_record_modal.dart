@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
@@ -98,7 +99,12 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
 
     final notesText = _notesController.text.trim();
     final isDone = _selectedStatus == 'Completed' || _selectedStatus == 'Evaluated';
-    final caseId = 'case-${DateTime.now().millisecondsSinceEpoch % 100000}';
+
+    // Generate collision-free UUID v4 for the clinical case record.
+    // Offline-first SQLite requires client-side primary key generation that guarantees
+    // global uniqueness without requiring a central server or roundtrip network coordination.
+    final caseId = const Uuid().v4();
+    AppLogger.debug('Generated collision-free UUID [$caseId] for clinical case record.');
 
     final newCase = CaseRecord(
       id: caseId,

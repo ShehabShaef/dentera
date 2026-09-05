@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,8 +163,12 @@ void main() {
       // 6. Verify modal popped
       expect(find.text('Schedule Appointment'), findsNothing);
 
-      // 7. Verify SQLite repository received the true relational IDs
+      // 7. Verify SQLite repository received the true relational IDs and collision-free UUID
       expect(mockRepo.lastAddedAppointment, isNotNull);
+      expect(mockRepo.lastAddedAppointment!.id, isNotNull);
+      expect(mockRepo.lastAddedAppointment!.id.length, 36);
+      final uuidRegex = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+      expect(uuidRegex.hasMatch(mockRepo.lastAddedAppointment!.id), isTrue);
       expect(mockRepo.lastAddedAppointment!.patientId, 'PT-1001');
       expect(mockRepo.lastAddedAppointment!.clinicId, 'c-endo');
       expect(

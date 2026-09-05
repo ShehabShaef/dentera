@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/services/local_notification_service.dart';
@@ -168,8 +169,14 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     final notes = _notesController.text.trim();
     final procedureText = notes.isNotEmpty ? '${clinic.name} - $notes' : clinic.name;
 
+    // Generate collision-free UUID v4 for the new appointment record.
+    // Offline-first SQLite requires client-side primary key generation that guarantees
+    // global uniqueness without requiring a central server or roundtrip network coordination.
+    final appointmentId = const Uuid().v4();
+    AppLogger.debug('Generated collision-free UUID [$appointmentId] for new appointment record.');
+
     final newAppointment = Appointment(
-      id: 'apt-${DateTime.now().millisecondsSinceEpoch}',
+      id: appointmentId,
       patientId: patientId,
       clinicId: clinicId,
       scheduledDate: scheduledDateTime,
