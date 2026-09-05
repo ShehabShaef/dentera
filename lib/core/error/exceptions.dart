@@ -1,3 +1,5 @@
+export 'app_exceptions.dart';
+
 /// Custom exception thrown when a database or local storage error occurs.
 class LocalDatabaseException implements Exception {
   const LocalDatabaseException(this.message, [this.cause]);

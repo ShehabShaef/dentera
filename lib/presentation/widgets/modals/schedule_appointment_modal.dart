@@ -7,6 +7,7 @@ import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Bottom sheet modal to schedule clinical appointments with patients.
@@ -233,11 +234,15 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
             clinicName: clinic.name,
           );
     } catch (e, stack) {
-      AppLogger.error(
-        '[ScheduleAppointmentModal] Failed to insert appointment into SQLite',
-        e,
-        stack,
-      );
+      if (mounted) {
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to schedule appointment',
+          error: e,
+          stackTrace: stack,
+        );
+      }
+      return;
     }
 
     widget.onAppointmentScheduled?.call(newAppointment);

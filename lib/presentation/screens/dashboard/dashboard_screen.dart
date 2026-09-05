@@ -80,19 +80,17 @@ class DashboardScreen extends ConsumerWidget {
                           );
                         },
                         loading: () => const DashboardProgressCard(),
-                        error: (error, stackTrace) {
-                          AppLogger.error(
-                            '[DashboardScreen] Failed to load quota statistics: $error',
-                            error,
-                            stackTrace,
-                          );
-                          return DenteraErrorState(
-                            isCompact: true,
-                            title: 'Quota Statistics Unavailable',
-                            message: 'Could not retrieve departmental progress.',
-                            onRetry: () => ref.invalidate(allRequirementsProvider),
-                          );
-                        },
+                        error: (error, stackTrace) => DenteraErrorWidget(
+                          error: error,
+                          stackTrace: stackTrace,
+                          isCompact: true,
+                          title: 'Quota Statistics Unavailable',
+                          message: 'Could not retrieve departmental progress.',
+                          onRetry: () {
+                            ref.invalidate(globalQuotaSummaryProvider);
+                            ref.invalidate(allRequirementsProvider);
+                          },
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -190,19 +188,14 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        error: (error, stackTrace) {
-                          AppLogger.error(
-                            '[DashboardScreen] Failed to load today\'s appointments: $error',
-                            error,
-                            stackTrace,
-                          );
-                          return DenteraErrorState(
-                            isCompact: true,
-                            title: 'Appointments Unavailable',
-                            message: 'Could not load today\'s scheduled appointments.',
-                            onRetry: () => ref.invalidate(dailyAppointmentsProvider(DateTime.now())),
-                          );
-                        },
+                        error: (error, stackTrace) => DenteraErrorWidget(
+                          error: error,
+                          stackTrace: stackTrace,
+                          isCompact: true,
+                          title: 'Appointments Unavailable',
+                          message: 'Could not load today\'s scheduled appointments.',
+                          onRetry: () => ref.invalidate(dailyAppointmentsProvider(DateTime.now())),
+                        ),
                       ),
                       const SizedBox(height: 20),
 
@@ -247,19 +240,14 @@ class DashboardScreen extends ConsumerWidget {
                           );
                         },
                         loading: () => const DashboardUpcomingSection(),
-                        error: (error, stackTrace) {
-                          AppLogger.error(
-                            '[DashboardScreen] Failed to load upcoming patients: $error',
-                            error,
-                            stackTrace,
-                          );
-                          return DenteraErrorState(
-                            isCompact: true,
-                            title: 'Upcoming Patients Unavailable',
-                            message: 'Could not retrieve tomorrow\'s patient schedule.',
-                            onRetry: () => ref.invalidate(upcomingAppointmentsProvider),
-                          );
-                        },
+                        error: (error, stackTrace) => DenteraErrorWidget(
+                          error: error,
+                          stackTrace: stackTrace,
+                          isCompact: true,
+                          title: 'Upcoming Patients Unavailable',
+                          message: 'Could not retrieve tomorrow\'s patient schedule.',
+                          onRetry: () => ref.invalidate(upcomingAppointmentsProvider),
+                        ),
                       ),
                       const SizedBox(height: 80), // Padding for floating action button
                     ],

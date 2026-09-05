@@ -7,6 +7,7 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Modal bottom sheet for clinical supervisors and students to evaluate a [CaseRecord],
@@ -147,14 +148,13 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
         Navigator.of(context).pop(updatedCase);
       }
     } catch (e, st) {
-      AppLogger.error('Failed to update case record: $e', e, st);
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to evaluate case record: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to evaluate case record',
+          error: e,
+          stackTrace: st,
         );
       }
     }

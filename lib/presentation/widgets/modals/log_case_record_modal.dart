@@ -8,6 +8,7 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Modal bottom sheet allowing dental students to log a new clinical [CaseRecord] for a specific patient.
@@ -83,14 +84,21 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
     super.dispose();
   }
 
+  /// Persists the new clinical [CaseRecord] to SQLite.
+  ///
+  /// **Imperative Action Errors vs. Reactive Stream Error Boundaries:**
+  /// Logging a case record is an imperative mutation action. If SQLite encounters
+  /// an edge case failure (such as [DatabaseLockedException] or [DataWriteException]),
+  /// replacing the input form with a full error screen would destroy uncommitted user inputs.
+  /// Instead, catching the exception within this `try/catch` block surfaces a transient
+  /// [DenteraSnackBar.showError], keeping the modal open and preserving entered clinical notes
+  /// for immediate retry while recording diagnostic details through [AppLogger.error].
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedRequirementId == null || _selectedRequirementId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a procedural requirement'),
-          backgroundColor: AppColors.error,
-        ),
+      DenteraSnackBar.showError(
+        context,
+        message: 'Please select a procedural requirement',
       );
       return;
     }
@@ -132,14 +140,13 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
         Navigator.of(context).pop(newCase);
       }
     } catch (e, st) {
-      AppLogger.error('Failed to log clinical case: $e', e, st);
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to log clinical case: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to log clinical case',
+          error: e,
+          stackTrace: st,
         );
       }
     }

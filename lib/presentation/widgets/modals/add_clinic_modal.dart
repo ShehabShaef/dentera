@@ -8,6 +8,7 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Bottom sheet modal to register a new dental clinic department in Dentera.
@@ -115,14 +116,13 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
         Navigator.of(context).pop(newClinic);
       }
     } catch (e, st) {
-      AppLogger.error('Failed to create clinic: $e', e, st);
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create clinic: $e'),
-            backgroundColor: AppColors.error,
-          ),
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to create clinic',
+          error: e,
+          stackTrace: st,
         );
       }
     }

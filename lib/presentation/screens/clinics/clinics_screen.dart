@@ -165,18 +165,13 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                         ),
                       ),
                     ),
-                    error: (error, stackTrace) {
-                      AppLogger.error(
-                        '[ClinicsScreen] Failed to retrieve clinics: $error',
-                        error,
-                        stackTrace,
-                      );
-                      return DenteraErrorState(
-                        title: 'Failed to load clinics',
-                        message: error.toString(),
-                        onRetry: () => ref.invalidate(clinicListProvider),
-                      );
-                    },
+                    error: (error, stackTrace) => DenteraErrorWidget(
+                      error: error,
+                      stackTrace: stackTrace,
+                      title: 'Failed to load clinics',
+                      message: 'Could not retrieve departmental clinics from local database.',
+                      onRetry: () => ref.invalidate(clinicListProvider),
+                    ),
                   ),
                   const SizedBox(height: 80), // Padding for Floating Action Button
                 ],

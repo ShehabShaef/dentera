@@ -8,6 +8,7 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Rapid-entry bottom sheet modal for creating a new patient record.
@@ -221,11 +222,15 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
       ref.invalidate(allCasesProvider);
       ref.invalidate(casesByPatientProvider(newPatient.id));
     } catch (e, stack) {
-      AppLogger.error(
-        '[AddPatientModal] Failed to register patient and link initial case record: $e',
-        e,
-        stack,
-      );
+      if (mounted) {
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to register patient',
+          error: e,
+          stackTrace: stack,
+        );
+      }
+      return;
     }
 
     widget.onPatientAdded?.call(newPatient);

@@ -74,16 +74,23 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                 ),
               ),
             ),
-      error: (_, _) {
-        final fallbackPatient = widget.patient ??
-            Patient(
-              id: pid,
-              name: 'Patient #$pid',
-              age: 25,
-              gender: 'Unknown',
-              createdAt: DateTime.now(),
-            );
-        return _buildScaffold(context, fallbackPatient);
+      error: (error, stackTrace) {
+        if (widget.patient != null) {
+          return _buildScaffold(context, widget.patient!);
+        }
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: const Text('Patient Case Sheet'),
+          ),
+          body: DenteraErrorWidget(
+            error: error,
+            stackTrace: stackTrace,
+            title: 'Patient Record Unavailable',
+            message: 'Could not load patient information from local database.',
+            onRetry: () => ref.invalidate(patientByIdProvider(pid)),
+          ),
+        );
       },
     );
   }
@@ -289,18 +296,13 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           ),
         ),
       ),
-      error: (error, stackTrace) {
-        AppLogger.error(
-          '[PatientCaseSheetScreen] Failed to load clinical cases for patient ${patient.id}: $error',
-          error,
-          stackTrace,
-        );
-        return DenteraErrorState(
-          title: 'Cases Unavailable',
-          message: error.toString(),
-          onRetry: () => ref.invalidate(casesByPatientProvider(patient.id)),
-        );
-      },
+      error: (error, stackTrace) => DenteraErrorWidget(
+        error: error,
+        stackTrace: stackTrace,
+        title: 'Cases Unavailable',
+        message: 'Could not load clinical cases for this patient from local database.',
+        onRetry: () => ref.invalidate(casesByPatientProvider(patient.id)),
+      ),
     );
   }
 

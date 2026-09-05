@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/services/database_backup_service.dart';
 import '../../../core/theme/theme.dart';
 import '../buttons/buttons.dart';
+import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
 /// Modal bottom sheet providing a destructive confirmation barrier for resetting
@@ -75,20 +76,16 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
-    } catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
       setState(() {
         _isResetting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to reset database: $e',
-            style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      DenteraSnackBar.showError(
+        context,
+        message: 'Failed to reset database',
+        error: e,
+        stackTrace: st,
       );
     }
   }
