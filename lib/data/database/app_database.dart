@@ -26,11 +26,16 @@ class AppDatabase {
     return _database!;
   }
 
+  /// Returns the absolute filesystem path to the active [dentera.db] SQLite file.
+  Future<String> getDatabasePath() async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return p.join(documentsDirectory.path, dbName);
+  }
+
   /// Internal database initialization routine.
   Future<Database> _initDatabase() async {
     try {
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      final dbPath = p.join(documentsDirectory.path, dbName);
+      final dbPath = await getDatabasePath();
 
       return await openDatabase(
         dbPath,

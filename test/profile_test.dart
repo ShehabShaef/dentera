@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:dentera/core/services/database_backup_service.dart';
 import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/presentation/screens/profile/profile_screen.dart';
 import 'package:dentera/presentation/screens/profile/widgets/widgets.dart';
@@ -95,5 +96,103 @@ void main() {
       await tester.tap(switches.first);
       await tester.pumpAndSettle();
     });
+
+    testWidgets('Tapping Export Local Backup executes service and shows SnackBar', (WidgetTester tester) async {
+      final fakeService = FakeDatabaseBackupService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseBackupServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final exportTile = find.text('Export Local Backup');
+      await tester.ensureVisible(exportTile);
+      await tester.tap(exportTile);
+      await tester.pumpAndSettle();
+
+      expect(fakeService.exportCalled, isTrue);
+      expect(find.text('Database backup created successfully.'), findsOneWidget);
+    });
+
+    testWidgets('Tapping Restore from Backup shows confirmation dialog and restores upon confirm', (WidgetTester tester) async {
+      final fakeService = FakeDatabaseBackupService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseBackupServiceProvider.overrideWithValue(fakeService),
+          ],
+          child: const MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap restore tile
+      final restoreTile = find.text('Restore from Backup');
+      await tester.ensureVisible(restoreTile);
+      await tester.tap(restoreTile);
+      await tester.pumpAndSettle();
+
+      // Dialog should be present
+      expect(find.text('Restore Database Backup?'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Restore'), findsOneWidget);
+
+      // Tap Cancel first
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(fakeService.importCalled, isFalse);
+      expect(find.text('Restore Database Backup?'), findsNothing);
+
+      // Tap restore tile again
+      await tester.ensureVisible(restoreTile);
+      await tester.tap(restoreTile);
+      await tester.pumpAndSettle();
+
+      // Tap Restore button
+      await tester.tap(find.text('Restore'));
+      await tester.pumpAndSettle();
+
+      expect(fakeService.importCalled, isTrue);
+      expect(find.text('Database restored successfully. Clinical records reloaded.'), findsOneWidget);
+    });
   });
 }
+
+class FakeDatabaseBackupService extends DatabaseBackupService {
+  FakeDatabaseBackupService({
+    this.exportResult,
+    this.restoreResult,
+  });
+
+  final BackupResult? exportResult;
+  final RestoreResult? restoreResult;
+
+  bool exportCalled = false;
+  bool importCalled = false;
+
+  @override
+  Future<BackupResult> exportDatabase({
+    String? destinationDirectoryPath,
+    bool shareViaSystemDialog = true,
+  }) async {
+    exportCalled = true;
+    return exportResult ?? BackupResult.success('/mock/export.db');
+  }
+
+  @override
+  Future<RestoreResult> importDatabase({String? customSourcePath}) async {
+    importCalled = true;
+    return restoreResult ?? RestoreResult.success('/mock/dentera.db');
+  }
+}
+

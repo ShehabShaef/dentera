@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/database_backup_service.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
@@ -45,6 +46,125 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!value) {
       // Opt-out: cancel all pending notification intents
       await ref.read(notificationServiceProvider).cancelAllReminders();
+    }
+  }
+
+  Future<void> _onExportDatabase() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final backupService = ref.read(databaseBackupServiceProvider);
+      final result = await backupService.exportDatabase();
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Database backup created successfully.',
+              style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.secondary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              result.errorMessage ?? 'Failed to export database backup.',
+              style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Export failed: $e',
+            style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onRestoreDatabase() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Restore Database Backup?'),
+        content: const Text(
+          'Restoring a database will overwrite your current clinical data, patients, and quotas with the selected backup file.\n\nAre you sure you want to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final backupService = ref.read(databaseBackupServiceProvider);
+      final result = await backupService.importDatabase();
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Database restored successfully. Clinical records reloaded.',
+              style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.secondary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (result.isCancelled) {
+        // Restore cancelled by user: no disruptive toast needed
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              result.errorMessage ?? 'Failed to restore database.',
+              style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Restore failed: $e',
+            style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -201,9 +321,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               size: 20,
                               color: AppColors.outlineVariant,
                             ),
-                            onTap: () {
-                              // TODO: Phase 7 - Trigger local SQLite export
-                            },
+                            onTap: _onExportDatabase,
                           ),
                           SettingsListTile(
                             icon: Icons.upload_rounded,
@@ -214,9 +332,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               size: 20,
                               color: AppColors.outlineVariant,
                             ),
-                            onTap: () {
-                              // TODO: Phase 7 - Trigger local SQLite import
-                            },
+                            onTap: _onRestoreDatabase,
                           ),
                         ],
                       ),
