@@ -7,7 +7,15 @@ import 'app_text_styles.dart';
 
 /// Global ThemeData configuration for Dentera based on DESIGN.md
 abstract final class AppTheme {
-  static ThemeData get lightTheme {
+  /// Default light ThemeData (LTR) for backward-compatibility with existing tests and call sites.
+  static ThemeData get lightTheme => lightThemeForLocale();
+
+  /// Default dark ThemeData (LTR) for backward-compatibility with existing tests and call sites.
+  static ThemeData get darkTheme => darkThemeForLocale();
+
+  /// Locale-aware light theme configuration.
+  static ThemeData lightThemeForLocale([Locale? locale]) {
+    final bool isArabic = locale?.languageCode == 'ar';
     final ColorScheme colorScheme = const ColorScheme.light(
       primary: AppColors.primary,
       onPrimary: AppColors.onPrimary,
@@ -36,23 +44,25 @@ abstract final class AppTheme {
       surfaceTint: AppColors.surfaceTint,
     );
 
-    final TextTheme baseTextTheme = GoogleFonts.hankenGroteskTextTheme();
+    final TextTheme baseTextTheme = isArabic
+        ? GoogleFonts.cairoTextTheme()
+        : GoogleFonts.hankenGroteskTextTheme();
     final TextTheme textTheme = baseTextTheme.copyWith(
-      displayLarge: AppTextStyles.h1,
-      displayMedium: AppTextStyles.h1Mobile,
-      displaySmall: AppTextStyles.h2,
-      headlineLarge: AppTextStyles.h1,
-      headlineMedium: AppTextStyles.h1Mobile,
-      headlineSmall: AppTextStyles.h2,
-      titleLarge: AppTextStyles.displayWordmark,
-      titleMedium: AppTextStyles.h2,
-      titleSmall: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600),
-      bodyLarge: AppTextStyles.bodyMd.copyWith(fontSize: 16),
-      bodyMedium: AppTextStyles.bodyMd,
-      bodySmall: AppTextStyles.caption,
-      labelLarge: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600),
-      labelMedium: AppTextStyles.caption,
-      labelSmall: AppTextStyles.labelCaps,
+      displayLarge: isArabic ? AppTextStyles.arabicH1 : AppTextStyles.h1,
+      displayMedium: isArabic ? AppTextStyles.arabicH1Mobile : AppTextStyles.h1Mobile,
+      displaySmall: isArabic ? AppTextStyles.arabicH2 : AppTextStyles.h2,
+      headlineLarge: isArabic ? AppTextStyles.arabicH1 : AppTextStyles.h1,
+      headlineMedium: isArabic ? AppTextStyles.arabicH1Mobile : AppTextStyles.h1Mobile,
+      headlineSmall: isArabic ? AppTextStyles.arabicH2 : AppTextStyles.h2,
+      titleLarge: isArabic ? AppTextStyles.arabicDisplayWordmark : AppTextStyles.displayWordmark,
+      titleMedium: isArabic ? AppTextStyles.arabicH2 : AppTextStyles.h2,
+      titleSmall: (isArabic ? AppTextStyles.arabicBodyMd : AppTextStyles.bodyMd).copyWith(fontWeight: FontWeight.w600),
+      bodyLarge: (isArabic ? AppTextStyles.arabicBodyMd : AppTextStyles.bodyMd).copyWith(fontSize: 16),
+      bodyMedium: isArabic ? AppTextStyles.arabicBodyMd : AppTextStyles.bodyMd,
+      bodySmall: isArabic ? AppTextStyles.arabicCaption : AppTextStyles.caption,
+      labelLarge: (isArabic ? AppTextStyles.arabicBodyMd : AppTextStyles.bodyMd).copyWith(fontWeight: FontWeight.w600),
+      labelMedium: isArabic ? AppTextStyles.arabicCaption : AppTextStyles.caption,
+      labelSmall: isArabic ? AppTextStyles.arabicLabelCaps : AppTextStyles.labelCaps,
     );
 
     return ThemeData(
@@ -60,7 +70,9 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
-      fontFamily: GoogleFonts.hankenGrotesk().fontFamily,
+      fontFamily: isArabic
+          ? GoogleFonts.cairo().fontFamily
+          : GoogleFonts.hankenGrotesk().fontFamily,
 
       // AppBar Theme
       appBarTheme: AppBarTheme(
@@ -70,7 +82,7 @@ abstract final class AppTheme {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.onSurface,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: AppTextStyles.h2.copyWith(
+        titleTextStyle: (isArabic ? AppTextStyles.arabicH2 : AppTextStyles.h2).copyWith(
           color: AppColors.onSurface,
           fontWeight: FontWeight.w600,
         ),
@@ -220,7 +232,8 @@ abstract final class AppTheme {
   }
 
   /// Global dark ThemeData configuration for Dentera based on DESIGN.md
-  static ThemeData get darkTheme {
+  static ThemeData darkThemeForLocale([Locale? locale]) {
+    final ThemeData baseLight = lightThemeForLocale(locale);
     final ColorScheme colorScheme = const ColorScheme.dark(
       primary: AppColors.inversePrimary,
       onPrimary: AppColors.onPrimaryFixed,
@@ -249,10 +262,10 @@ abstract final class AppTheme {
       surfaceTint: AppColors.surfaceTint,
     );
 
-    return lightTheme.copyWith(
+    return baseLight.copyWith(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.inverseSurface,
-      appBarTheme: lightTheme.appBarTheme.copyWith(
+      appBarTheme: baseLight.appBarTheme.copyWith(
         backgroundColor: AppColors.inverseSurface,
         foregroundColor: AppColors.inverseOnSurface,
       ),

@@ -561,7 +561,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                       if (_dateTimeError != null) ...<Widget>[
                         const SizedBox(height: 8),
                         Padding(
-                          padding: const EdgeInsets.only(left: 4.0),
+                          padding: const EdgeInsetsDirectional.only(start: 4.0),
                           child: Text(
                             _dateTimeError!,
                             style: AppTextStyles.caption.copyWith(

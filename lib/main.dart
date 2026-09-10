@@ -27,14 +27,15 @@ class DenteraApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final currentLocale = ref.watch(localeProvider);
+    final locale = Locale(currentLocale);
 
     return MaterialApp(
       title: 'Dentera',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightThemeForLocale(locale),
+      darkTheme: AppTheme.darkThemeForLocale(locale),
       themeMode: themeMode,
-      locale: Locale(currentLocale),
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: const InitializationScreen(),
