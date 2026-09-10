@@ -76,15 +76,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              AppLogger.info('Switching root tab to Profile from Appointments');
-              ref.read(rootNavigationIndexProvider.notifier).state = 4;
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
