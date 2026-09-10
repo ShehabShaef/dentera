@@ -98,6 +98,22 @@ void main() {
         ProviderScope(
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
+            allRequirementsProvider.overrideWith((ref) async => [
+              const Requirement(
+                id: 'r-01',
+                clinicId: 'clinic-prosth',
+                title: 'Complete Denture',
+                targetCount: 2,
+              ),
+            ]),
+            clinicListProvider.overrideWith((ref) async => [
+              const Clinic(
+                id: 'clinic-prosth',
+                name: 'Prosthodontics',
+                academicYear: '5th Year',
+                colorHex: '#003E6F',
+              ),
+            ]),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
@@ -112,9 +128,11 @@ void main() {
       expect(find.text('Female, 23 yrs • +967-771234567'), findsOneWidget);
       expect(find.text('SA'), findsOneWidget);
 
-      // Default Active Tab: Clinical Cases (Populated)
+      // Default Active Tab: Clinical Cases (Populated with resolved titles, no UUIDs)
       expect(find.text('Clinical Cases'), findsOneWidget);
-      expect(find.text('Clinical Requirement #r-01'), findsOneWidget);
+      expect(find.text('Complete Denture'), findsOneWidget);
+      expect(find.text('Prosthodontics'), findsWidgets);
+      expect(find.textContaining('r-01'), findsNothing);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
       // Assert unbacked Treatment Plan tab was pruned
@@ -132,5 +150,45 @@ void main() {
       expect(find.text('Penicillin Allergy'), findsOneWidget);
       expect(find.text('Dental History'), findsNothing);
     });
+
+    testWidgets('Tapping CaseRecordCard opens EvaluateCaseModal with patient name and procedure title, obfuscating UUIDs', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
+            allRequirementsProvider.overrideWith((ref) async => [
+              const Requirement(
+                id: 'r-01',
+                clinicId: 'clinic-prosth',
+                title: 'Complete Denture',
+                targetCount: 2,
+              ),
+            ]),
+            clinicListProvider.overrideWith((ref) async => [
+              const Clinic(
+                id: 'clinic-prosth',
+                name: 'Prosthodontics',
+                academicYear: '5th Year',
+                colorHex: '#003E6F',
+              ),
+            ]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: PatientCaseSheetScreen(patient: patient),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Complete Denture'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Evaluate Case Record'), findsOneWidget);
+      expect(find.text('Sara Ahmed • Complete Denture'), findsOneWidget);
+      expect(find.textContaining('c-01'), findsNothing);
+      expect(find.textContaining('r-01'), findsNothing);
+    });
   });
 }
+

@@ -145,7 +145,7 @@ void main() {
       // 2. Open Patient dropdown and select 'Sara Ahmed (PT-1001)'
       await tester.tap(find.byKey(const Key('patient_dropdown')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Sara Ahmed (PT-1001)').last);
+      await tester.tap(find.text('Sara Ahmed • 23y, Female').last);
       await tester.pumpAndSettle();
 
       // 3. Open Clinic dropdown and select 'Endodontics'
