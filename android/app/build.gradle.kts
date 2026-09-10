@@ -30,11 +30,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            // Placeholder release signing configuration for production CI/CD builds
+            storeFile = file(project.findProperty("MYAPP_RELEASE_STORE_FILE") as String? ?: "dentera-release-key.jks")
+            storePassword = project.findProperty("MYAPP_RELEASE_STORE_PASSWORD") as String? ?: System.getenv("KEYSTORE_PASSWORD") ?: "dentera_placeholder"
+            keyAlias = project.findProperty("MYAPP_RELEASE_KEY_ALIAS") as String? ?: System.getenv("KEY_ALIAS") ?: "dentera"
+            keyPassword = project.findProperty("MYAPP_RELEASE_KEY_PASSWORD") as String? ?: System.getenv("KEY_PASSWORD") ?: "dentera_placeholder"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use release signingConfig if keystore exists, otherwise fall back to debug signing for local testing
+            val releaseKeystore = file(project.findProperty("MYAPP_RELEASE_STORE_FILE") as String? ?: "dentera-release-key.jks")
+            signingConfig = if (releaseKeystore.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+export 'app_info_provider.dart';
 export 'appointments_provider.dart';
 export 'cases_provider.dart';
 export 'clinics_provider.dart';

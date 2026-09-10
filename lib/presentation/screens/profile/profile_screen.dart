@@ -5,6 +5,7 @@ import '../../../core/services/database_backup_service.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../../state/state.dart';
 import '../../widgets/modals/database_reset_modal.dart';
 import 'widgets/widgets.dart';
 
@@ -279,6 +280,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final agendaRemindersEnabled = ref.watch(agendaRemindersProvider);
     final followUpAlertsEnabled = ref.watch(followUpAlertsProvider);
+    final appVersion = ref.watch(appVersionProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -431,7 +433,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: 'App Version',
                         showDivider: true,
                         trailing: Text(
-                          'v0.1.0 (Offline Build)',
+                          appVersion,
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.onSurfaceVariant,
                           ),

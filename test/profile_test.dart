@@ -90,6 +90,8 @@ void main() {
       expect(find.text('Export Local Backup'), findsOneWidget);
       expect(find.text('Restore from Backup'), findsOneWidget);
       expect(find.text('Reset All Clinical Data'), findsOneWidget);
+      expect(find.text('v0.7.0 (Build 7)'), findsOneWidget);
+      expect(find.textContaining('v0.1.0'), findsNothing);
 
       // Toggle switch
       final switches = find.byType(Switch);
