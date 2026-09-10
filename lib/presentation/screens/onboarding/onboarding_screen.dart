@@ -57,6 +57,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _continueAsGuest() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final prefsRepo = ref.read(preferencesRepositoryProvider);
+      await prefsRepo.saveUserProfile(
+        name: 'Dr. Guest',
+        university: 'Guest Dental University',
+        academicYear: 'guest Year',
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (context) => const RootNavigationScreen(),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _completeOnboarding() async {
     final name = _nameController.text.trim();
     final university = _universityController.text.trim();
@@ -144,6 +173,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   WelcomePage(
                     nameController: _nameController,
                     onContinue: _nextPage,
+                    onContinueAsGuest: _continueAsGuest,
+                    isLoading: _isLoading,
                   ),
                   UniversityPage(
                     universityController: _universityController,
