@@ -105,6 +105,7 @@ void main() {
       expect(find.text('Register your clinical departments to track quotas and case progress.'), findsOneWidget);
       expect(find.text('Add Dental Clinic'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byIcon(Icons.settings_outlined), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

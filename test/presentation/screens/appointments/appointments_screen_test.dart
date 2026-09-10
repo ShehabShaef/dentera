@@ -177,7 +177,7 @@ void main() {
       expect(find.text('Next Up'), findsOneWidget);
     });
 
-    testWidgets('Tapping settings icon in AppBar mutates rootNavigationIndexProvider to Profile tab (4)',
+    testWidgets('AppointmentsScreen AppBar does not render redundant Settings gear icon',
         (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -200,14 +200,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(container.read(rootNavigationIndexProvider), 3);
-
-      final settingsBtnFinder = find.byIcon(Icons.settings_outlined);
-      expect(settingsBtnFinder, findsOneWidget);
-      await tester.tap(settingsBtnFinder);
-      await tester.pumpAndSettle();
-
-      expect(container.read(rootNavigationIndexProvider), 4);
+      // Assert redundant settings gear icon was removed
+      expect(find.byIcon(Icons.settings_outlined), findsNothing);
     });
 
     testWidgets('Tapping "Open Case Sheet" on Next Up card pushes PatientCaseSheetScreen',

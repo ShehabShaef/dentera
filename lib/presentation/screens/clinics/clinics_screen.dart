@@ -54,14 +54,6 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              // TODO: Phase 5.5 - Navigate to Profile & Settings
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
