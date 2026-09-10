@@ -257,7 +257,51 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
+  static const Map<String, String> _fallbackProcedureTitles = <String, String>{
+    'req-prosth-cd': 'Complete Denture',
+    'req-prosth-rpd': 'Removable Partial Denture',
+    'req-op-class1': 'Class I Composite',
+    'req-op-class2': 'Class II Amalgam',
+    'req-endo-anterior': 'Anterior RCT',
+    'req-endo-molar': 'Premolar / Molar RCT',
+    'req-surg-simple': 'Simple Extraction',
+    'req-surg-complex': 'Surgical Extraction',
+    'req-perio-srp': 'Scaling & Root Planing',
+    'req-perio-gingivectomy': 'Gingivectomy',
+    'req-pediatric-pulpotomy': 'Pulpotomy',
+    'req-pediatric-ssc': 'Stainless Steel Crown',
+  };
+
+  static const Map<String, String> _fallbackClinicNames = <String, String>{
+    'clinic-prosth': 'Prosthodontics',
+    'clinic-operative': 'Operative Dentistry',
+    'clinic-endo': 'Endodontics',
+    'clinic-surgery': 'Oral Surgery',
+    'clinic-perio': 'Periodontics',
+    'clinic-pediatric': 'Pediatric Dentistry',
+  };
+
+  Color _parseColor(String? colorHex) {
+    if (colorHex == null || colorHex.isEmpty) return AppColors.secondary;
+    try {
+      final hex = colorHex.replaceAll('#', '');
+      return Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return AppColors.secondary;
+    }
+  }
+
   Widget _buildCasesTab(AsyncValue<List<CaseRecord>> casesAsync, Patient patient) {
+    final reqsAsync = ref.watch(allRequirementsProvider);
+    final clinicsAsync = ref.watch(allClinicsProvider);
+
+    final reqsMap = {
+      for (final r in reqsAsync.valueOrNull ?? const <Requirement>[]) r.id: r,
+    };
+    final clinicsMap = {
+      for (final c in clinicsAsync.valueOrNull ?? const <Clinic>[]) c.id: c,
+    };
+
     return casesAsync.when(
       data: (cases) {
         if (cases.isEmpty) {
@@ -274,15 +318,27 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final item = cases[index];
+            final requirement = reqsMap[item.requirementId];
+            final clinic = requirement != null ? clinicsMap[requirement.clinicId] : null;
+
+            final procedureTitle = requirement?.title ??
+                _fallbackProcedureTitles[item.requirementId] ??
+                'Clinical Procedure';
+            final clinicName = clinic?.name ??
+                (requirement != null ? _fallbackClinicNames[requirement.clinicId] : null) ??
+                'Dental Department';
+            final clinicColor = _parseColor(clinic?.colorHex);
+
             return CaseRecordCard(
               caseRecord: item,
-              requirementTitle: 'Clinical Requirement #${item.requirementId}',
-              clinicName: 'Dental Department',
-              clinicColor: AppColors.secondary,
+              requirementTitle: procedureTitle,
+              clinicName: clinicName,
+              clinicColor: clinicColor,
               onTap: () => EvaluateCaseModal.show(
                 context,
                 caseRecord: item,
                 patientName: patient.name,
+                procedureTitle: procedureTitle,
               ),
             );
           },

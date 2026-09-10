@@ -353,7 +353,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                   (p) => DropdownMenuItem<Patient>(
                                     value: p,
                                     child: Text(
-                                      '${p.name} (${p.id})',
+                                      '${p.name} • ${p.age}y, ${p.gender}',
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),

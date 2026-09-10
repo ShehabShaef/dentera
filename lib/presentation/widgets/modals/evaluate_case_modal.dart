@@ -26,11 +26,13 @@ class EvaluateCaseModal extends ConsumerStatefulWidget {
     super.key,
     required this.caseRecord,
     this.patientName,
+    this.procedureTitle,
     this.onCaseEvaluated,
   });
 
   final CaseRecord caseRecord;
   final String? patientName;
+  final String? procedureTitle;
   final ValueChanged<CaseRecord>? onCaseEvaluated;
 
   /// Convenience static helper to display the [EvaluateCaseModal].
@@ -38,6 +40,7 @@ class EvaluateCaseModal extends ConsumerStatefulWidget {
     BuildContext context, {
     required CaseRecord caseRecord,
     String? patientName,
+    String? procedureTitle,
     ValueChanged<CaseRecord>? onCaseEvaluated,
   }) {
     AppLogger.info('Opened EvaluateCaseModal for case: ${caseRecord.id}');
@@ -48,6 +51,7 @@ class EvaluateCaseModal extends ConsumerStatefulWidget {
       builder: (context) => EvaluateCaseModal(
         caseRecord: caseRecord,
         patientName: patientName,
+        procedureTitle: procedureTitle,
         onCaseEvaluated: onCaseEvaluated,
       ),
     );
@@ -169,6 +173,19 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final reqsAsync = ref.watch(allRequirementsProvider);
+    final req = reqsAsync.valueOrNull?.firstWhere(
+      (r) => r.id == widget.caseRecord.requirementId,
+      orElse: () => Requirement(
+        id: widget.caseRecord.requirementId,
+        clinicId: '',
+        title: widget.procedureTitle ?? 'Clinical Procedure',
+        targetCount: 1,
+        completedCount: 0,
+      ),
+    );
+    final procedureName = widget.procedureTitle ??
+        (req != null && req.title.isNotEmpty ? req.title : 'Clinical Procedure');
 
     return Container(
       decoration: const BoxDecoration(
@@ -217,8 +234,8 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                         const SizedBox(height: 2),
                         Text(
                           widget.patientName != null
-                              ? '${widget.patientName} • Case #${widget.caseRecord.id}'
-                              : 'Case #${widget.caseRecord.id} (${widget.caseRecord.requirementId})',
+                              ? '${widget.patientName} • $procedureName'
+                              : procedureName,
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.onSurfaceVariant,
                           ),

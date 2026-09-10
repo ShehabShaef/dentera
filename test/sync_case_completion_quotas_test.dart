@@ -88,7 +88,7 @@ void main() {
     setupDatabaseTests();
   });
 
-  tearDown(() async {
+  tearDownAll(() async {
     await AppDatabase.instance.close();
   });
 
@@ -197,9 +197,22 @@ void main() {
         dateStarted: DateTime.parse('2026-09-01T10:00:00.000Z'),
       );
 
+      const fakeReq = Requirement(
+        id: 'req-eval',
+        clinicId: 'clinic-1',
+        title: 'Complete Denture',
+        targetCount: 5,
+        completedCount: 0,
+      );
+      final fakeReqRepo = _FakeRequirementRepo([fakeReq]);
+      final fakeClinicRepo = _FakeClinicRepo([]);
+
       final container = ProviderContainer(
         overrides: [
           caseRecordRepositoryProvider.overrideWithValue(captureCaseRepo),
+          requirementRepositoryProvider.overrideWithValue(fakeReqRepo),
+          clinicRepositoryProvider.overrideWithValue(fakeClinicRepo),
+          allRequirementsProvider.overrideWith((ref) async => [fakeReq]),
         ],
       );
 
@@ -249,6 +262,8 @@ void main() {
       expect(captureCaseRepo.lastUpdatedCase, isNotNull);
       expect(captureCaseRepo.lastUpdatedCase!.id, 'case-test-eval');
       expect(captureCaseRepo.lastUpdatedCase!.status, 'Completed');
+
+      container.dispose();
     });
   });
 
@@ -283,6 +298,7 @@ void main() {
             clinicRepositoryProvider.overrideWithValue(fakeClinicRepo),
             requirementRepositoryProvider.overrideWithValue(fakeReqRepo),
             allClinicsProvider.overrideWith((ref) async => <Clinic>[customClinic]),
+            allRequirementsProvider.overrideWith((ref) async => <Requirement>[customReq]),
             requirementsByClinicProvider('clinic-custom-ortho')
                 .overrideWith((ref) async => <Requirement>[customReq]),
           ],
