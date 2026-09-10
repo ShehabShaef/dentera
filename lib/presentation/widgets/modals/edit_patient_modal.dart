@@ -63,6 +63,11 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
   late final TextEditingController _ageController;
   late final TextEditingController _phoneController;
   late final TextEditingController _medicalHistoryController;
+  late final TextEditingController _chiefComplaintController;
+  late final TextEditingController _historyOfChiefComplaintController;
+  late final TextEditingController _dentalHistoryController;
+  late final TextEditingController _medicationsController;
+  late final TextEditingController _diagnosticAidsController;
 
   bool _isSubmitting = false;
 
@@ -73,6 +78,12 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
     _ageController = TextEditingController(text: widget.patient.age.toString());
     _phoneController = TextEditingController(text: widget.patient.phoneNumber ?? '');
     _medicalHistoryController = TextEditingController(text: widget.patient.medicalHistory ?? '');
+    _chiefComplaintController = TextEditingController(text: widget.patient.chiefComplaint ?? '');
+    _historyOfChiefComplaintController =
+        TextEditingController(text: widget.patient.historyOfChiefComplaint ?? '');
+    _dentalHistoryController = TextEditingController(text: widget.patient.dentalHistory ?? '');
+    _medicationsController = TextEditingController(text: widget.patient.medications ?? '');
+    _diagnosticAidsController = TextEditingController(text: widget.patient.diagnosticAids ?? '');
   }
 
   @override
@@ -81,6 +92,11 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
     _ageController.dispose();
     _phoneController.dispose();
     _medicalHistoryController.dispose();
+    _chiefComplaintController.dispose();
+    _historyOfChiefComplaintController.dispose();
+    _dentalHistoryController.dispose();
+    _medicationsController.dispose();
+    _diagnosticAidsController.dispose();
     super.dispose();
   }
 
@@ -95,6 +111,21 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
       phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
       medicalHistory: _medicalHistoryController.text.trim().isNotEmpty
           ? _medicalHistoryController.text.trim()
+          : null,
+      chiefComplaint: _chiefComplaintController.text.trim().isNotEmpty
+          ? _chiefComplaintController.text.trim()
+          : null,
+      historyOfChiefComplaint: _historyOfChiefComplaintController.text.trim().isNotEmpty
+          ? _historyOfChiefComplaintController.text.trim()
+          : null,
+      dentalHistory: _dentalHistoryController.text.trim().isNotEmpty
+          ? _dentalHistoryController.text.trim()
+          : null,
+      medications: _medicationsController.text.trim().isNotEmpty
+          ? _medicationsController.text.trim()
+          : null,
+      diagnosticAids: _diagnosticAidsController.text.trim().isNotEmpty
+          ? _diagnosticAidsController.text.trim()
           : null,
     );
 
@@ -250,13 +281,79 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               ),
               const SizedBox(height: 16),
 
-              // 5. Medical History & Systemic Conditions
+              const SizedBox(height: 20),
+              Text(
+                'Clinical Anamnesis / History',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Chief Complaint (CC)
+              DenteraTextField(
+                controller: _chiefComplaintController,
+                label: 'Chief Complaint (CC)',
+                hintText: 'e.g., Severe throbbing pain in upper right quadrant',
+                prefixIcon: const Icon(Icons.record_voice_over_outlined, size: 20),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 14),
+
+              // History of Chief Complaint (HCC)
+              DenteraTextField(
+                controller: _historyOfChiefComplaintController,
+                label: 'History of Chief Complaint (HCC)',
+                hintText: 'e.g., Pain started 3 days ago, aggravated by cold stimuli',
+                prefixIcon: const Icon(Icons.history_edu_outlined, size: 20),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 14),
+
+              // Medical History & Allergies
               DenteraTextField(
                 controller: _medicalHistoryController,
                 label: 'Medical History & Allergies',
                 hintText: 'e.g., Penicillin allergy, Hypertension, Diabetic...',
                 prefixIcon: const Icon(Icons.medical_information_outlined, size: 20),
-                maxLines: 3,
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 14),
+
+              // Dental History
+              DenteraTextField(
+                controller: _dentalHistoryController,
+                label: 'Dental History',
+                hintText: 'e.g., Past extractions, regular scaling, RCT 2 years ago',
+                prefixIcon: const Icon(Icons.medical_services_outlined, size: 20),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 14),
+
+              // Current Medications
+              DenteraTextField(
+                controller: _medicationsController,
+                label: 'Current Medications',
+                hintText: 'e.g., Amoxicillin 500mg, Metformin 500mg',
+                prefixIcon: const Icon(Icons.medication_outlined, size: 20),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 14),
+
+              // Diagnostic Aids
+              DenteraTextField(
+                controller: _diagnosticAidsController,
+                label: 'Diagnostic Aids',
+                hintText: 'e.g., Periapical radiograph tooth #16, vitality test positive',
+                prefixIcon: const Icon(Icons.biotech_outlined, size: 20),
+                maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 24),

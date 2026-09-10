@@ -10,6 +10,11 @@ class Patient {
     required this.gender,
     this.phoneNumber,
     this.medicalHistory,
+    this.chiefComplaint,
+    this.historyOfChiefComplaint,
+    this.dentalHistory,
+    this.medications,
+    this.diagnosticAids,
     required this.createdAt,
   });
 
@@ -19,6 +24,11 @@ class Patient {
   final String gender;
   final String? phoneNumber;
   final String? medicalHistory;
+  final String? chiefComplaint;
+  final String? historyOfChiefComplaint;
+  final String? dentalHistory;
+  final String? medications;
+  final String? diagnosticAids;
   final DateTime createdAt;
 
   Patient copyWith({
@@ -28,6 +38,11 @@ class Patient {
     String? gender,
     String? phoneNumber,
     String? medicalHistory,
+    String? chiefComplaint,
+    String? historyOfChiefComplaint,
+    String? dentalHistory,
+    String? medications,
+    String? diagnosticAids,
     DateTime? createdAt,
   }) {
     return Patient(
@@ -37,6 +52,11 @@ class Patient {
       gender: gender ?? this.gender,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       medicalHistory: medicalHistory ?? this.medicalHistory,
+      chiefComplaint: chiefComplaint ?? this.chiefComplaint,
+      historyOfChiefComplaint: historyOfChiefComplaint ?? this.historyOfChiefComplaint,
+      dentalHistory: dentalHistory ?? this.dentalHistory,
+      medications: medications ?? this.medications,
+      diagnosticAids: diagnosticAids ?? this.diagnosticAids,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -49,6 +69,11 @@ class Patient {
       'gender': gender,
       'phoneNumber': phoneNumber,
       'medicalHistory': medicalHistory,
+      'chiefComplaint': chiefComplaint,
+      'historyOfChiefComplaint': historyOfChiefComplaint,
+      'dentalHistory': dentalHistory,
+      'medications': medications,
+      'diagnosticAids': diagnosticAids,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -61,6 +86,11 @@ class Patient {
       gender: map['gender'] as String,
       phoneNumber: map['phoneNumber'] as String?,
       medicalHistory: map['medicalHistory'] as String?,
+      chiefComplaint: map['chiefComplaint'] as String?,
+      historyOfChiefComplaint: map['historyOfChiefComplaint'] as String?,
+      dentalHistory: map['dentalHistory'] as String?,
+      medications: map['medications'] as String?,
+      diagnosticAids: map['diagnosticAids'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );
   }
@@ -75,6 +105,11 @@ class Patient {
         other.gender == gender &&
         other.phoneNumber == phoneNumber &&
         other.medicalHistory == medicalHistory &&
+        other.chiefComplaint == chiefComplaint &&
+        other.historyOfChiefComplaint == historyOfChiefComplaint &&
+        other.dentalHistory == dentalHistory &&
+        other.medications == medications &&
+        other.diagnosticAids == diagnosticAids &&
         other.createdAt == createdAt;
   }
 
@@ -86,11 +121,16 @@ class Patient {
         gender,
         phoneNumber,
         medicalHistory,
+        chiefComplaint,
+        historyOfChiefComplaint,
+        dentalHistory,
+        medications,
+        diagnosticAids,
         createdAt,
       );
 
   @override
   String toString() {
-    return 'Patient(id: $id, name: $name, age: $age, gender: $gender, phoneNumber: $phoneNumber, medicalHistory: $medicalHistory, createdAt: $createdAt)';
+    return 'Patient(id: $id, name: $name, age: $age, gender: $gender, phoneNumber: $phoneNumber, medicalHistory: $medicalHistory, chiefComplaint: $chiefComplaint, historyOfChiefComplaint: $historyOfChiefComplaint, dentalHistory: $dentalHistory, medications: $medications, diagnosticAids: $diagnosticAids, createdAt: $createdAt)';
   }
 }

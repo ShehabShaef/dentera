@@ -16,7 +16,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String dbName = 'dentera.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   Database? _database;
 
@@ -43,6 +43,7 @@ class AppDatabase {
         version: dbVersion,
         onConfigure: _onConfigure,
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
       );
     } catch (e) {
       throw LocalDatabaseException('Failed to initialize local database: $e', e);
@@ -58,6 +59,17 @@ class AppDatabase {
   /// or [Appointment] rows), preventing orphaned entries in the offline database.
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON;');
+  }
+
+  /// Handles sequential schema migrations between database versions.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE patients ADD COLUMN chiefComplaint TEXT;');
+      await db.execute('ALTER TABLE patients ADD COLUMN historyOfChiefComplaint TEXT;');
+      await db.execute('ALTER TABLE patients ADD COLUMN dentalHistory TEXT;');
+      await db.execute('ALTER TABLE patients ADD COLUMN medications TEXT;');
+      await db.execute('ALTER TABLE patients ADD COLUMN diagnosticAids TEXT;');
+    }
   }
 
   /// Creates the relational schema for all domain tables and pre-populates default academic data.
@@ -84,6 +96,11 @@ class AppDatabase {
         gender TEXT NOT NULL,
         phoneNumber TEXT,
         medicalHistory TEXT,
+        chiefComplaint TEXT,
+        historyOfChiefComplaint TEXT,
+        dentalHistory TEXT,
+        medications TEXT,
+        diagnosticAids TEXT,
         createdAt TEXT NOT NULL
       );
     ''');
