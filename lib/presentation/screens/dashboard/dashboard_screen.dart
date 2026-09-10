@@ -18,7 +18,9 @@ class DashboardScreen extends ConsumerWidget {
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
     final quotaSummaryAsync = ref.watch(globalQuotaSummaryProvider);
     final allReqsAsync = ref.watch(allRequirementsProvider);
-    final todayAppointmentsAsync = ref.watch(dailyAppointmentsProvider(DateTime.now()));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final todayAppointmentsAsync = ref.watch(dailyAppointmentsProvider(today));
     final upcomingAppointmentsAsync = ref.watch(upcomingAppointmentsProvider);
 
     return Scaffold(
@@ -194,7 +196,7 @@ class DashboardScreen extends ConsumerWidget {
                           isCompact: true,
                           title: 'Appointments Unavailable',
                           message: 'Could not load today\'s scheduled appointments.',
-                          onRetry: () => ref.invalidate(dailyAppointmentsProvider(DateTime.now())),
+                          onRetry: () => ref.invalidate(dailyAppointmentsProvider(today)),
                         ),
                       ),
                       const SizedBox(height: 20),

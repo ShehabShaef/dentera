@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ import 'package:dentera/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:dentera/presentation/screens/dashboard/widgets/widgets.dart';
 import 'package:dentera/presentation/screens/patients/patient_case_sheet_screen.dart';
 import 'package:dentera/presentation/state/state.dart';
+import 'package:dentera/presentation/widgets/cards/base_card.dart';
 
 /// Test navigator observer to capture push transitions and inspect routes.
 class TestNavigatorObserver extends NavigatorObserver {
@@ -374,6 +377,88 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
       expect(find.text('1 appointment(s) scheduled today'), findsOneWidget);
       expect(find.text('1 upcoming appointment(s) scheduled'), findsOneWidget);
+    });
+
+    testWidgets('Up Next displays loading indicator initially then resolves to zero-state BaseCard with calendar icon', (WidgetTester tester) async {
+      final completer = Completer<List<Appointment>>();
+
+      final container = ProviderContainer(
+        overrides: [
+          rootNavigationIndexProvider.overrideWith((ref) => 0),
+          dailyAppointmentsProvider.overrideWith((ref, date) => completer.future),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+          patientListProvider.overrideWith((ref) => <Patient>[]),
+          allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+          allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+          clinicListProvider.overrideWith((ref) => <Clinic>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DashboardScreen(),
+          ),
+        ),
+      );
+
+      // Pump 1 frame: Initial loading state must show CircularProgressIndicator
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+      expect(find.text('No appointments scheduled today'), findsNothing);
+
+      // Complete future with empty list
+      completer.complete(<Appointment>[]);
+      await tester.pumpAndSettle();
+
+      // Loading spinner should be gone and zero-state card with calendar icon must be visible
+      expect(find.text('No appointments scheduled today'), findsOneWidget);
+      expect(find.text('Scheduled clinical procedures will appear here.'), findsOneWidget);
+      expect(find.byIcon(Icons.event_available_outlined), findsOneWidget);
+      expect(find.byType(BaseCard), findsWidgets);
+    });
+
+    testWidgets('Up Next zero-state renders stably without spinner freeze on provider invalidation', (WidgetTester tester) async {
+      var callCount = 0;
+      final container = ProviderContainer(
+        overrides: [
+          rootNavigationIndexProvider.overrideWith((ref) => 0),
+          dailyAppointmentsProvider.overrideWith((ref, date) async {
+            callCount++;
+            return <Appointment>[];
+          }),
+          upcomingAppointmentsProvider.overrideWith((ref) => <Appointment>[]),
+          patientListProvider.overrideWith((ref) => <Patient>[]),
+          allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
+          allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
+          clinicListProvider.overrideWith((ref) => <Clinic>[]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DashboardScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(callCount, 1);
+      expect(find.text('No appointments scheduled today'), findsOneWidget);
+
+      // Invalidate provider simulating database reset or background sync
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      container.invalidate(dailyAppointmentsProvider(today));
+
+      await tester.pumpAndSettle();
+      expect(callCount, 2);
+      expect(find.text('No appointments scheduled today'), findsOneWidget);
     });
   });
 }

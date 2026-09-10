@@ -47,7 +47,9 @@ class DashboardReminders extends ConsumerWidget {
     } else {
       activeReminders = <ClinicalReminderItem>[];
 
-      final todayApts = ref.watch(dailyAppointmentsProvider(DateTime.now())).valueOrNull ?? const [];
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final todayApts = ref.watch(dailyAppointmentsProvider(today)).valueOrNull ?? const [];
       final upcomingApts = ref.watch(upcomingAppointmentsProvider).valueOrNull ?? const [];
 
       // Check for pending or scheduled appointments today

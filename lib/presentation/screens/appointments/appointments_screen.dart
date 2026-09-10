@@ -43,9 +43,12 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
-
 class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +105,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
                       );
                       setState(() {
-                        _selectedDate = date;
+                        _selectedDate = DateTime(date.year, date.month, date.day);
                       });
                     },
                   ),
