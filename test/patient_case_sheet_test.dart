@@ -138,17 +138,21 @@ void main() {
       // Assert unbacked Treatment Plan tab was pruned
       expect(find.text('Treatment Plan'), findsNothing);
 
-      // Verify exactly 2 tabs exist in TabBar (Clinical Cases and Medical History)
+      // Verify exactly 2 tabs exist in TabBar (Clinical Cases and Patient History)
       expect(find.byType(Tab), findsNWidgets(2));
 
-      // Switch to Medical History Tab
-      await tester.tap(find.text('Medical History'));
+      // Switch to Patient History Tab
+      await tester.tap(find.text('Patient History'));
       await tester.pumpAndSettle();
 
-      // Assert dynamic medical history renders and unbacked Dental History is pruned
+      // Assert structured anamnesis sections render
+      expect(find.text('Chief Complaint (CC)'), findsOneWidget);
+      expect(find.text('History of Chief Complaint (HCC)'), findsOneWidget);
       expect(find.text('Medical History & Allergies'), findsOneWidget);
       expect(find.text('Penicillin Allergy'), findsOneWidget);
-      expect(find.text('Dental History'), findsNothing);
+      expect(find.text('Dental History'), findsOneWidget);
+      expect(find.text('Current Medications'), findsOneWidget);
+      expect(find.text('Diagnostic Aids'), findsOneWidget);
     });
 
     testWidgets('Tapping CaseRecordCard opens EvaluateCaseModal with patient name and procedure title, obfuscating UUIDs', (WidgetTester tester) async {

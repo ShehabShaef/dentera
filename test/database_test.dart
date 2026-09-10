@@ -36,6 +36,11 @@ void main() {
               gender TEXT NOT NULL,
               phoneNumber TEXT,
               medicalHistory TEXT,
+              chiefComplaint TEXT,
+              historyOfChiefComplaint TEXT,
+              dentalHistory TEXT,
+              medications TEXT,
+              diagnosticAids TEXT,
               createdAt TEXT NOT NULL
             );
           ''');

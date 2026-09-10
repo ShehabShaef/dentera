@@ -252,7 +252,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                   ),
                   tabs: const <Widget>[
                     Tab(text: 'Clinical Cases'),
-                    Tab(text: 'Medical History'),
+                    Tab(text: 'Patient History'),
                   ],
                 ),
               ),
@@ -264,8 +264,8 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                     // Tab 1: Clinical Cases
                     _buildCasesTab(patientCasesAsync, patient),
 
-                    // Tab 2: Medical History
-                    _buildMedicalHistoryTab(patient),
+                    // Tab 2: Patient History
+                    _buildPatientHistoryTab(patient),
                   ],
                 ),
               ),
@@ -431,9 +431,13 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     );
   }
 
-  Widget _buildMedicalHistoryTab(Patient patient) {
+  Widget _buildPatientHistoryTab(Patient patient) {
     final hasMedicalHistory = patient.medicalHistory != null &&
         patient.medicalHistory!.isNotEmpty;
+
+    void onEditAnamnesis() {
+      EditPatientModal.show(context, patient: patient);
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
@@ -441,41 +445,154 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          // Systemic Conditions & Allergies Card (strictly backed by SQLite)
-          BaseCard(
-            padding: const EdgeInsets.all(18.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Icon(
-                      hasMedicalHistory ? Icons.warning_amber_rounded : Icons.health_and_safety_outlined,
-                      size: 20,
-                      color: hasMedicalHistory ? AppColors.error : AppColors.secondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Medical History & Allergies',
-                      style: AppTextStyles.h2.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
+          // 1. Chief Complaint (CC)
+          _AnamnesisSectionCard(
+            title: 'Chief Complaint (CC)',
+            icon: Icons.record_voice_over_outlined,
+            iconColor: AppColors.primary,
+            content: patient.chiefComplaint,
+            emptyPlaceholder: 'No chief complaint recorded.',
+            onEdit: onEditAnamnesis,
+          ),
+          const SizedBox(height: 12),
+
+          // 2. History of Chief Complaint (HCC)
+          _AnamnesisSectionCard(
+            title: 'History of Chief Complaint (HCC)',
+            icon: Icons.history_edu_outlined,
+            iconColor: AppColors.secondary,
+            content: patient.historyOfChiefComplaint,
+            emptyPlaceholder: 'No history of chief complaint recorded.',
+            onEdit: onEditAnamnesis,
+          ),
+          const SizedBox(height: 12),
+
+          // 3. Medical History & Allergies
+          _AnamnesisSectionCard(
+            title: 'Medical History & Allergies',
+            icon: hasMedicalHistory ? Icons.warning_amber_rounded : Icons.health_and_safety_outlined,
+            iconColor: hasMedicalHistory ? AppColors.error : AppColors.secondary,
+            content: patient.medicalHistory,
+            emptyPlaceholder: 'No significant systemic medical history or drug allergies reported.',
+            onEdit: onEditAnamnesis,
+          ),
+          const SizedBox(height: 12),
+
+          // 4. Dental History
+          _AnamnesisSectionCard(
+            title: 'Dental History',
+            icon: Icons.medical_services_outlined,
+            iconColor: AppColors.primary,
+            content: patient.dentalHistory,
+            emptyPlaceholder: 'No prior dental treatments or dental history recorded.',
+            onEdit: onEditAnamnesis,
+          ),
+          const SizedBox(height: 12),
+
+          // 5. Current Medications
+          _AnamnesisSectionCard(
+            title: 'Current Medications',
+            icon: Icons.medication_outlined,
+            iconColor: AppColors.secondary,
+            content: patient.medications,
+            emptyPlaceholder: 'No active medications reported.',
+            onEdit: onEditAnamnesis,
+          ),
+          const SizedBox(height: 12),
+
+          // 6. Diagnostic Aids & Investigations
+          _AnamnesisSectionCard(
+            title: 'Diagnostic Aids',
+            icon: Icons.biotech_outlined,
+            iconColor: AppColors.primary,
+            content: patient.diagnosticAids,
+            emptyPlaceholder: 'No radiographs, pulp tests, or diagnostic aids logged.',
+            onEdit: onEditAnamnesis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnamnesisSectionCard extends StatelessWidget {
+  const _AnamnesisSectionCard({
+    required this.title,
+    required this.icon,
+    required this.iconColor,
+    required this.content,
+    required this.emptyPlaceholder,
+    required this.onEdit,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color iconColor;
+  final String? content;
+  final String emptyPlaceholder;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasContent = content != null && content!.trim().isNotEmpty;
+
+    return BaseCard(
+      padding: const EdgeInsets.all(18.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(icon, size: 20, color: iconColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.h2.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  hasMedicalHistory
-                      ? patient.medicalHistory!
-                      : 'No significant systemic medical history or drug allergies reported.',
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: hasMedicalHistory ? AppColors.onSurface : AppColors.onSurfaceVariant,
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.outline),
+                tooltip: 'Edit $title',
+                splashRadius: 18,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: onEdit,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (hasContent)
+            Text(
+              content!.trim(),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSurface,
+              ),
+            )
+          else
+            Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: AppColors.outlineVariant,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    emptyPlaceholder,
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
         ],
       ),
     );
