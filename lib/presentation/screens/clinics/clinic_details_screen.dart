@@ -45,14 +45,15 @@ class ClinicDetailsScreen extends ConsumerWidget {
 
   List<LinkedPatientCase> _resolveLinkedCases(
     List<CaseRecord>? cases,
-    Requirement req,
-  ) {
+    Requirement req, [
+    Map<String, String>? patientMap,
+  ]) {
     if (cases != null && cases.isNotEmpty) {
       final matched = cases.where((c) => c.requirementId == req.id).toList();
       if (matched.isNotEmpty) {
         return matched
             .map((c) => LinkedPatientCase(
-                  patientName: 'Patient #${c.patientId}',
+                  patientName: patientMap?[c.patientId] ?? 'Patient #${c.patientId}',
                   status: c.status,
                   isCompleted: c.status.toLowerCase().contains('completed') ||
                       c.status.toLowerCase().contains('evaluated'),
@@ -142,6 +143,10 @@ class ClinicDetailsScreen extends ConsumerWidget {
     }
 
     final allCasesAsync = ref.watch(allCasesProvider);
+    final patientsAsync = ref.watch(patientListProvider);
+    final patientMap = {
+      for (final p in patientsAsync.valueOrNull ?? const <Patient>[]) p.id: p.name,
+    };
 
     final int totalTarget = requirements.fold(0, (sum, item) => sum + item.targetCount);
     final int totalCompleted = requirements.fold(0, (sum, item) => sum + item.completedCount);
@@ -273,6 +278,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                     final List<LinkedPatientCase> linkedCases = _resolveLinkedCases(
                       allCasesAsync.value,
                       req,
+                      patientMap,
                     );
 
                     return RequirementDetailCard(

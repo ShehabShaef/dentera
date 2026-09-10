@@ -19,6 +19,8 @@ import '../inputs/inputs.dart';
 /// - [casesByPatientProvider] is invalidated to re-render the patient case sheet.
 /// - [casesByRequirementProvider] is invalidated to refresh clinic requirement progress.
 /// - [allCasesProvider] is invalidated to update total quota counts.
+/// - [requirementsByClinicProvider] and [allRequirementsProvider] are invalidated to refresh clinic progress bars.
+/// - [globalQuotaSummaryProvider] is invalidated to recalculate dashboard progress rings.
 class EvaluateCaseModal extends ConsumerStatefulWidget {
   const EvaluateCaseModal({
     super.key,
@@ -141,6 +143,10 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
       ref.invalidate(casesByPatientProvider(widget.caseRecord.patientId));
       ref.invalidate(casesByRequirementProvider(widget.caseRecord.requirementId));
       ref.invalidate(allCasesProvider);
+      ref.invalidate(requirementsByClinicProvider);
+      ref.invalidate(allRequirementsProvider);
+      ref.invalidate(globalQuotaSummaryProvider);
+      ref.invalidate(clinicListProvider);
 
       widget.onCaseEvaluated?.call(updatedCase);
 

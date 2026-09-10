@@ -115,5 +115,45 @@ void main() {
       expect(find.text('Removable Partial Denture (RPD)'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
     });
+
+    testWidgets('ClinicDetailsScreen renders linked cases with real patient names and completed badge', (WidgetTester tester) async {
+      final testCases = <CaseRecord>[
+        CaseRecord(
+          id: 'case-01',
+          patientId: 'p-01',
+          requirementId: 'r-01',
+          status: 'Completed',
+          dateStarted: DateTime.now(),
+        ),
+      ];
+
+      final testPatients = <Patient>[
+        Patient(
+          id: 'p-01',
+          name: 'Sarah Connor',
+          age: 29,
+          gender: 'Female',
+          createdAt: DateTime.now(),
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            requirementsByClinicProvider(clinic.id).overrideWith((ref) async => testRequirements),
+            allCasesProvider.overrideWith((ref) async => testCases),
+            patientListProvider.overrideWith((ref) async => testPatients),
+          ],
+          child: const MaterialApp(
+            home: ClinicDetailsScreen(clinic: clinic),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sarah Connor'), findsOneWidget);
+      expect(find.text('Completed'), findsOneWidget);
+      expect(find.byIcon(Icons.task_alt_rounded), findsOneWidget);
+    });
   });
 }
