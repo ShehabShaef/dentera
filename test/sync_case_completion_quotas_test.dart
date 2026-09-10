@@ -329,12 +329,18 @@ void main() {
       expect(find.text('Orthodontics'), findsOneWidget);
 
       // Verify dynamic procedural requirement selector is populated
-      expect(find.text('Initial Procedural Requirement'), findsOneWidget);
-      expect(find.text('Bracket Placement (0/4)'), findsOneWidget);
+      expect(find.text('Main Case / Procedure'), findsOneWidget);
+      expect(find.text('Select main case / procedure'), findsOneWidget);
 
       // Fill in required name and age
       await tester.enterText(find.widgetWithText(DenteraTextField, 'Patient Name *'), 'Mona Saeed');
       await tester.enterText(find.widgetWithText(DenteraTextField, 'Age *'), '22');
+      await tester.pumpAndSettle();
+
+      // Explicitly select procedure from mandatory dropdown
+      await tester.tap(find.text('Select main case / procedure'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bracket Placement (0/4)').last);
       await tester.pumpAndSettle();
 
       // Submit form

@@ -97,6 +97,37 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
   Widget _buildScaffold(BuildContext context, Patient patient) {
     final patientCasesAsync = ref.watch(casesByPatientProvider(patient.id));
+    final reqsAsync = ref.watch(allRequirementsProvider);
+    final clinicsAsync = ref.watch(allClinicsProvider);
+
+    final reqsMap = {
+      for (final r in reqsAsync.valueOrNull ?? const <Requirement>[]) r.id: r,
+    };
+    final clinicsMap = {
+      for (final c in clinicsAsync.valueOrNull ?? const <Clinic>[]) c.id: c,
+    };
+
+    final cases = patientCasesAsync.valueOrNull ?? const <CaseRecord>[];
+    final patientClinics = <Clinic>[];
+    final seenClinicIds = <String>{};
+
+    for (final c in cases) {
+      final req = reqsMap[c.requirementId];
+      if (req != null) {
+        final clinic = clinicsMap[req.clinicId] ??
+            (req.clinicId.isNotEmpty
+                ? Clinic(
+                    id: req.clinicId,
+                    name: _fallbackClinicNames[req.clinicId] ?? 'Dental Department',
+                    academicYear: '',
+                    colorHex: '#006A64',
+                  )
+                : null);
+        if (clinic != null && seenClinicIds.add(clinic.id)) {
+          patientClinics.add(clinic);
+        }
+      }
+    }
 
     return DefaultTabController(
       length: 2,
@@ -189,10 +220,17 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                     // Clinic Tags
                     Wrap(
                       spacing: 6,
-                      children: const <Widget>[
-                        _ClinicBadge(label: 'Prosthodontics', color: AppColors.primary),
-                        _ClinicBadge(label: 'Endodontics', color: AppColors.secondary),
-                      ],
+                      runSpacing: 6,
+                      children: patientClinics.isNotEmpty
+                          ? patientClinics.map((clinic) {
+                              return _ClinicBadge(
+                                label: clinic.name,
+                                color: _parseColor(clinic.colorHex),
+                              );
+                            }).toList()
+                          : const <Widget>[
+                              _ClinicBadge(label: 'General', color: AppColors.primary),
+                            ],
                     ),
                   ],
                 ),
