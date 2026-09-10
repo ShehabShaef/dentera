@@ -61,4 +61,64 @@ abstract final class AppTextStyles {
         letterSpacing: 11 * 0.02,
         color: AppColors.onSurfaceVariant,
       );
+
+  /// Returns the appropriate font family for the given locale.
+  static String? fontFamilyForLocale([Locale? locale]) {
+    if (locale?.languageCode == 'ar') {
+      return GoogleFonts.cairo().fontFamily;
+    }
+    return GoogleFonts.hankenGrotesk().fontFamily;
+  }
+
+  /// Arabic typography using GoogleFonts.cairo
+  static TextStyle get arabicDisplayWordmark => GoogleFonts.cairo(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        height: 24 / 20,
+        letterSpacing: 20 * 0.05,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle get arabicH1 => GoogleFonts.cairo(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        height: 32 / 24,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle get arabicH1Mobile => GoogleFonts.cairo(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        height: 28 / 20,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle get arabicH2 => GoogleFonts.cairo(
+        fontSize: 18,
+        fontWeight: FontWeight.w500,
+        height: 26 / 18,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle get arabicBodyMd => GoogleFonts.cairo(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 22 / 14,
+        color: AppColors.onSurface,
+      );
+
+  static TextStyle get arabicCaption => GoogleFonts.cairo(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 16 / 12,
+        color: AppColors.onSurfaceVariant,
+      );
+
+  static TextStyle get arabicLabelCaps => GoogleFonts.cairo(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        height: 14 / 11,
+        letterSpacing: 11 * 0.02,
+        color: AppColors.onSurfaceVariant,
+      );
 }

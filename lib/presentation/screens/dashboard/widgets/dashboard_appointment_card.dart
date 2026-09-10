@@ -57,11 +57,11 @@ class DashboardAppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         child: Stack(
           children: <Widget>[
-            // Left Accent Border Indicator
-            Positioned(
+            // Leading Accent Border Indicator
+            PositionedDirectional(
               top: 0,
               bottom: 0,
-              left: 0,
+              start: 0,
               width: 4,
               child: Container(color: clinicColor),
             ),
