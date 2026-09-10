@@ -15,6 +15,8 @@ class _FakePatientRepo implements PatientRepository {
   @override
   Future<void> deletePatient(String id) async {}
   @override
+  Future<void> deletePatients(List<String> ids) async {}
+  @override
   Future<List<Patient>> getAllPatients() async => [];
   @override
   Future<Patient?> getPatientById(String id) async => null;
@@ -47,6 +49,10 @@ class _FakeClinicRepo implements ClinicRepository {
   final List<Clinic> clinics;
   @override
   Future<void> addClinic(Clinic clinic) async => clinics.add(clinic);
+  @override
+  Future<void> deleteClinic(String id) async => clinics.removeWhere((c) => c.id == id);
+  @override
+  Future<void> deleteClinics(List<String> ids) async => clinics.removeWhere((c) => ids.contains(c.id));
   @override
   Future<List<Clinic>> getAllClinics() async => clinics;
   @override

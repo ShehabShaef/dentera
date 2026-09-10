@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -39,22 +40,204 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     'Orthodontics',
   ];
 
+  void _toggleClinicSelection(String id) {
+    final current = ref.read(selectedClinicIdsProvider);
+    if (current.contains(id)) {
+      ref.read(selectedClinicIdsProvider.notifier).state = current.difference({id});
+    } else {
+      ref.read(selectedClinicIdsProvider.notifier).state = {...current, id};
+    }
+  }
+
+  Future<void> _confirmBatchDeleteClinics(Set<String> selectedIds) async {
+    if (selectedIds.isEmpty) return;
+
+    final count = selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Selected Clinics?'),
+        content: Text(
+          'Deleting $count clinic${count > 1 ? 's' : ''} will permanently remove all associated requirements, clinical case records, and scheduled appointments due to cascade deletion.\n\nThis action cannot be undone. Are you sure you want to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final repository = ref.read(clinicRepositoryProvider);
+      await repository.deleteClinics(selectedIds.toList());
+
+      ref.read(clinicSelectionModeProvider.notifier).state = false;
+      ref.read(selectedClinicIdsProvider.notifier).state = <String>{};
+
+      ref.invalidate(clinicListProvider);
+      ref.invalidate(allRequirementsProvider);
+      ref.invalidate(allCasesProvider);
+      ref.invalidate(upcomingAppointmentsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully deleted $count clinic${count > 1 ? 's' : ''}.',
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      AppLogger.error('Failed to delete clinics in batch', e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete clinics: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final clinicsAsync = ref.watch(clinicListProvider);
     final allReqsAsync = ref.watch(allRequirementsProvider);
+    final isSelectionMode = ref.watch(clinicSelectionModeProvider);
+    final selectedIds = ref.watch(selectedClinicIdsProvider);
+    final sortOption = ref.watch(clinicSortOptionProvider);
+
+    final clinicsList = clinicsAsync.valueOrNull ?? <Clinic>[];
+    final visibleClinics = clinicsList.where((c) {
+      if (_selectedCategory == 'All') return true;
+      return c.name.toLowerCase().contains(_selectedCategory.toLowerCase());
+    }).toList();
+    final visibleClinicIds = visibleClinics.map((c) => c.id).toSet();
+    final isAllSelected = visibleClinicIds.isNotEmpty && selectedIds.containsAll(visibleClinicIds);
+
+    final PreferredSizeWidget appBar = isSelectionMode
+        ? AppBar(
+            leadingWidth: 80,
+            leading: TextButton(
+              onPressed: () {
+                ref.read(clinicSelectionModeProvider.notifier).state = false;
+                ref.read(selectedClinicIdsProvider.notifier).state = <String>{};
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            title: Text(
+              '${selectedIds.length} Selected',
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (isAllSelected) {
+                    ref.read(selectedClinicIdsProvider.notifier).state = <String>{};
+                  } else {
+                    ref.read(selectedClinicIdsProvider.notifier).state = {
+                      ...selectedIds,
+                      ...visibleClinicIds,
+                    };
+                  }
+                },
+                child: Text(
+                  isAllSelected ? 'Deselect All' : 'Select All',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0, left: 4.0),
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.onError,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: selectedIds.isEmpty
+                      ? null
+                      : () => _confirmBatchDeleteClinics(selectedIds),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                  label: Text('Delete (${selectedIds.length})'),
+                ),
+              ),
+            ],
+          )
+        : AppBar(
+            title: Text(
+              'Clinics & Requirements',
+              style: AppTextStyles.h1Mobile.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            actions: <Widget>[
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded),
+                tooltip: 'More options',
+                onSelected: (value) {
+                  if (value == 'sort') {
+                    SortClinicsModal.show(context);
+                  } else if (value == 'delete') {
+                    ref.read(clinicSelectionModeProvider.notifier).state = true;
+                    ref.read(selectedClinicIdsProvider.notifier).state = <String>{};
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'sort',
+                    child: Row(
+                      children: [
+                        Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        SizedBox(width: 12),
+                        Text('Sort Clinics'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        SizedBox(width: 12),
+                        Text('Delete Clinics'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Clinics & Requirements',
-          style: AppTextStyles.h1Mobile.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      appBar: appBar,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -143,11 +326,49 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                                   .contains(_selectedCategory.toLowerCase());
                             }).toList();
 
+                      // Apply sorting based on active sort option
+                      switch (sortOption) {
+                        case ClinicSortOption.name:
+                          filteredData.sort((a, b) {
+                            final Clinic ca = a['clinic'] as Clinic;
+                            final Clinic cb = b['clinic'] as Clinic;
+                            return ca.name.toLowerCase().compareTo(cb.name.toLowerCase());
+                          });
+                          break;
+                        case ClinicSortOption.academicYear:
+                          filteredData.sort((a, b) {
+                            final Clinic ca = a['clinic'] as Clinic;
+                            final Clinic cb = b['clinic'] as Clinic;
+                            final cmp = ca.academicYear.compareTo(cb.academicYear);
+                            return cmp != 0 ? cmp : ca.name.toLowerCase().compareTo(cb.name.toLowerCase());
+                          });
+                          break;
+                        case ClinicSortOption.quotaProgress:
+                          filteredData.sort((a, b) {
+                            final List<Requirement> reqsA = a['requirements'] as List<Requirement>;
+                            final List<Requirement> reqsB = b['requirements'] as List<Requirement>;
+                            final targetA = reqsA.fold(0, (sum, r) => sum + r.targetCount);
+                            final compA = reqsA.fold(0, (sum, r) => sum + r.completedCount);
+                            final pctA = targetA == 0 ? 0.0 : compA / targetA;
+
+                            final targetB = reqsB.fold(0, (sum, r) => sum + r.targetCount);
+                            final compB = reqsB.fold(0, (sum, r) => sum + r.completedCount);
+                            final pctB = targetB == 0 ? 0.0 : compB / targetB;
+
+                            final cmp = pctB.compareTo(pctA);
+                            if (cmp != 0) return cmp;
+                            final Clinic ca = a['clinic'] as Clinic;
+                            final Clinic cb = b['clinic'] as Clinic;
+                            return ca.name.toLowerCase().compareTo(cb.name.toLowerCase());
+                          });
+                          break;
+                      }
+
                       if (filteredData.isEmpty) {
                         return _buildEmptyFilterState();
                       }
 
-                      return _buildClinicsGridOrList(filteredData);
+                      return _buildClinicsGridOrList(filteredData, isSelectionMode, selectedIds);
                     },
                     loading: () => const Center(
                       child: Padding(
@@ -172,23 +393,25 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_clinics',
-        onPressed: () {
-          AppLogger.info('Opened AddClinicModal from ClinicsScreen');
-          AddClinicModal.show(context);
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Icon(
-          Icons.add_chart_rounded,
-          size: 26,
-        ),
-      ),
+      floatingActionButton: isSelectionMode
+          ? null
+          : FloatingActionButton(
+              heroTag: 'fab_clinics',
+              onPressed: () {
+                AppLogger.info('Opened AddClinicModal from ClinicsScreen');
+                AddClinicModal.show(context);
+              },
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.add_chart_rounded,
+                size: 26,
+              ),
+            ),
     );
   }
 
@@ -228,7 +451,11 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     );
   }
 
-  Widget _buildClinicsGridOrList(List<Map<String, dynamic>> data) {
+  Widget _buildClinicsGridOrList(
+    List<Map<String, dynamic>> data,
+    bool isSelectionMode,
+    Set<String> selectedIds,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 640;
@@ -238,19 +465,39 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
             children: data.map((entry) {
               final Clinic clinic = entry['clinic'] as Clinic;
               final List<Requirement> reqs = entry['requirements'] as List<Requirement>;
+              final isSelected = selectedIds.contains(clinic.id);
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: ClinicSummaryCard(
-                  clinic: clinic,
-                  requirements: reqs,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => ClinicDetailsScreen(clinic: clinic),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (isSelectionMode)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: CircularCheckbox(
+                          isSelected: isSelected,
+                          onChanged: (_) => _toggleClinicSelection(clinic.id),
+                        ),
                       ),
-                    );
-                  },
+                    Expanded(
+                      child: ClinicSummaryCard(
+                        clinic: clinic,
+                        requirements: reqs,
+                        onTap: () {
+                          if (isSelectionMode) {
+                            _toggleClinicSelection(clinic.id);
+                          } else {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (context) => ClinicDetailsScreen(clinic: clinic),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               );
             }).toList(),
@@ -271,17 +518,37 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
             final entry = data[index];
             final Clinic clinic = entry['clinic'] as Clinic;
             final List<Requirement> reqs = entry['requirements'] as List<Requirement>;
+            final isSelected = selectedIds.contains(clinic.id);
 
-            return ClinicSummaryCard(
-              clinic: clinic,
-              requirements: reqs,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => ClinicDetailsScreen(clinic: clinic),
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: CircularCheckbox(
+                      isSelected: isSelected,
+                      onChanged: (_) => _toggleClinicSelection(clinic.id),
+                    ),
                   ),
-                );
-              },
+                Expanded(
+                  child: ClinicSummaryCard(
+                    clinic: clinic,
+                    requirements: reqs,
+                    onTap: () {
+                      if (isSelectionMode) {
+                        _toggleClinicSelection(clinic.id);
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => ClinicDetailsScreen(clinic: clinic),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             );
           },
         );

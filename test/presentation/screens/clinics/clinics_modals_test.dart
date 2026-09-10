@@ -32,6 +32,12 @@ class MockClinicRepository implements ClinicRepository {
   @override
   Future<Clinic?> getClinicById(String id) async =>
       clinics.where((c) => c.id == id).firstOrNull;
+
+  @override
+  Future<void> deleteClinic(String id) async => clinics.removeWhere((c) => c.id == id);
+
+  @override
+  Future<void> deleteClinics(List<String> ids) async => clinics.removeWhere((c) => ids.contains(c.id));
 }
 
 class MockRequirementRepository implements RequirementRepository {

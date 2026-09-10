@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/logging/app_logger.dart';
+import '../../../core/theme/theme.dart';
+import '../../state/state.dart';
+
+/// Modal bottom sheet allowing users to select the sorting order of the clinical departments.
+class SortClinicsModal extends ConsumerWidget {
+  const SortClinicsModal({super.key});
+
+  /// Convenience static helper to display the [SortClinicsModal].
+  static Future<ClinicSortOption?> show(BuildContext context) {
+    AppLogger.info('Opened SortClinicsModal');
+    return showModalBottomSheet<ClinicSortOption>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const SortClinicsModal(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentSort = ref.watch(clinicSortOptionProvider);
+
+    final sortOptions = <Map<String, dynamic>>[
+      {
+        'option': ClinicSortOption.name,
+        'title': 'Name (A to Z)',
+        'subtitle': 'Alphabetical order by clinic name',
+        'icon': Icons.sort_by_alpha_rounded,
+      },
+      {
+        'option': ClinicSortOption.academicYear,
+        'title': 'Academic Year',
+        'subtitle': 'Order by target academic year curriculum',
+        'icon': Icons.school_outlined,
+      },
+      {
+        'option': ClinicSortOption.quotaProgress,
+        'title': 'Quota Progress',
+        'subtitle': 'Highest percentage of completed requirements first',
+        'icon': Icons.donut_large_rounded,
+      },
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // 1. Drag Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 2. Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sort Clinics',
+                        style: AppTextStyles.h2.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Order clinical departments by academic criteria',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const Divider(height: 20, thickness: 0.8, color: AppColors.outlineVariant),
+
+            // 3. Sorting Options List
+            ...sortOptions.map((item) {
+              final option = item['option'] as ClinicSortOption;
+              final title = item['title'] as String;
+              final subtitle = item['subtitle'] as String;
+              final icon = item['icon'] as IconData;
+              final isSelected = currentSort == option;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Material(
+                  color: isSelected
+                      ? AppColors.secondaryContainer.withValues(alpha: 0.25)
+                      : AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    onTap: () {
+                      AppLogger.info('Changed clinic sort option to: ${option.name}');
+                      ref.read(clinicSortOptionProvider.notifier).state = option;
+                      Navigator.of(context).pop(option);
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            icon,
+                            color: isSelected ? AppColors.secondary : AppColors.outline,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  title,
+                                  style: AppTextStyles.bodyMd.copyWith(
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.secondary,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}

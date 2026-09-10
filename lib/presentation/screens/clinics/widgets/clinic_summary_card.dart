@@ -38,9 +38,12 @@ class ClinicSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final topRequirements = requirements.take(3).toList();
 
-    return BaseCard(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: BaseCard(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -139,6 +142,7 @@ class ClinicSummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

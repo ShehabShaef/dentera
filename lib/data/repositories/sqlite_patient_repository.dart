@@ -67,6 +67,25 @@ class SqlitePatientRepository implements PatientRepository {
   }
 
   @override
+  Future<void> deletePatients(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      final db = await _dbManager.database;
+      await db.transaction((txn) async {
+        final placeholders = List.filled(ids.length, '?').join(', ');
+        await txn.delete(
+          _tableName,
+          where: 'id IN ($placeholders)',
+          whereArgs: ids,
+        );
+      });
+      AppLogger.info('Batch deleted ${ids.length} patients with cascade');
+    } catch (e) {
+      throw LocalDatabaseException('Failed to delete patients: $ids', e);
+    }
+  }
+
+  @override
   Future<List<Patient>> getAllPatients() async {
     try {
       final db = await _dbManager.database;

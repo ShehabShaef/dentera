@@ -36,6 +36,9 @@ class ThrowingPatientRepository implements PatientRepository {
 
   @override
   Future<void> deletePatient(String id) async {}
+
+  @override
+  Future<void> deletePatients(List<String> ids) async {}
 }
 
 /// Test mock of [ClinicRepository] throwing simulated SQLite exceptions.
@@ -50,6 +53,12 @@ class ThrowingClinicRepository implements ClinicRepository {
 
   @override
   Future<void> addClinic(Clinic clinic) async {}
+
+  @override
+  Future<void> deleteClinic(String id) async {}
+
+  @override
+  Future<void> deleteClinics(List<String> ids) async {}
 }
 
 /// Test mock of [RequirementRepository] throwing simulated SQLite exceptions.

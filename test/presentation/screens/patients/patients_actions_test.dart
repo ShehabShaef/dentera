@@ -50,6 +50,11 @@ class MockPatientRepository implements PatientRepository {
   Future<void> deletePatient(String id) async {
     patients.removeWhere((p) => p.id == id);
   }
+
+  @override
+  Future<void> deletePatients(List<String> ids) async {
+    patients.removeWhere((p) => ids.contains(p.id));
+  }
 }
 
 class MockClinicRepository implements ClinicRepository {
@@ -66,6 +71,12 @@ class MockClinicRepository implements ClinicRepository {
 
   @override
   Future<void> addClinic(Clinic clinic) async => clinics.add(clinic);
+
+  @override
+  Future<void> deleteClinic(String id) async => clinics.removeWhere((c) => c.id == id);
+
+  @override
+  Future<void> deleteClinics(List<String> ids) async => clinics.removeWhere((c) => ids.contains(c.id));
 }
 
 class MockRequirementRepository implements RequirementRepository {
@@ -254,19 +265,24 @@ void main() {
 
       expect(find.text('Patients'), findsOneWidget);
 
-      // Tap sort button in AppBar
-      final sortButton = find.byTooltip('Sort Patients');
-      expect(sortButton, findsOneWidget);
-      await tester.tap(sortButton);
+      // Tap 3-dots menu in AppBar and select Sort Patients
+      final moreButton = find.byType(PopupMenuButton<String>);
+      expect(moreButton, findsOneWidget);
+      await tester.tap(moreButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Sort Patients'), findsOneWidget);
+      final sortMenuItem = find.text('Sort Patients');
+      expect(sortMenuItem, findsOneWidget);
+      await tester.tap(sortMenuItem);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SortPatientsModal), findsOneWidget);
 
       // Tap Name (A to Z)
       await tester.tap(find.text('Name (A to Z)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Sort Patients'), findsNothing);
+      expect(find.byType(SortPatientsModal), findsNothing);
       expect(find.text('Amal Omar'), findsOneWidget);
       expect(find.text('Zayd Ali'), findsOneWidget);
     });
