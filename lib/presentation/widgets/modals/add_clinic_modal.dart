@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
+import '../../../domain/constants/dental_catalog.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
@@ -21,21 +22,27 @@ class AddClinicModal extends ConsumerStatefulWidget {
   const AddClinicModal({
     super.key,
     this.onClinicAdded,
+    this.initialDepartment,
   });
 
   final ValueChanged<Clinic>? onClinicAdded;
+  final String? initialDepartment;
 
   /// Convenience static method to show the AddClinicModal bottom sheet.
   static Future<Clinic?> show(
     BuildContext context, {
     ValueChanged<Clinic>? onClinicAdded,
+    String? initialDepartment,
   }) {
     AppLogger.info('Opened AddClinicModal');
     return showModalBottomSheet<Clinic>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddClinicModal(onClinicAdded: onClinicAdded),
+      builder: (context) => AddClinicModal(
+        onClinicAdded: onClinicAdded,
+        initialDepartment: initialDepartment,
+      ),
     );
   }
 
@@ -47,6 +54,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
 
+  late String _selectedDepartment;
   String _selectedAcademicYear = '5th Year';
   String _selectedColorHex = '#003E6F';
   bool _isSubmitting = false;
@@ -65,10 +73,22 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
     '#006A64', // Deep Teal (Operative)
     '#2E3F50', // Slate Navy (Oral Surgery)
     '#37485A', // Steel Blue (Periodontics)
+    '#455A64', // Blue Grey (Oral Medicine)
     '#7B1FA2', // Royal Purple (Orthodontics)
     '#C2185B', // Rose / Pediatric
     '#E65100', // Amber / Radiography
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDepartment = widget.initialDepartment ?? DentalCatalog.otherOption;
+    if (_selectedDepartment != DentalCatalog.otherOption &&
+        DentalCatalog.isStandardDepartment(_selectedDepartment)) {
+      _nameController.text = _selectedDepartment;
+      _selectedColorHex = DentalCatalog.getDefaultColorForDepartment(_selectedDepartment);
+    }
+  }
 
   @override
   void dispose() {
@@ -86,11 +106,12 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final isOther = _selectedDepartment == DentalCatalog.otherOption;
+    if (isOther && !_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    final clinicName = _nameController.text.trim();
+    final clinicName = isOther ? _nameController.text.trim() : _selectedDepartment;
 
     // Generate collision-free UUID v4 for the new clinic department record.
     // Offline-first SQLite requires client-side primary key generation that guarantees
@@ -194,24 +215,56 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
               ),
               const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
 
-              // 3. Clinic Name Field
-              DenteraTextField(
-                controller: _nameController,
-                label: 'Clinic Name',
-                hintText: 'e.g., Orthodontics or Pedodontics',
+              // 3. Department Dropdown (Standard 10 departments + Other...)
+              DenteraDropdown<String>(
+                label: 'Department',
+                value: _selectedDepartment,
                 prefixIcon: const Icon(Icons.medical_services_outlined, size: 20),
-                textCapitalization: TextCapitalization.words,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a clinic name';
+                items: DentalCatalog.departmentOptions
+                    .map(
+                      (dept) => DropdownMenuItem<String>(
+                        value: dept,
+                        child: Text(dept),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _selectedDepartment = val;
+                      if (val != DentalCatalog.otherOption) {
+                        _nameController.text = val;
+                        _selectedColorHex =
+                            DentalCatalog.getDefaultColorForDepartment(val);
+                      } else {
+                        _nameController.clear();
+                      }
+                    });
                   }
-                  if (value.trim().length < 2) {
-                    return 'Clinic name must be at least 2 characters';
-                  }
-                  return null;
                 },
               ),
               const SizedBox(height: 16),
+
+              // 3b. Custom Clinic Name Field (Revealed when "Other..." is selected)
+              if (_selectedDepartment == DentalCatalog.otherOption) ...[
+                DenteraTextField(
+                  controller: _nameController,
+                  label: 'Clinic Name',
+                  hintText: 'e.g., Orthodontics or Pedodontics',
+                  prefixIcon: const Icon(Icons.edit_outlined, size: 20),
+                  textCapitalization: TextCapitalization.words,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a clinic name';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Clinic name must be at least 2 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // 4. Academic Year Dropdown
               DenteraDropdown<String>(

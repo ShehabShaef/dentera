@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
+import '../../../domain/constants/dental_catalog.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
@@ -24,11 +25,13 @@ class AddRequirementModal extends ConsumerStatefulWidget {
     super.key,
     required this.clinicId,
     this.clinicName,
+    this.initialProcedure,
     this.onRequirementAdded,
   });
 
   final String clinicId;
   final String? clinicName;
+  final String? initialProcedure;
   final ValueChanged<Requirement>? onRequirementAdded;
 
   /// Convenience static method to show the AddRequirementModal bottom sheet.
@@ -36,6 +39,7 @@ class AddRequirementModal extends ConsumerStatefulWidget {
     BuildContext context, {
     required String clinicId,
     String? clinicName,
+    String? initialProcedure,
     ValueChanged<Requirement>? onRequirementAdded,
   }) {
     AppLogger.info('Opened AddRequirementModal for clinic: $clinicId');
@@ -46,6 +50,7 @@ class AddRequirementModal extends ConsumerStatefulWidget {
       builder: (context) => AddRequirementModal(
         clinicId: clinicId,
         clinicName: clinicName,
+        initialProcedure: initialProcedure,
         onRequirementAdded: onRequirementAdded,
       ),
     );
@@ -94,7 +99,17 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _quotaController = TextEditingController(text: '5');
 
+  late String _selectedProcedure;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedProcedure = widget.initialProcedure ?? DentalCatalog.otherOption;
+    if (_selectedProcedure != DentalCatalog.otherOption) {
+      _titleController.text = _selectedProcedure;
+    }
+  }
 
   @override
   void dispose() {
@@ -103,12 +118,28 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
     super.dispose();
   }
 
+  String? _resolveClinicName() {
+    if (widget.clinicName != null && widget.clinicName!.trim().isNotEmpty) {
+      return widget.clinicName!.trim();
+    }
+    final clinics = ref.read(clinicListProvider).valueOrNull;
+    if (clinics != null) {
+      final clinic = clinics.where((c) => c.id == widget.clinicId).firstOrNull;
+      if (clinic != null) return clinic.name;
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
+    final clinicName = _resolveClinicName();
+    final isStandardClinic = DentalCatalog.isStandardDepartment(clinicName);
+    final isOther = !isStandardClinic || _selectedProcedure == DentalCatalog.otherOption;
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    final title = _titleController.text.trim();
+    final title = isOther ? _titleController.text.trim() : _selectedProcedure;
     final targetCount = int.parse(_quotaController.text.trim());
 
     // Generate collision-free UUID v4 for the new requirement record.
@@ -152,7 +183,9 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final clinicDisplayName = widget.clinicName ?? 'Clinic';
+    final resolvedClinicName = _resolveClinicName();
+    final clinicDisplayName = resolvedClinicName ?? widget.clinicName ?? 'Clinic';
+    final isStandardClinic = DentalCatalog.isStandardDepartment(resolvedClinicName);
 
     return Container(
       decoration: const BoxDecoration(
@@ -216,24 +249,76 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
               ),
               const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
 
-              // 3. Requirement Title Field
-              DenteraTextField(
-                controller: _titleController,
-                label: 'Requirement Title',
-                hintText: 'e.g., Complete Denture or Class II Amalgam',
-                prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
-                textCapitalization: TextCapitalization.sentences,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a requirement title';
-                  }
-                  if (value.trim().length < 3) {
-                    return 'Title must be at least 3 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // 3. Procedure / Requirement Selection
+              if (isStandardClinic) ...[
+                // Predefined procedure dropdown with "Other..." option
+                DenteraDropdown<String>(
+                  label: 'Procedure / Requirement',
+                  value: _selectedProcedure,
+                  prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
+                  items: DentalCatalog.getProcedureOptionsForDepartment(resolvedClinicName!)
+                      .map(
+                        (proc) => DropdownMenuItem<String>(
+                          value: proc,
+                          child: Text(proc),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedProcedure = val;
+                        if (val != DentalCatalog.otherOption) {
+                          _titleController.text = val;
+                        } else {
+                          _titleController.clear();
+                        }
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Custom Procedure Title (revealed when "Other..." is selected)
+                if (_selectedProcedure == DentalCatalog.otherOption) ...[
+                  DenteraTextField(
+                    controller: _titleController,
+                    label: 'Custom Procedure Title',
+                    hintText: 'e.g., Custom Implant Guide',
+                    prefixIcon: const Icon(Icons.edit_outlined, size: 20),
+                    textCapitalization: TextCapitalization.sentences,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a requirement title';
+                      }
+                      if (value.trim().length < 3) {
+                        return 'Title must be at least 3 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ] else ...[
+                // Free-text input for clinics created under "Other..."
+                DenteraTextField(
+                  controller: _titleController,
+                  label: 'Requirement Title',
+                  hintText: 'e.g., Complete Denture or Class II Amalgam',
+                  prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a requirement title';
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Title must be at least 3 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // 4. Target Quota Count Field
               DenteraTextField(
