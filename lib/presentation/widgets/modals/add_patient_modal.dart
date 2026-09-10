@@ -76,16 +76,18 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
 
   String _selectedGender = 'Male';
   String _selectedClinic = 'Prosthodontics';
+  String? _selectedClinicId;
+  String? _selectedRequirementId;
   bool _showOptionalDetails = false;
 
   static const List<String> _genders = <String>['Male', 'Female'];
-  static const List<String> _clinics = <String>[
-    'Prosthodontics',
-    'Operative',
-    'Endodontics',
-    'Oral Surgery',
-    'Periodontics',
-    'Pediatric Dentistry',
+  static const List<Clinic> _fallbackClinics = <Clinic>[
+    Clinic(id: 'clinic-prosth', name: 'Prosthodontics', academicYear: '5th Year', colorHex: '#003E6F'),
+    Clinic(id: 'clinic-operative', name: 'Operative', academicYear: '5th Year', colorHex: '#006A64'),
+    Clinic(id: 'clinic-endo', name: 'Endodontics', academicYear: '5th Year', colorHex: '#2E3F50'),
+    Clinic(id: 'clinic-surgery', name: 'Oral Surgery', academicYear: '5th Year', colorHex: '#8C1D18'),
+    Clinic(id: 'clinic-perio', name: 'Periodontics', academicYear: '5th Year', colorHex: '#526070'),
+    Clinic(id: 'clinic-pediatric', name: 'Pediatric Dentistry', academicYear: '5th Year', colorHex: '#6750A4'),
   ];
 
   @override
@@ -179,23 +181,32 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
       // 1. Insert the parent Patient record first.
       await ref.read(patientRepositoryProvider).addPatient(newPatient);
 
-      // 2. Resolve the clinic ID and matching requirement ID for the initial case.
+      // 2. Resolve the clinic ID and matching requirement ID dynamically from SQLite.
       final clinicRepo = ref.read(clinicRepositoryProvider);
       final allClinics = await clinicRepo.getAllClinics();
-      final clinic = allClinics.where(
+      final List<Clinic> clinicsList = allClinics.isNotEmpty ? allClinics : _fallbackClinics;
+
+      final clinic = clinicsList.firstWhere(
         (c) =>
+            (_selectedClinicId != null && c.id == _selectedClinicId) ||
             c.name.toLowerCase() == _selectedClinic.toLowerCase() ||
             c.name.toLowerCase().contains(_selectedClinic.toLowerCase()) ||
             _selectedClinic.toLowerCase().contains(c.name.toLowerCase()),
-      ).firstOrNull;
+        orElse: () => clinicsList.first,
+      );
 
-      final clinicId = clinic?.id ?? _getClinicId(_selectedClinic);
+      final clinicId = clinic.id;
 
       final reqRepo = ref.read(requirementRepositoryProvider);
       final clinicReqs = await reqRepo.getRequirementsByClinicId(clinicId);
-      final requirementId = clinicReqs.isNotEmpty
-          ? clinicReqs.first.id
-          : _getDefaultRequirementId(clinicId);
+
+      // Prioritize user-selected requirement, then first requirement from SQLite, then schema fallback
+      final requirementId = (_selectedRequirementId != null &&
+              clinicReqs.any((r) => r.id == _selectedRequirementId))
+          ? _selectedRequirementId!
+          : (clinicReqs.isNotEmpty
+              ? clinicReqs.first.id
+              : _getDefaultRequirementId(clinicId));
 
       // 3. Insert the child CaseRecord referencing the new patient's ID.
       // Generate collision-free UUID v4 for the initial case record.
@@ -221,6 +232,9 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
       ref.invalidate(patientListProvider);
       ref.invalidate(allCasesProvider);
       ref.invalidate(casesByPatientProvider(newPatient.id));
+      ref.invalidate(requirementsByClinicProvider);
+      ref.invalidate(allRequirementsProvider);
+      ref.invalidate(globalQuotaSummaryProvider);
     } catch (e, stack) {
       if (mounted) {
         DenteraSnackBar.showError(
@@ -241,10 +255,27 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final clinicsAsync = ref.watch(clinicListProvider);
-    final availableClinics = clinicsAsync.valueOrNull != null && clinicsAsync.value!.isNotEmpty
-        ? clinicsAsync.value!.map((c) => c.name).toList()
-        : _clinics;
+    final clinicsAsync = ref.watch(allClinicsProvider);
+    final List<Clinic> availableClinics =
+        clinicsAsync.valueOrNull != null && clinicsAsync.value!.isNotEmpty
+            ? clinicsAsync.value!
+            : _fallbackClinics;
+
+    final Clinic activeClinic = availableClinics.firstWhere(
+      (c) =>
+          (_selectedClinicId != null && c.id == _selectedClinicId) ||
+          c.name.toLowerCase() == _selectedClinic.toLowerCase(),
+      orElse: () => availableClinics.first,
+    );
+    final activeClinicId = activeClinic.id;
+
+    // Dynamically watch requirements for the selected clinic
+    final reqsAsync = ref.watch(requirementsByClinicProvider(activeClinicId));
+    final List<Requirement> availableReqs = reqsAsync.valueOrNull ?? const <Requirement>[];
+    final String? activeRequirementId = (_selectedRequirementId != null &&
+            availableReqs.any((r) => r.id == _selectedRequirementId))
+        ? _selectedRequirementId
+        : (availableReqs.isNotEmpty ? availableReqs.first.id : null);
 
     return Container(
       constraints: BoxConstraints(
@@ -384,13 +415,14 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: availableClinics.map((clinic) {
-                          final isSelected = clinic == _selectedClinic ||
-                              clinic.toLowerCase() == _selectedClinic.toLowerCase();
+                        children: availableClinics.map((clinicItem) {
+                          final isSelected = clinicItem.id == activeClinicId;
                           return InkWell(
                             onTap: () {
                               setState(() {
-                                _selectedClinic = clinic;
+                                _selectedClinicId = clinicItem.id;
+                                _selectedClinic = clinicItem.name;
+                                _selectedRequirementId = null;
                               });
                             },
                             borderRadius: BorderRadius.circular(12),
@@ -408,7 +440,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                                 ),
                               ),
                               child: Text(
-                                clinic,
+                                clinicItem.name,
                                 style: AppTextStyles.labelCaps.copyWith(
                                   color: isSelected ? AppColors.secondary : AppColors.onSurface,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -418,6 +450,28 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                           );
                         }).toList(),
                       ),
+                      if (availableReqs.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 14),
+                        DenteraDropdown<String>(
+                          label: 'Initial Procedural Requirement',
+                          value: activeRequirementId,
+                          prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
+                          items: availableReqs.map((req) {
+                            return DropdownMenuItem<String>(
+                              value: req.id,
+                              child: Text(
+                                '${req.title} (${req.completedCount}/${req.targetCount})',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedRequirementId = val);
+                            }
+                          },
+                        ),
+                      ],
                       const SizedBox(height: 16),
 
                       // Optional Contact & Medical History Accordion

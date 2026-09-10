@@ -15,5 +15,9 @@ final clinicListProvider = FutureProvider<List<Clinic>>((ref) async {
   return await repository.getAllClinics();
 });
 
+/// Direct alias for [clinicListProvider] to provide consistent naming across clinical modals.
+final allClinicsProvider = clinicListProvider;
+
 /// Tracks the active clinic category filter on the Clinics screen.
 final selectedClinicCategoryProvider = StateProvider<String>((ref) => 'All');
+
