@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/logging/app_provider_observer.dart';
 import 'core/theme/theme.dart';
 import 'data/repositories/preferences_repository.dart';
+import 'l10n/app_localizations.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 import 'presentation/screens/root_navigation_screen.dart';
 
@@ -25,6 +26,7 @@ class DenteraApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final currentLocale = ref.watch(localeProvider);
 
     return MaterialApp(
       title: 'Dentera',
@@ -32,6 +34,9 @@ class DenteraApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      locale: Locale(currentLocale),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: const InitializationScreen(),
     );
   }
