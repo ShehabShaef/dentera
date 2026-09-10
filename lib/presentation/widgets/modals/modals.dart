@@ -7,5 +7,6 @@ export 'evaluate_case_modal.dart';
 export 'log_case_record_modal.dart';
 export 'requirement_cases_bottom_sheet.dart';
 export 'schedule_appointment_modal.dart';
+export 'sort_clinics_modal.dart';
 export 'sort_patients_modal.dart';
 

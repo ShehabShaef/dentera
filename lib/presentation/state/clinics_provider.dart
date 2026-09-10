@@ -21,3 +21,20 @@ final allClinicsProvider = clinicListProvider;
 /// Tracks the active clinic category filter on the Clinics screen.
 final selectedClinicCategoryProvider = StateProvider<String>((ref) => 'All');
 
+/// Sorting criteria for clinical departments.
+enum ClinicSortOption {
+  name,
+  academicYear,
+  quotaProgress,
+}
+
+/// Tracks the active sorting preference for clinics.
+final clinicSortOptionProvider =
+    StateProvider<ClinicSortOption>((ref) => ClinicSortOption.name);
+
+/// Tracks selection mode on Clinics screen for batch deletion.
+final clinicSelectionModeProvider = StateProvider<bool>((ref) => false);
+
+/// Tracks selected clinic IDs for batch deletion.
+final selectedClinicIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+

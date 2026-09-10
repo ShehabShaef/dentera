@@ -25,6 +25,9 @@ class _LockedPatientRepo implements PatientRepository {
   Future<void> deletePatient(String id) async {}
 
   @override
+  Future<void> deletePatients(List<String> ids) async {}
+
+  @override
   Future<List<Patient>> getAllPatients() async => [];
 
   @override
@@ -52,6 +55,10 @@ class _StubCaseRecordRepo implements CaseRecordRepository {
 class _StubClinicRepo implements ClinicRepository {
   @override
   Future<void> addClinic(Clinic clinic) async {}
+  @override
+  Future<void> deleteClinic(String id) async {}
+  @override
+  Future<void> deleteClinics(List<String> ids) async {}
   @override
   Future<List<Clinic>> getAllClinics() async => [];
   @override

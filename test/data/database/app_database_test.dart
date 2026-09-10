@@ -5,6 +5,9 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import 'package:dentera/data/database/app_database.dart';
+import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
+import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
+import 'package:dentera/domain/entities/entities.dart';
 
 import '../../setup/test_setup.dart';
 
@@ -247,6 +250,124 @@ void main() {
           await file.delete();
         }
       }
+    });
+
+    test('SqliteClinicRepository batch deletes clinics and cascades deletion to child requirements and appointments', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final clinicRepo = SqliteClinicRepository(appDb);
+
+      const c1Id = 'batch-clinic-1';
+      const c2Id = 'batch-clinic-2';
+      const testPatientId = 'patient-for-batch-clinic-test';
+
+      await db.insert('patients', {
+        'id': testPatientId,
+        'name': 'Patient For Clinic Batch Test',
+        'age': 22,
+        'gender': 'Female',
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
+      await clinicRepo.addClinic(const Clinic(id: c1Id, name: 'Batch Clinic 1', academicYear: '5th Year', colorHex: '#003E6F'));
+      await clinicRepo.addClinic(const Clinic(id: c2Id, name: 'Batch Clinic 2', academicYear: '5th Year', colorHex: '#006A64'));
+
+      // Insert requirement referencing c1Id
+      await db.insert('requirements', {
+        'id': 'batch-req-1',
+        'clinicId': c1Id,
+        'title': 'Batch Req 1',
+        'targetCount': 5,
+        'completedCount': 0,
+      });
+
+      // Insert appointment referencing c2Id and testPatientId
+      await db.insert('appointments', {
+        'id': 'batch-appt-1',
+        'patientId': testPatientId,
+        'clinicId': c2Id,
+        'scheduledDate': DateTime.now().toIso8601String(),
+        'status': 'Scheduled',
+        'procedureDescription': 'Consultation',
+      });
+
+      // Batch delete both clinics
+      await clinicRepo.deleteClinics([c1Id, c2Id]);
+
+      // Verify clinics are removed
+      final remainingClinics = await db.query('clinics', where: 'id IN (?, ?)', whereArgs: [c1Id, c2Id]);
+      expect(remainingClinics, isEmpty);
+
+      // Verify child requirement was cascade deleted
+      final remainingReqs = await db.query('requirements', where: 'id = ?', whereArgs: ['batch-req-1']);
+      expect(remainingReqs, isEmpty);
+
+      // Verify child appointment was cascade deleted
+      final remainingAppts = await db.query('appointments', where: 'id = ?', whereArgs: ['batch-appt-1']);
+      expect(remainingAppts, isEmpty);
+
+      // Clean up test patient
+      await db.delete('patients', where: 'id = ?', whereArgs: [testPatientId]);
+    });
+
+    test('SqlitePatientRepository batch deletes patients and cascades deletion to child cases and appointments', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const p1Id = 'batch-patient-1';
+      const p2Id = 'batch-patient-2';
+
+      await patientRepo.addPatient(Patient(
+        id: p1Id,
+        name: 'Batch Patient 1',
+        age: 28,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+      await patientRepo.addPatient(Patient(
+        id: p2Id,
+        name: 'Batch Patient 2',
+        age: 34,
+        gender: 'Female',
+        createdAt: DateTime.now(),
+      ));
+
+      // Insert child case record referencing p1Id and seeded requirement
+      await db.insert('case_records', {
+        'id': 'batch-case-1',
+        'patientId': p1Id,
+        'requirementId': 'req-prosth-cd',
+        'status': 'In Progress',
+        'notes': 'Test notes',
+        'dateStarted': DateTime.now().toIso8601String(),
+        'dateCompleted': null,
+      });
+
+      // Insert child appointment referencing p2Id and seeded clinic
+      await db.insert('appointments', {
+        'id': 'batch-appt-p2',
+        'patientId': p2Id,
+        'clinicId': 'clinic-prosth',
+        'scheduledDate': DateTime.now().toIso8601String(),
+        'status': 'Scheduled',
+        'procedureDescription': 'Checkup',
+      });
+
+      // Batch delete both patients
+      await patientRepo.deletePatients([p1Id, p2Id]);
+
+      // Verify patients are removed
+      final remainingPatients = await db.query('patients', where: 'id IN (?, ?)', whereArgs: [p1Id, p2Id]);
+      expect(remainingPatients, isEmpty);
+
+      // Verify child case record cascade deleted
+      final remainingCases = await db.query('case_records', where: 'id = ?', whereArgs: ['batch-case-1']);
+      expect(remainingCases, isEmpty);
+
+      // Verify child appointment cascade deleted
+      final remainingAppts = await db.query('appointments', where: 'id = ?', whereArgs: ['batch-appt-p2']);
+      expect(remainingAppts, isEmpty);
     });
   });
 }

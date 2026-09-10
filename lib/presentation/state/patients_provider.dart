@@ -42,6 +42,12 @@ enum PatientSortOption {
 final patientSortOptionProvider =
     StateProvider<PatientSortOption>((ref) => PatientSortOption.dateAdded);
 
+/// Tracks selection mode on Patients screen for batch deletion.
+final patientSelectionModeProvider = StateProvider<bool>((ref) => false);
+
+/// Tracks selected patient IDs for batch deletion.
+final selectedPatientIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+
 /// Provides the filtered list of patients based on search query, category, relational clinic cases, and sorting order.
 ///
 /// Filters the master patient roster across multiple clinical criteria:

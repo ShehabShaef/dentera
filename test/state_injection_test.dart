@@ -36,6 +36,11 @@ class MockPatientRepo implements PatientRepository {
   Future<void> deletePatient(String id) async {
     _patients.removeWhere((p) => p.id == id);
   }
+
+  @override
+  Future<void> deletePatients(List<String> ids) async {
+    _patients.removeWhere((p) => ids.contains(p.id));
+  }
 }
 
 class MockClinicRepo implements ClinicRepository {
@@ -57,6 +62,16 @@ class MockClinicRepo implements ClinicRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<void> deleteClinic(String id) async {
+    _clinics.removeWhere((c) => c.id == id);
+  }
+
+  @override
+  Future<void> deleteClinics(List<String> ids) async {
+    _clinics.removeWhere((c) => ids.contains(c.id));
   }
 }
 

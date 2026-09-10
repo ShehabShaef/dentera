@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -39,30 +40,199 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     super.dispose();
   }
 
+  void _togglePatientSelection(String id) {
+    final current = ref.read(selectedPatientIdsProvider);
+    if (current.contains(id)) {
+      ref.read(selectedPatientIdsProvider.notifier).state = current.difference({id});
+    } else {
+      ref.read(selectedPatientIdsProvider.notifier).state = {...current, id};
+    }
+  }
+
+  Future<void> _confirmBatchDeletePatients(Set<String> selectedIds) async {
+    if (selectedIds.isEmpty) return;
+
+    final count = selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Selected Patients?'),
+        content: Text(
+          'Deleting $count patient${count > 1 ? 's' : ''} will permanently remove all associated clinical case records and scheduled appointments due to cascade deletion.\n\nThis action cannot be undone. Are you sure you want to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final repository = ref.read(patientRepositoryProvider);
+      await repository.deletePatients(selectedIds.toList());
+
+      ref.read(patientSelectionModeProvider.notifier).state = false;
+      ref.read(selectedPatientIdsProvider.notifier).state = <String>{};
+
+      ref.invalidate(patientListProvider);
+      ref.invalidate(allCasesProvider);
+      ref.invalidate(upcomingAppointmentsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully deleted $count patient${count > 1 ? 's' : ''}.',
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      AppLogger.error('Failed to delete patients in batch', e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete patients: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredPatientsAsync = ref.watch(filteredPatientListProvider);
     final searchQuery = ref.watch(patientSearchQueryProvider);
     final selectedFilter = ref.watch(patientFilterCategoryProvider);
+    final isSelectionMode = ref.watch(patientSelectionModeProvider);
+    final selectedIds = ref.watch(selectedPatientIdsProvider);
+
+    final visiblePatients = filteredPatientsAsync.valueOrNull ?? <Patient>[];
+    final visiblePatientIds = visiblePatients.map((p) => p.id).toSet();
+    final isAllSelected = visiblePatientIds.isNotEmpty && selectedIds.containsAll(visiblePatientIds);
+
+    final PreferredSizeWidget appBar = isSelectionMode
+        ? AppBar(
+            leadingWidth: 80,
+            leading: TextButton(
+              onPressed: () {
+                ref.read(patientSelectionModeProvider.notifier).state = false;
+                ref.read(selectedPatientIdsProvider.notifier).state = <String>{};
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            title: Text(
+              '${selectedIds.length} Selected',
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (isAllSelected) {
+                    ref.read(selectedPatientIdsProvider.notifier).state = <String>{};
+                  } else {
+                    ref.read(selectedPatientIdsProvider.notifier).state = {
+                      ...selectedIds,
+                      ...visiblePatientIds,
+                    };
+                  }
+                },
+                child: Text(
+                  isAllSelected ? 'Deselect All' : 'Select All',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0, left: 4.0),
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: AppColors.onError,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: selectedIds.isEmpty
+                      ? null
+                      : () => _confirmBatchDeletePatients(selectedIds),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                  label: Text('Delete (${selectedIds.length})'),
+                ),
+              ),
+            ],
+          )
+        : AppBar(
+            title: Text(
+              'Patients',
+              style: AppTextStyles.h1Mobile.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            actions: <Widget>[
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded),
+                tooltip: 'More options',
+                onSelected: (value) {
+                  if (value == 'sort') {
+                    SortPatientsModal.show(context);
+                  } else if (value == 'delete') {
+                    ref.read(patientSelectionModeProvider.notifier).state = true;
+                    ref.read(selectedPatientIdsProvider.notifier).state = <String>{};
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'sort',
+                    child: Row(
+                      children: [
+                        Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        SizedBox(width: 12),
+                        Text('Sort Patients'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        SizedBox(width: 12),
+                        Text('Delete Patients'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Patients',
-          style: AppTextStyles.h1Mobile.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.sort_rounded),
-            tooltip: 'Sort Patients',
-            onPressed: () => SortPatientsModal.show(context),
-          ),
-        ],
-      ),
+      appBar: appBar,
       body: SafeArea(
         child: Column(
           children: <Widget>[
@@ -147,7 +317,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               child: filteredPatientsAsync.when(
                 data: (patients) {
                   if (patients.isNotEmpty) {
-                    return _buildRosterList(patients);
+                    return _buildRosterList(patients, isSelectionMode, selectedIds);
                   }
                   if (searchQuery.isNotEmpty) {
                     AppLogger.debug(
@@ -185,32 +355,38 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_patients',
-        onPressed: () {
-          AddPatientModal.show(
-            context,
-            onPatientAdded: (_) {
-              ref.invalidate(patientListProvider);
-              ref.invalidate(allCasesProvider);
-            },
-          );
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Icon(
-          Icons.person_add_rounded,
-          size: 26,
-        ),
-      ),
+      floatingActionButton: isSelectionMode
+          ? null
+          : FloatingActionButton(
+              heroTag: 'fab_patients',
+              onPressed: () {
+                AddPatientModal.show(
+                  context,
+                  onPatientAdded: (_) {
+                    ref.invalidate(patientListProvider);
+                    ref.invalidate(allCasesProvider);
+                  },
+                );
+              },
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.person_add_rounded,
+                size: 26,
+              ),
+            ),
     );
   }
 
-  Widget _buildRosterList(List<Patient> patients) {
+  Widget _buildRosterList(
+    List<Patient> patients,
+    bool isSelectionMode,
+    Set<String> selectedIds,
+  ) {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 960),
@@ -221,20 +397,41 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final patient = patients[index];
-            return PatientListCard(
-              patient: patient,
-              subtitle: patient.phoneNumber ?? 'No Phone',
-              tags: <String>[
-                if (patient.medicalHistory != null) 'Medical Alert',
-                'Active',
-              ],
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) => PatientCaseSheetScreen(patient: patient),
+            final isSelected = selectedIds.contains(patient.id);
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: CircularCheckbox(
+                      isSelected: isSelected,
+                      onChanged: (_) => _togglePatientSelection(patient.id),
+                    ),
                   ),
-                );
-              },
+                Expanded(
+                  child: PatientListCard(
+                    patient: patient,
+                    subtitle: patient.phoneNumber ?? 'No Phone',
+                    tags: <String>[
+                      if (patient.medicalHistory != null) 'Medical Alert',
+                      'Active',
+                    ],
+                    onTap: () {
+                      if (isSelectionMode) {
+                        _togglePatientSelection(patient.id);
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => PatientCaseSheetScreen(patient: patient),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             );
           },
         ),
