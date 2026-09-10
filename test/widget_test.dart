@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/theme/theme.dart';
+import 'package:dentera/data/repositories/preferences_repository.dart';
 import 'package:dentera/main.dart';
+import 'package:dentera/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:dentera/presentation/widgets/widgets.dart';
 
 void main() {
@@ -22,6 +26,29 @@ void main() {
 
     expect(find.text('DENTERA'), findsOneWidget);
     expect(find.text('Welcome, Doctor.'), findsOneWidget);
+  });
+
+  testWidgets('InitializationScreen renders Dentera logo and loading indicator during initialization', (WidgetTester tester) async {
+    final completer = Completer<bool>();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          onboardingStatusProvider.overrideWith((ref) => completer.future),
+        ],
+        child: const MaterialApp(
+          home: InitializationScreen(),
+        ),
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    final imageWidget = tester.widget<Image>(find.byType(Image));
+    expect((imageWidget.image as AssetImage).assetName, 'assets/images/dentera_logo.png');
+
+    completer.complete(false);
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingScreen), findsOneWidget);
   });
 
   testWidgets('PrimaryButton renders and triggers onPressed', (WidgetTester tester) async {
