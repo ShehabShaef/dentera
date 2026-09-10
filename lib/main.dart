@@ -51,11 +51,27 @@ class InitializationScreen extends ConsumerWidget {
         }
         return const OnboardingScreen();
       },
-      loading: () => const Scaffold(
+      loading: () => Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Image.asset(
+                'assets/images/dentera_logo.png',
+                width: 72,
+                height: 72,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.medical_services_outlined,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ],
           ),
         ),
       ),

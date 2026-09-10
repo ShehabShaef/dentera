@@ -1,0 +1,11 @@
+flutter_native_splash:
+  color: "#0F141C"
+  image: "assets/images/dentera_logo.png"
+  color_dark: "#0F141C"
+  image_dark: "assets/images/dentera_logo.png"
+  android_12:
+    color: "#0F141C"
+    image: "assets/images/dentera_logo.png"
+    icon_background_color: "#0F141C"
+  android: true
+  ios: true
