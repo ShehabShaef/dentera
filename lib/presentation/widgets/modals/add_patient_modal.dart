@@ -77,7 +77,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
   String _selectedGender = 'Male';
   String _selectedClinic = 'Prosthodontics';
   String? _selectedClinicId;
-  String? _selectedRequirementId;
+  Requirement? _selectedMainRequirement;
   bool _showOptionalDetails = false;
 
   static const List<String> _genders = <String>['Male', 'Female'];
@@ -99,40 +99,21 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     super.dispose();
   }
 
-
-  String _getDefaultRequirementId(String clinicId) {
-    switch (clinicId) {
-      case 'clinic-prosth':
-        return 'req-prosth-cd';
-      case 'clinic-operative':
-        return 'req-op-class1';
-      case 'clinic-endo':
-        return 'req-endo-anterior';
-      case 'clinic-surgery':
-        return 'req-surg-simple';
-      case 'clinic-perio':
-        return 'req-perio-srp';
-      case 'clinic-pediatric':
-        return 'req-peds-pulpotomy';
-      default:
-        return 'req-prosth-cd';
-    }
-  }
-
-  /// Persists a new patient and automatically creates an initial clinical [CaseRecord].
+  /// Persists a new patient and automatically creates an initial clinical [CaseRecord]
+  /// linked to the explicitly designated main case / procedure.
   ///
   /// **Why Sequential Insertion is Required:**
   /// Under SQLite foreign key constraints (`PRAGMA foreign_keys = ON;`), a child
   /// [CaseRecord] cannot reference a [patientId] that does not yet exist in the
   /// `patients` table. We first insert the [Patient] entity. Once successfully written,
   /// we extract the patient's generated UUID and insert the initial [CaseRecord]
-  /// linked to the user's selected clinic.
+  /// linked to the user's selected clinic and procedure requirement.
   ///
-  /// **Preventing Orphaned Records:**
-  /// By creating the initial [CaseRecord] at patient registration time, the patient
-  /// is immediately associated with the clinical department chosen by the student.
-  /// This ensures the patient appears in clinic-specific roster filters and prevents
-  /// unassigned, orphaned patient records in the offline clinical database.
+  /// **Preventing Orphaned Records & Auto-Case Binding Decoupling:**
+  /// Rather than defaulting to a hardcoded or arbitrary first requirement, the initial
+  /// [CaseRecord] is bound directly to the clinician's chosen [_selectedMainRequirement].
+  /// This ensures the patient appears in clinic-specific roster filters while accurately
+  /// reflecting their primary clinical indication.
   Future<void> _savePatient() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -161,54 +142,32 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
       // 1. Insert the parent Patient record first.
       await ref.read(patientRepositoryProvider).addPatient(newPatient);
 
-      // 2. Resolve the clinic ID and matching requirement ID dynamically from SQLite.
-      final clinicRepo = ref.read(clinicRepositoryProvider);
-      final allClinics = await clinicRepo.getAllClinics();
-      final List<Clinic> clinicsList = allClinics.isNotEmpty ? allClinics : _fallbackClinics;
+      // 2. Insert initial CaseRecord linked to the explicitly selected procedure requirement.
+      if (_selectedMainRequirement != null) {
+        final initialCaseId = const Uuid().v4();
+        AppLogger.debug('Generated collision-free UUID [$initialCaseId] for initial case record.');
 
-      final clinic = clinicsList.firstWhere(
-        (c) =>
-            (_selectedClinicId != null && c.id == _selectedClinicId) ||
-            c.name.toLowerCase() == _selectedClinic.toLowerCase() ||
-            c.name.toLowerCase().contains(_selectedClinic.toLowerCase()) ||
-            _selectedClinic.toLowerCase().contains(c.name.toLowerCase()),
-        orElse: () => clinicsList.first,
-      );
+        final initialCase = CaseRecord(
+          id: initialCaseId,
+          patientId: newPatient.id,
+          requirementId: _selectedMainRequirement!.id,
+          status: 'In Progress',
+          notes: 'Initial registration case for $_selectedClinic clinic.',
+          dateStarted: DateTime.now(),
+        );
 
-      final clinicId = clinic.id;
+        await ref.read(caseRecordRepositoryProvider).addCaseRecord(initialCase);
 
-      final reqRepo = ref.read(requirementRepositoryProvider);
-      final clinicReqs = await reqRepo.getRequirementsByClinicId(clinicId);
+        AppLogger.info(
+          '[AddPatientModal] Relational SQLite insert: created Patient (${newPatient.id}: "${newPatient.name}") and initial CaseRecord (${initialCase.id}) linked to clinic "$_selectedClinic" (requirement: ${_selectedMainRequirement!.id}).',
+        );
+      } else {
+        AppLogger.info(
+          '[AddPatientModal] Created Patient (${newPatient.id}: "${newPatient.name}") without initial CaseRecord (no requirement selected or available).',
+        );
+      }
 
-      // Prioritize user-selected requirement, then first requirement from SQLite, then schema fallback
-      final requirementId = (_selectedRequirementId != null &&
-              clinicReqs.any((r) => r.id == _selectedRequirementId))
-          ? _selectedRequirementId!
-          : (clinicReqs.isNotEmpty
-              ? clinicReqs.first.id
-              : _getDefaultRequirementId(clinicId));
-
-      // 3. Insert the child CaseRecord referencing the new patient's ID.
-      // Generate collision-free UUID v4 for the initial case record.
-      final initialCaseId = const Uuid().v4();
-      AppLogger.debug('Generated collision-free UUID [$initialCaseId] for initial case record.');
-
-      final initialCase = CaseRecord(
-        id: initialCaseId,
-        patientId: newPatient.id,
-        requirementId: requirementId,
-        status: 'In Progress',
-        notes: 'Initial registration case for $_selectedClinic clinic.',
-        dateStarted: DateTime.now(),
-      );
-
-      await ref.read(caseRecordRepositoryProvider).addCaseRecord(initialCase);
-
-      AppLogger.info(
-        '[AddPatientModal] Relational SQLite insert: created Patient (${newPatient.id}: "${newPatient.name}") and initial CaseRecord (${initialCase.id}) linked to clinic "$_selectedClinic" (requirement: $requirementId).',
-      );
-
-      // 4. Invalidate affected providers to update state across the app.
+      // 3. Invalidate affected providers to update state across the app.
       ref.invalidate(patientListProvider);
       ref.invalidate(allCasesProvider);
       ref.invalidate(casesByPatientProvider(newPatient.id));
@@ -252,10 +211,12 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     // Dynamically watch requirements for the selected clinic
     final reqsAsync = ref.watch(requirementsByClinicProvider(activeClinicId));
     final List<Requirement> availableReqs = reqsAsync.valueOrNull ?? const <Requirement>[];
-    final String? activeRequirementId = (_selectedRequirementId != null &&
-            availableReqs.any((r) => r.id == _selectedRequirementId))
-        ? _selectedRequirementId
-        : (availableReqs.isNotEmpty ? availableReqs.first.id : null);
+
+    // Ensure selected requirement belongs to the active clinic
+    final Requirement? activeSelectedReq = (_selectedMainRequirement != null &&
+            availableReqs.any((r) => r.id == _selectedMainRequirement!.id))
+        ? _selectedMainRequirement
+        : null;
 
     return Container(
       constraints: BoxConstraints(
@@ -402,7 +363,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                               setState(() {
                                 _selectedClinicId = clinicItem.id;
                                 _selectedClinic = clinicItem.name;
-                                _selectedRequirementId = null;
+                                _selectedMainRequirement = null;
                               });
                             },
                             borderRadius: BorderRadius.circular(12),
@@ -433,8 +394,10 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                       if (availableReqs.isNotEmpty) ...<Widget>[
                         const SizedBox(height: 14),
                         DenteraDropdown<String>(
-                          label: 'Initial Procedural Requirement',
-                          value: activeRequirementId,
+                          key: ValueKey('${activeClinicId}_${activeSelectedReq?.id}'),
+                          label: 'Main Case / Procedure',
+                          hintText: 'Select main case / procedure',
+                          value: activeSelectedReq?.id,
                           prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
                           items: availableReqs.map((req) {
                             return DropdownMenuItem<String>(
@@ -445,10 +408,18 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                               ),
                             );
                           }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _selectedRequirementId = val);
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return 'Please select a main case / procedure';
                             }
+                            return null;
+                          },
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedMainRequirement = val != null
+                                  ? availableReqs.firstWhere((r) => r.id == val)
+                                  : null;
+                            });
                           },
                         ),
                       ],

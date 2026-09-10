@@ -189,6 +189,51 @@ void main() {
       expect(find.textContaining('c-01'), findsNothing);
       expect(find.textContaining('r-01'), findsNothing);
     });
+
+    testWidgets('PatientCaseSheetScreen renders patient main clinic as primary clinical tag', (WidgetTester tester) async {
+      final endoCase = CaseRecord(
+        id: 'c-endo-01',
+        patientId: 'p-01',
+        requirementId: 'r-endo-01',
+        status: 'In Progress',
+        notes: 'Initial registration case',
+        dateStarted: DateTime(2026, 8, 1),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            casesByPatientProvider(patient.id).overrideWith((ref) async => [endoCase]),
+            allRequirementsProvider.overrideWith((ref) async => [
+              const Requirement(
+                id: 'r-endo-01',
+                clinicId: 'clinic-endo',
+                title: 'Anterior RCT',
+                targetCount: 3,
+              ),
+            ]),
+            clinicListProvider.overrideWith((ref) async => [
+              const Clinic(
+                id: 'clinic-endo',
+                name: 'Endodontics',
+                academicYear: '5th Year',
+                colorHex: '#2E3F50',
+              ),
+            ]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: PatientCaseSheetScreen(patient: patient),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert that Endodontics is dynamically rendered as clinical badge in header
+      expect(find.text('Endodontics'), findsWidgets);
+      // Hardcoded 'Prosthodontics' should no longer be present
+      expect(find.text('Prosthodontics'), findsNothing);
+    });
   });
 }
 
