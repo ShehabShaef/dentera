@@ -19,7 +19,8 @@ final selectedScheduleDateProvider = StateProvider<DateTime>((ref) => DateTime.n
 final dailyAppointmentsProvider =
     FutureProvider.family<List<Appointment>, DateTime>((ref, date) async {
   final repository = ref.watch(appointmentRepositoryProvider);
-  return await repository.getAppointmentsByDate(date);
+  final normalizedDate = DateTime(date.year, date.month, date.day);
+  return await repository.getAppointmentsByDate(normalizedDate);
 });
 
 /// Provides all appointments recorded in the local database.
@@ -192,6 +193,8 @@ class AppointmentsNotifier extends StateNotifier<AsyncValue<void>> {
   void _invalidateProviders(DateTime? scheduledDate) {
     if (ref == null) return;
     if (scheduledDate != null) {
+      final normalizedDate = DateTime(scheduledDate.year, scheduledDate.month, scheduledDate.day);
+      ref!.invalidate(dailyAppointmentsProvider(normalizedDate));
       ref!.invalidate(dailyAppointmentsProvider(scheduledDate));
     }
     ref!.invalidate(allAppointmentsProvider);

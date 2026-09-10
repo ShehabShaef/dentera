@@ -99,26 +99,6 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
     super.dispose();
   }
 
-  String _getClinicId(String clinicName) {
-    switch (clinicName.toLowerCase()) {
-      case 'prosthodontics':
-        return 'clinic-prosth';
-      case 'operative':
-      case 'operative dentistry':
-        return 'clinic-operative';
-      case 'endodontics':
-        return 'clinic-endo';
-      case 'oral surgery':
-        return 'clinic-surgery';
-      case 'periodontics':
-        return 'clinic-perio';
-      case 'pediatric dentistry':
-      case 'pediatric':
-        return 'clinic-pediatric';
-      default:
-        return 'clinic-prosth';
-    }
-  }
 
   String _getDefaultRequirementId(String clinicId) {
     switch (clinicId) {
