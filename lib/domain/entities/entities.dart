@@ -5,3 +5,4 @@ export '../../data/models/clinic.dart';
 export '../../data/models/patient.dart';
 export '../../data/models/requirement.dart';
 export '../../data/models/treatment_plan.dart';
+export '../../data/models/patient_radiograph.dart';

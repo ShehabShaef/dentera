@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -16,7 +18,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String dbName = 'dentera.db';
-  static const int dbVersion = 4;
+  static const int dbVersion = 5;
 
   Database? _database;
 
@@ -95,6 +97,20 @@ class AppDatabase {
           status TEXT NOT NULL DEFAULT 'Proposed',
           targetClinicId TEXT,
           notes TEXT,
+          createdAt TEXT NOT NULL,
+          FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+        );
+      ''');
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS patient_radiographs (
+          id TEXT PRIMARY KEY,
+          patientId TEXT NOT NULL,
+          filePath TEXT NOT NULL,
+          type TEXT NOT NULL,
+          notes TEXT,
+          captureDate TEXT NOT NULL,
           createdAt TEXT NOT NULL,
           FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
         );
@@ -216,6 +232,20 @@ class AppDatabase {
       );
     ''');
 
+    // 8. Patient Radiographs table
+    batch.execute('''
+      CREATE TABLE patient_radiographs (
+        id TEXT PRIMARY KEY,
+        patientId TEXT NOT NULL,
+        filePath TEXT NOT NULL,
+        type TEXT NOT NULL,
+        notes TEXT,
+        captureDate TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+      );
+    ''');
+
     await batch.commit();
 
     // Pre-populate default academic clinics and baseline requirement quotas.
@@ -264,11 +294,20 @@ class AppDatabase {
       await txn.rawDelete('DELETE FROM appointments;');
       await txn.rawDelete('DELETE FROM case_visits;');
       await txn.rawDelete('DELETE FROM treatment_plans;');
+      await txn.rawDelete('DELETE FROM patient_radiographs;');
       await txn.rawDelete('DELETE FROM case_records;');
       await txn.rawDelete('DELETE FROM requirements;');
       await txn.rawDelete('DELETE FROM clinics;');
       await txn.rawDelete('DELETE FROM patients;');
     });
+
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final radiographsDir = Directory(p.join(docDir.path, 'radiographs'));
+      if (await radiographsDir.exists()) {
+        await radiographsDir.delete(recursive: true);
+      }
+    } catch (_) {}
 
     final prefsRepo = preferencesRepository ?? PreferencesRepository();
     await prefsRepo.clearAll();

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/error/exceptions.dart';
@@ -51,6 +53,33 @@ class SqlitePatientRepository implements PatientRepository {
   Future<void> deletePatient(String id) async {
     try {
       final db = await _dbManager.database;
+
+      // Clean up physical radiograph image files from disk before cascade triggers
+      try {
+        final radiographRows = await db.query(
+          'patient_radiographs',
+          columns: <String>['filePath'],
+          where: 'patientId = ?',
+          whereArgs: <Object>[id],
+        );
+        for (final row in radiographRows) {
+          final path = row['filePath'] as String?;
+          if (path != null && path.isNotEmpty) {
+            try {
+              final file = File(path);
+              if (await file.exists()) {
+                await file.delete();
+              }
+            } catch (e) {
+              AppLogger.warning('Could not delete radiograph file on patient deletion: $path ($e)');
+            }
+          }
+        }
+      } catch (e) {
+        // Table might not exist in isolated test databases or legacy schemas
+        AppLogger.debug('Could not query patient_radiographs during patient deletion: $e');
+      }
+
       final count = await db.delete(
         _tableName,
         where: 'id = ?',
@@ -71,8 +100,35 @@ class SqlitePatientRepository implements PatientRepository {
     if (ids.isEmpty) return;
     try {
       final db = await _dbManager.database;
+
+      // Clean up physical radiograph image files for all patients being batch deleted
+      final placeholders = List.filled(ids.length, '?').join(', ');
+      try {
+        final radiographRows = await db.query(
+          'patient_radiographs',
+          columns: <String>['filePath'],
+          where: 'patientId IN ($placeholders)',
+          whereArgs: ids,
+        );
+        for (final row in radiographRows) {
+          final path = row['filePath'] as String?;
+          if (path != null && path.isNotEmpty) {
+            try {
+              final file = File(path);
+              if (await file.exists()) {
+                await file.delete();
+              }
+            } catch (e) {
+              AppLogger.warning('Could not delete radiograph file on batch patient deletion: $path ($e)');
+            }
+          }
+        }
+      } catch (e) {
+        // Table might not exist in isolated test databases or legacy schemas
+        AppLogger.debug('Could not query patient_radiographs during batch patient deletion: $e');
+      }
+
       await db.transaction((txn) async {
-        final placeholders = List.filled(ids.length, '?').join(', ');
         await txn.delete(
           _tableName,
           where: 'id IN ($placeholders)',

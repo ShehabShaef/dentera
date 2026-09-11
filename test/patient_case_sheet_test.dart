@@ -73,6 +73,7 @@ void main() {
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => <CaseRecord>[]),
             treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
+            radiographsByPatientProvider(patient.id).overrideWith((ref) async => []),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
@@ -102,6 +103,7 @@ void main() {
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
             treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
+            radiographsByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-01',
@@ -170,6 +172,7 @@ void main() {
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
             treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
+            radiographsByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-01',
@@ -219,6 +222,7 @@ void main() {
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [endoCase]),
             treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
+            radiographsByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-endo-01',

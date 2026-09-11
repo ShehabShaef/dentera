@@ -1,5 +1,6 @@
 export 'add_clinic_modal.dart';
 export 'add_patient_modal.dart';
+export 'add_radiograph_modal.dart';
 export 'add_requirement_modal.dart';
 export 'add_treatment_plan_modal.dart';
 export 'database_reset_modal.dart';

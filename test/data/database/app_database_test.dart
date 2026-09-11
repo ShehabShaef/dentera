@@ -13,6 +13,7 @@ import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
 import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
 import 'package:dentera/data/repositories/sqlite_requirement_repository.dart';
 import 'package:dentera/data/repositories/sqlite_treatment_plan_repository.dart';
+import 'package:dentera/data/repositories/sqlite_radiograph_repository.dart';
 import 'package:dentera/domain/entities/entities.dart';
 
 import '../../setup/test_setup.dart';
@@ -1062,6 +1063,216 @@ void main() {
           'status',
           'targetClinicId',
           'notes',
+          'createdAt',
+        ]));
+
+        await upgradedDb.close();
+      } finally {
+        final file = File(tempDbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+    });
+
+    test('SqliteRadiographRepository supports CRUD, ordering, and physical file deletion on disk', () async {
+      final appDb = AppDatabase.instance;
+      final radRepo = SqliteRadiographRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-rad-test';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Radiograph Test Patient',
+        age: 38,
+        gender: 'Female',
+        createdAt: DateTime.now(),
+      ));
+
+      // Create a temporary physical dummy file to verify file deletion on disk
+      final tempFile = File(p.join(Directory.systemTemp.path, 'test_xray_crud_${DateTime.now().microsecondsSinceEpoch}.jpg'));
+      await tempFile.writeAsString('mock x-ray binary data');
+      expect(await tempFile.exists(), isTrue);
+
+      final rad1 = PatientRadiograph(
+        id: 'rad-1',
+        patientId: patientId,
+        filePath: tempFile.path,
+        type: PatientRadiograph.typePeriapical,
+        notes: 'Periapical view tooth #46',
+        captureDate: DateTime(2026, 9, 10),
+        createdAt: DateTime.now(),
+      );
+
+      final rad2 = PatientRadiograph(
+        id: 'rad-2',
+        patientId: patientId,
+        filePath: '/dummy/path/opg.jpg',
+        type: PatientRadiograph.typePanoramic,
+        notes: 'Full mouth OPG',
+        captureDate: DateTime(2026, 9, 11),
+        createdAt: DateTime.now(),
+      );
+
+      // 1. Insert radiographs
+      await radRepo.addRadiograph(rad1);
+      await radRepo.addRadiograph(rad2);
+
+      // 2. Query by patient, asserting ordered by captureDate DESC
+      final patientRads = await radRepo.getRadiographsByPatient(patientId);
+      expect(patientRads, hasLength(2));
+      expect(patientRads[0].id, equals('rad-2')); // Later date first
+      expect(patientRads[1].id, equals('rad-1'));
+
+      // 3. Query single item by id
+      final fetched = await radRepo.getRadiographById('rad-1');
+      expect(fetched, isNotNull);
+      expect(fetched!.notes, equals('Periapical view tooth #46'));
+      expect(fetched.radiographType, equals(RadiographType.periapical));
+
+      // 4. Update radiograph
+      final updated = fetched.copyWith(
+        notes: 'Updated: small periapical radiolucency confirmed',
+      );
+      await radRepo.updateRadiograph(updated);
+
+      final reFetched = await radRepo.getRadiographById('rad-1');
+      expect(reFetched!.notes, equals('Updated: small periapical radiolucency confirmed'));
+
+      // 5. Delete individual radiograph and assert file deletion
+      await radRepo.deleteRadiograph('rad-1');
+      expect(await tempFile.exists(), isFalse); // Disk file deleted!
+
+      final remaining = await radRepo.getRadiographsByPatient(patientId);
+      expect(remaining, hasLength(1));
+
+      // Clean up patient
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('enforces foreign key cascade deletion and cleans up disk files from patients to patient_radiographs', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final radRepo = SqliteRadiographRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-rad-cascade';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Cascade Rad Patient',
+        age: 41,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+
+      final tempFile1 = File(p.join(Directory.systemTemp.path, 'cascade_rad1_${DateTime.now().microsecondsSinceEpoch}.jpg'));
+      final tempFile2 = File(p.join(Directory.systemTemp.path, 'cascade_rad2_${DateTime.now().microsecondsSinceEpoch}.jpg'));
+      await tempFile1.writeAsString('x-ray 1');
+      await tempFile2.writeAsString('x-ray 2');
+
+      await radRepo.addRadiograph(PatientRadiograph(
+        id: 'rad-casc-1',
+        patientId: patientId,
+        filePath: tempFile1.path,
+        type: PatientRadiograph.typeBitewing,
+        captureDate: DateTime.now(),
+        createdAt: DateTime.now(),
+      ));
+      await radRepo.addRadiograph(PatientRadiograph(
+        id: 'rad-casc-2',
+        patientId: patientId,
+        filePath: tempFile2.path,
+        type: PatientRadiograph.typePeriapical,
+        captureDate: DateTime.now(),
+        createdAt: DateTime.now(),
+      ));
+
+      expect(await radRepo.getRadiographsByPatient(patientId), hasLength(2));
+      expect(await tempFile1.exists(), isTrue);
+      expect(await tempFile2.exists(), isTrue);
+
+      // Delete parent patient
+      await patientRepo.deletePatient(patientId);
+
+      // Verify that database rows were cascade deleted
+      final rows = await db.query(
+        'patient_radiographs',
+        where: 'patientId = ?',
+        whereArgs: [patientId],
+      );
+      expect(rows, isEmpty);
+
+      // Verify that physical disk files were cleaned up to prevent storage leaks
+      expect(await tempFile1.exists(), isFalse);
+      expect(await tempFile2.exists(), isFalse);
+    });
+
+    test('migrates database from v4 to v5 creating patient_radiographs table', () async {
+      final tempDbPath = p.join(
+        Directory.systemTemp.path,
+        'dentera_mig_v5_test_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      try {
+        // Create DB at version 4
+        final db = await openDatabase(
+          tempDbPath,
+          version: 4,
+          onCreate: (db, version) async {
+            await db.execute('''
+              CREATE TABLE patients (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                gender TEXT NOT NULL,
+                createdAt TEXT NOT NULL
+              );
+            ''');
+            await db.execute('''
+              CREATE TABLE treatment_plans (
+                id TEXT PRIMARY KEY,
+                patientId TEXT NOT NULL,
+                phase INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                createdAt TEXT NOT NULL
+              );
+            ''');
+          },
+        );
+
+        await db.close();
+
+        // Upgrade to v5
+        final upgradedDb = await openDatabase(
+          tempDbPath,
+          version: 5,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            if (oldVersion < 5) {
+              await db.execute('''
+                CREATE TABLE IF NOT EXISTS patient_radiographs (
+                  id TEXT PRIMARY KEY,
+                  patientId TEXT NOT NULL,
+                  filePath TEXT NOT NULL,
+                  type TEXT NOT NULL,
+                  notes TEXT,
+                  captureDate TEXT NOT NULL,
+                  createdAt TEXT NOT NULL,
+                  FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+                );
+              ''');
+            }
+          },
+        );
+
+        final tableInfo = await upgradedDb.rawQuery('PRAGMA table_info(patient_radiographs);');
+        final columnNames = tableInfo.map((col) => col['name'] as String).toSet();
+
+        expect(columnNames, containsAll([
+          'id',
+          'patientId',
+          'filePath',
+          'type',
+          'notes',
+          'captureDate',
           'createdAt',
         ]));
 
