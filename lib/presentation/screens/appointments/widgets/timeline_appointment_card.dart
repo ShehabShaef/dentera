@@ -24,6 +24,8 @@ class TimelineAppointmentCard extends StatelessWidget {
     this.clinicColor = AppColors.secondary,
     this.isLast = false,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   final Appointment appointment;
@@ -33,6 +35,8 @@ class TimelineAppointmentCard extends StatelessWidget {
   final Color clinicColor;
   final bool isLast;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +133,6 @@ class TimelineAppointmentCard extends StatelessWidget {
                       children: <Widget>[
                         // Patient Name & Status
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             Expanded(
                               child: Text(
@@ -142,7 +145,8 @@ class TimelineAppointmentCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (appointment.status.isNotEmpty)
+                            if (appointment.status.isNotEmpty) ...<Widget>[
+                              const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
@@ -160,6 +164,67 @@ class TimelineAppointmentCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                            ],
+                            if (onEdit != null) ...<Widget>[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                tooltip: 'Edit Appointment',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                onPressed: onEdit,
+                              ),
+                            ],
+                            if (onDelete != null || onEdit != null) ...<Widget>[
+                              PopupMenuButton<String>(
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  size: 18,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                tooltip: 'Appointment actions',
+                                onSelected: (value) {
+                                  if (value == 'edit') {
+                                    onEdit?.call();
+                                  } else if (value == 'delete') {
+                                    onDelete?.call();
+                                  }
+                                },
+                                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                                  if (onEdit != null)
+                                    const PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
+                                          SizedBox(width: 8),
+                                          Text('Edit Appointment'),
+                                        ],
+                                      ),
+                                    ),
+                                  if (onDelete != null)
+                                    const PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Delete Appointment',
+                                            style: TextStyle(color: AppColors.error),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 6),

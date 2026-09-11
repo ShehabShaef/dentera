@@ -11,6 +11,8 @@ class CaseRecordCard extends StatelessWidget {
     required this.clinicName,
     this.clinicColor = AppColors.secondary,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   final CaseRecord caseRecord;
@@ -18,6 +20,8 @@ class CaseRecordCard extends StatelessWidget {
   final String clinicName;
   final Color clinicColor;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   String _formatDate(DateTime date) {
     const months = <String>['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -57,7 +61,6 @@ class CaseRecordCard extends StatelessWidget {
             children: <Widget>[
               // Header: Procedure & Status Badge
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Expanded(
                     child: Text(
@@ -84,6 +87,52 @@ class CaseRecordCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onEdit != null || onDelete != null) ...<Widget>[
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        size: 18,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      tooltip: 'Case actions',
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          onEdit?.call();
+                        } else if (value == 'delete') {
+                          onDelete?.call();
+                        }
+                      },
+                      itemBuilder: (context) => <PopupMenuEntry<String>>[
+                        if (onEdit != null)
+                          const PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
+                                SizedBox(width: 8),
+                                Text('Edit Case'),
+                              ],
+                            ),
+                          ),
+                        if (onDelete != null)
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Delete Case',
+                                  style: TextStyle(color: AppColors.error),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 6),

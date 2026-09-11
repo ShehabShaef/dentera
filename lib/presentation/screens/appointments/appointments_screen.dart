@@ -164,7 +164,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: laterAppointments.length,
-                              itemBuilder: (context, index) {
+                              itemBuilder: (_, index) {
                                 final apt = laterAppointments[index];
                                 final isLast = index == laterAppointments.length - 1;
                                 final patientName =
@@ -173,29 +173,65 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 final clinic = clinicsMap[apt.clinicId];
                                 final clinicName = clinic?.name ?? 'General Clinic';
                                 final clinicColor = _parseColor(
-                                  clinic?.colorHex,
-                                  fallback: AppColors.secondary,
+                                    clinic?.colorHex,
+                                    fallback: AppColors.secondary,
                                 );
                                 final timeFormatted = _formatTime(apt.scheduledDate);
 
-                                return TimelineAppointmentCard(
-                                  appointment: apt,
-                                  patientName: patientName,
-                                  clinicName: clinicName,
-                                  timeFormatted: timeFormatted,
-                                  clinicColor: clinicColor,
-                                  isLast: isLast,
-                                  onTap: () {
-                                    AppLogger.info('Navigating to Patient Case Sheet for patient: ${apt.patientId}');
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (context) => PatientCaseSheetScreen(
-                                          patientId: apt.patientId,
-                                          patient: patientsMap[apt.patientId],
-                                        ),
-                                      ),
-                                    );
+                                return Dismissible(
+                                  key: ValueKey('apt_dismiss_${apt.id}'),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20.0),
+                                    margin: const EdgeInsets.only(bottom: 16.0),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline,
+                                      color: AppColors.onError,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  confirmDismiss: (direction) =>
+                                      _confirmDeleteAppointment(context, apt, patientName),
+                                  onDismissed: (direction) async {
+                                    await ref
+                                        .read(appointmentsNotifierProvider.notifier)
+                                        .deleteAppointment(
+                                          apt.id,
+                                          scheduledDate: apt.scheduledDate,
+                                        );
+                                    if (mounted) {
+                                      ref.invalidate(dailyAppointmentsProvider(_selectedDate));
+                                      ScaffoldMessenger.of(this.context).showSnackBar(
+                                        const SnackBar(content: Text('Appointment deleted')),
+                                      );
+                                    }
                                   },
+                                  child: TimelineAppointmentCard(
+                                    appointment: apt,
+                                    patientName: patientName,
+                                    clinicName: clinicName,
+                                    timeFormatted: timeFormatted,
+                                    clinicColor: clinicColor,
+                                    isLast: isLast,
+                                    onTap: () {
+                                      AppLogger.info('Navigating to Patient Case Sheet for patient: ${apt.patientId}');
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (context) => PatientCaseSheetScreen(
+                                            patientId: apt.patientId,
+                                            patient: patientsMap[apt.patientId],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onEdit: () => _editAppointment(apt),
+                                    onDelete: () => _handleDeleteAppointment(apt, patientName),
+                                  ),
                                 );
                               },
                             ),
@@ -265,6 +301,60 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     }
   }
 
+  Future<void> _editAppointment(Appointment apt) async {
+    await EditAppointmentModal.show(context, appointment: apt);
+  }
+
+  Future<bool> _confirmDeleteAppointment(
+    BuildContext context,
+    Appointment apt,
+    String patientName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Appointment'),
+        content: Text(
+          'Are you sure you want to delete this appointment for $patientName? This action cannot be undone.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed ?? false;
+  }
+
+  Future<void> _handleDeleteAppointment(
+    Appointment apt,
+    String patientName,
+  ) async {
+    final confirmed = await _confirmDeleteAppointment(context, apt, patientName);
+    if (confirmed && mounted) {
+      await ref.read(appointmentsNotifierProvider.notifier).deleteAppointment(
+            apt.id,
+            scheduledDate: apt.scheduledDate,
+          );
+      if (mounted) {
+        ref.invalidate(dailyAppointmentsProvider(_selectedDate));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment deleted')),
+        );
+      }
+    }
+  }
+
   Widget _buildNextUpCard({
     required Appointment appointment,
     required String patientName,
@@ -300,18 +390,76 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(9999),
-                ),
-                child: Text(
-                  appointment.status,
-                  style: AppTextStyles.labelCaps.copyWith(
-                    color: AppColors.onSecondaryContainer,
+              Row(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Text(
+                      appointment.status,
+                      style: AppTextStyles.labelCaps.copyWith(
+                        color: AppColors.onSecondaryContainer,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    tooltip: 'Edit Appointment',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () => _editAppointment(appointment),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    tooltip: 'Appointment actions',
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _editAppointment(appointment);
+                      } else if (value == 'delete') {
+                        _handleDeleteAppointment(appointment, patientName);
+                      }
+                    },
+                    itemBuilder: (context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
+                            SizedBox(width: 8),
+                            Text('Edit Appointment'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                            SizedBox(width: 8),
+                            Text(
+                              'Delete Appointment',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
