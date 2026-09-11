@@ -6,4 +6,7 @@ abstract class RequirementRepository {
   Future<List<Requirement>> getAllRequirements();
   Future<void> updateRequirementProgress(String requirementId, int completedCount);
   Future<void> addRequirement(Requirement requirement);
+  Future<void> updateRequirement(Requirement requirement);
+  Future<void> deleteRequirement(String id);
+  Future<void> deleteRequirements(List<String> ids);
 }

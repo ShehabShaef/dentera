@@ -73,6 +73,12 @@ class MockClinicRepository implements ClinicRepository {
   Future<void> addClinic(Clinic clinic) async => clinics.add(clinic);
 
   @override
+  Future<void> updateClinic(Clinic clinic) async {
+    final idx = clinics.indexWhere((c) => c.id == clinic.id);
+    if (idx != -1) clinics[idx] = clinic;
+  }
+
+  @override
   Future<void> deleteClinic(String id) async => clinics.removeWhere((c) => c.id == id);
 
   @override
@@ -96,6 +102,20 @@ class MockRequirementRepository implements RequirementRepository {
 
   @override
   Future<void> updateRequirementProgress(String requirementId, int completedCount) async {}
+
+  @override
+  Future<void> updateRequirement(Requirement requirement) async {
+    final idx = requirements.indexWhere((r) => r.id == requirement.id);
+    if (idx != -1) requirements[idx] = requirement;
+  }
+
+  @override
+  Future<void> deleteRequirement(String id) async =>
+      requirements.removeWhere((r) => r.id == id);
+
+  @override
+  Future<void> deleteRequirements(List<String> ids) async =>
+      requirements.removeWhere((r) => ids.contains(r.id));
 }
 
 class MockCaseRecordRepository implements CaseRecordRepository {

@@ -35,12 +35,14 @@ class RequirementDetailCard extends StatelessWidget {
     this.accentColor = AppColors.secondary,
     this.linkedCases = const <LinkedPatientCase>[],
     this.onTap,
+    this.onEdit,
   });
 
   final Requirement requirement;
   final Color accentColor;
   final List<LinkedPatientCase> linkedCases;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +87,17 @@ class RequirementDetailCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onEdit != null) ...[
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.outline),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                      tooltip: 'Edit Requirement',
+                      onPressed: onEdit,
+                    ),
+                  ],
                   const SizedBox(width: 6),
                   const Icon(
                     Icons.chevron_right_rounded,

@@ -308,6 +308,12 @@ class FakeClinicRepository implements ClinicRepository {
   Future<void> addClinic(Clinic clinic) async => clinics.add(clinic);
 
   @override
+  Future<void> updateClinic(Clinic clinic) async {
+    final idx = clinics.indexWhere((c) => c.id == clinic.id);
+    if (idx != -1) clinics[idx] = clinic;
+  }
+
+  @override
   Future<List<Clinic>> getAllClinics() async => clinics;
 
   @override

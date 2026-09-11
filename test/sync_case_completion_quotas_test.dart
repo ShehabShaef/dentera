@@ -64,6 +64,8 @@ class _FakeClinicRepo implements ClinicRepository {
   @override
   Future<void> addClinic(Clinic clinic) async {}
   @override
+  Future<void> updateClinic(Clinic clinic) async {}
+  @override
   Future<void> deleteClinic(String id) async {}
   @override
   Future<void> deleteClinics(List<String> ids) async {}
@@ -80,6 +82,12 @@ class _FakeRequirementRepo implements RequirementRepository {
 
   @override
   Future<void> addRequirement(Requirement requirement) async {}
+  @override
+  Future<void> updateRequirement(Requirement requirement) async {}
+  @override
+  Future<void> deleteRequirement(String id) async {}
+  @override
+  Future<void> deleteRequirements(List<String> ids) async {}
   @override
   Future<List<Requirement>> getAllRequirements() async => requirements;
   @override

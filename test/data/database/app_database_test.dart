@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import 'package:dentera/core/error/exceptions.dart';
 import 'package:dentera/data/database/app_database.dart';
 import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
 import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
+import 'package:dentera/data/repositories/sqlite_requirement_repository.dart';
 import 'package:dentera/domain/entities/entities.dart';
 
 import '../../setup/test_setup.dart';
@@ -368,6 +370,162 @@ void main() {
       // Verify child appointment cascade deleted
       final remainingAppts = await db.query('appointments', where: 'id = ?', whereArgs: ['batch-appt-p2']);
       expect(remainingAppts, isEmpty);
+    });
+
+    test('SqliteClinicRepository.updateClinic updates clinic fields and throws RecordNotFoundException on non-existent clinic', () async {
+      final appDb = AppDatabase.instance;
+      final clinicRepo = SqliteClinicRepository(appDb);
+
+      const testClinicId = 'clinic-to-update-1';
+      final initialClinic = Clinic(
+        id: testClinicId,
+        name: 'Original Clinic Name',
+        academicYear: '5th Year',
+        colorHex: '#112233',
+      );
+
+      await clinicRepo.addClinic(initialClinic);
+
+      final updatedClinic = Clinic(
+        id: testClinicId,
+        name: 'Updated Clinic Name',
+        academicYear: '4th Year',
+        colorHex: '#445566',
+      );
+
+      await clinicRepo.updateClinic(updatedClinic);
+
+      final retrieved = await clinicRepo.getClinicById(testClinicId);
+      expect(retrieved, isNotNull);
+      expect(retrieved!.name, equals('Updated Clinic Name'));
+      expect(retrieved.academicYear, equals('4th Year'));
+      expect(retrieved.colorHex, equals('#445566'));
+
+      final nonExistentClinic = Clinic(
+        id: 'non-existent-clinic-id',
+        name: 'Ghost Clinic',
+        academicYear: '5th Year',
+        colorHex: '#FFFFFF',
+      );
+
+      expect(
+        () => clinicRepo.updateClinic(nonExistentClinic),
+        throwsA(isA<RecordNotFoundException>()),
+      );
+    });
+
+    test('SqliteRequirementRepository.updateRequirement updates requirement fields and throws RecordNotFoundException on non-existent requirement', () async {
+      final appDb = AppDatabase.instance;
+      final reqRepo = SqliteRequirementRepository(appDb);
+
+      const testReqId = 'req-to-update-1';
+      final initialReq = Requirement(
+        id: testReqId,
+        clinicId: 'clinic-prosth',
+        title: 'Original Requirement Title',
+        targetCount: 4,
+        completedCount: 0,
+      );
+
+      await reqRepo.addRequirement(initialReq);
+
+      final updatedReq = Requirement(
+        id: testReqId,
+        clinicId: 'clinic-prosth',
+        title: 'Modified Requirement Title',
+        targetCount: 10,
+        completedCount: 2,
+      );
+
+      await reqRepo.updateRequirement(updatedReq);
+
+      final reqs = await reqRepo.getRequirementsByClinicId('clinic-prosth');
+      final retrieved = reqs.firstWhere((r) => r.id == testReqId);
+      expect(retrieved.title, equals('Modified Requirement Title'));
+      expect(retrieved.targetCount, equals(10));
+      expect(retrieved.completedCount, equals(2));
+
+      final nonExistentReq = Requirement(
+        id: 'non-existent-req-id',
+        clinicId: 'clinic-prosth',
+        title: 'Ghost Requirement',
+        targetCount: 1,
+        completedCount: 0,
+      );
+
+      expect(
+        () => reqRepo.updateRequirement(nonExistentReq),
+        throwsA(isA<RecordNotFoundException>()),
+      );
+    });
+
+    test('SqliteRequirementRepository.deleteRequirements batch deletes requirements and cascades deletion to child case records', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final reqRepo = SqliteRequirementRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'test-patient-req-cascade';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Req Cascade Patient',
+        age: 30,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+
+      const r1Id = 'batch-delete-req-1';
+      const r2Id = 'batch-delete-req-2';
+
+      await reqRepo.addRequirement(Requirement(
+        id: r1Id,
+        clinicId: 'clinic-prosth',
+        title: 'Batch Req 1',
+        targetCount: 5,
+        completedCount: 0,
+      ));
+      await reqRepo.addRequirement(Requirement(
+        id: r2Id,
+        clinicId: 'clinic-prosth',
+        title: 'Batch Req 2',
+        targetCount: 3,
+        completedCount: 0,
+      ));
+
+      // Insert child case records for both requirements
+      await db.insert('case_records', {
+        'id': 'case-req-1',
+        'patientId': patientId,
+        'requirementId': r1Id,
+        'status': 'In Progress',
+        'notes': 'Test case 1',
+        'dateStarted': DateTime.now().toIso8601String(),
+        'dateCompleted': null,
+      });
+
+      await db.insert('case_records', {
+        'id': 'case-req-2',
+        'patientId': patientId,
+        'requirementId': r2Id,
+        'status': 'In Progress',
+        'notes': 'Test case 2',
+        'dateStarted': DateTime.now().toIso8601String(),
+        'dateCompleted': null,
+      });
+
+      // Batch delete both requirements
+      await reqRepo.deleteRequirements([r1Id, r2Id]);
+
+      // Verify requirements are deleted
+      final remainingReqs = await db.query('requirements', where: 'id IN (?, ?)', whereArgs: [r1Id, r2Id]);
+      expect(remainingReqs, isEmpty);
+
+      // Verify child case records were cascade deleted
+      final remainingCases = await db.query('case_records', where: 'id IN (?, ?)', whereArgs: ['case-req-1', 'case-req-2']);
+      expect(remainingCases, isEmpty);
+
+      // Clean up patient
+      await patientRepo.deletePatient(patientId);
     });
   });
 }
