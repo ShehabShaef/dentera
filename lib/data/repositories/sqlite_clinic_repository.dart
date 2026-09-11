@@ -60,6 +60,26 @@ class SqliteClinicRepository implements ClinicRepository {
   }
 
   @override
+  Future<void> updateClinic(Clinic clinic) async {
+    try {
+      final db = await _dbManager.database;
+      final count = await db.update(
+        _tableName,
+        clinic.toMap(),
+        where: 'id = ?',
+        whereArgs: <Object>[clinic.id],
+      );
+      if (count == 0) {
+        throw RecordNotFoundException('Clinic not found with id: ${clinic.id}');
+      }
+      AppLogger.info('Updated clinic: ${clinic.id}');
+    } catch (e) {
+      if (e is RecordNotFoundException) rethrow;
+      throw LocalDatabaseException('Failed to update clinic: ${clinic.id}', e);
+    }
+  }
+
+  @override
   Future<void> deleteClinic(String id) async {
     await deleteClinics(<String>[id]);
   }

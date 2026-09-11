@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -15,17 +16,18 @@ import 'widgets/widgets.dart';
 /// visual mock fallbacks.
 ///
 /// ### Modal Invocation & Administration:
+/// - **Clinic Editing ([EditClinicModal]):** Tapping "Edit Clinic" in the 3-dot popup menu
+///   opens [EditClinicModal] to modify name, academic year, and color in-place.
 /// - **Requirement Definition ([AddRequirementModal]):** Tapping the screen's Floating Action Button
-///   opens [AddRequirementModal], allowing dental students to define new clinical procedures and target quotas
-///   for this specific clinic without hardcoded placeholders.
+///   opens [AddRequirementModal], allowing dental students to define new clinical procedures and target quotas.
+/// - **Requirement Editing ([EditRequirementModal]):** Tapping the edit icon on any [RequirementDetailCard]
+///   opens [EditRequirementModal] to adjust title and targetCount in-place.
+/// - **Sorting ([SortClinicCasesModal]):** Tapping "Sort Cases" allows sorting requirements by Name (A-Z),
+///   Quota Progress, or Target Quota.
+/// - **Batch Deletion:** Tapping "Delete Cases" enters selection mode, allowing multi-select requirement deletion
+///   with cascade warning.
 /// - **Relational Case Inspection ([RequirementCasesBottomSheet]):** Tapping any [RequirementDetailCard]
-///   triggers [RequirementCasesBottomSheet], fetching and displaying all clinical [CaseRecord] entries
-///   belonging to that requirement via [casesByRequirementProvider].
-///
-/// ### Relational Querying & State Management:
-/// Clinical requirements are queried reactively using [requirementsByClinicProvider(clinic.id)].
-/// When new requirements or case records are submitted, state providers are invalidated,
-/// triggering immediate local recalculation of overall clinic completion percentages and UI cards.
+///   triggers [RequirementCasesBottomSheet], fetching and displaying all clinical [CaseRecord] entries.
 class ClinicDetailsScreen extends ConsumerWidget {
   const ClinicDetailsScreen({
     super.key,
@@ -34,7 +36,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
 
   final Clinic clinic;
 
-  Color get _clinicColor {
+  Color _resolveClinicColor(Clinic clinic) {
     try {
       final hex = clinic.colorHex.replaceAll('#', '');
       return Color(int.parse('FF$hex', radix: 16));
@@ -65,32 +67,225 @@ class ClinicDetailsScreen extends ConsumerWidget {
     return const <LinkedPatientCase>[];
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final clinicReqsAsync = ref.watch(requirementsByClinicProvider(clinic.id));
+  Future<void> _confirmBatchDeleteRequirements(
+    BuildContext context,
+    WidgetRef ref,
+    String clinicId,
+    Set<String> selectedIds,
+  ) async {
+    if (selectedIds.isEmpty) return;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          clinic.name,
-          style: AppTextStyles.h1Mobile.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
+    final count = selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Selected Requirements?'),
+        content: Text(
+          'Deleting $count procedural requirement${count > 1 ? 's' : ''} will permanently remove all associated student case records due to cascade deletion.\n\nThis action cannot be undone. Are you sure you want to proceed?',
         ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () {
-              // TODO: Phase 6 - Edit Clinic Quota settings
-            },
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
           ),
         ],
       ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final repository = ref.read(requirementRepositoryProvider);
+      await repository.deleteRequirements(selectedIds.toList());
+
+      ref.read(clinicRequirementSelectionModeProvider(clinicId).notifier).state = false;
+      ref.read(selectedClinicRequirementIdsProvider(clinicId).notifier).state = <String>{};
+
+      ref.invalidate(requirementsByClinicProvider(clinicId));
+      ref.invalidate(allRequirementsProvider);
+      ref.invalidate(allCasesProvider);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully deleted $count requirement${count > 1 ? 's' : ''}.',
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      AppLogger.error('Failed to batch delete requirements: $selectedIds', e, st);
+      if (context.mounted) {
+        DenteraSnackBar.showError(
+          context,
+          message: 'Failed to delete selected requirements',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Dynamically track current clinic from repository list to reflect edits immediately
+    final allClinics = ref.watch(clinicListProvider).valueOrNull;
+    final currentClinic = allClinics?.where((c) => c.id == clinic.id).firstOrNull ?? clinic;
+    final clinicColor = _resolveClinicColor(currentClinic);
+
+    final clinicReqsAsync = ref.watch(requirementsByClinicProvider(currentClinic.id));
+    final isSelectionMode = ref.watch(clinicRequirementSelectionModeProvider(currentClinic.id));
+    final selectedIds = ref.watch(selectedClinicRequirementIdsProvider(currentClinic.id));
+    final sortOption = ref.watch(clinicRequirementSortOptionProvider(currentClinic.id));
+
+    // Sort requirements if available
+    final rawRequirements = clinicReqsAsync.valueOrNull ?? const <Requirement>[];
+    final sortedRequirements = [...rawRequirements];
+    switch (sortOption) {
+      case ClinicRequirementSortOption.title:
+        sortedRequirements.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        break;
+      case ClinicRequirementSortOption.progress:
+        sortedRequirements.sort((a, b) {
+          final progA = a.targetCount > 0 ? (a.completedCount / a.targetCount) : 0.0;
+          final progB = b.targetCount > 0 ? (b.completedCount / b.targetCount) : 0.0;
+          return progB.compareTo(progA);
+        });
+        break;
+      case ClinicRequirementSortOption.targetCount:
+        sortedRequirements.sort((a, b) => b.targetCount.compareTo(a.targetCount));
+        break;
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: isSelectionMode
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () {
+                  ref.read(clinicRequirementSelectionModeProvider(currentClinic.id).notifier).state = false;
+                  ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = <String>{};
+                },
+              ),
+              title: Text(
+                '${selectedIds.length} Selected',
+                style: AppTextStyles.h1Mobile.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: sortedRequirements.isEmpty
+                      ? null
+                      : () {
+                          final allIds = sortedRequirements.map((r) => r.id).toSet();
+                          if (selectedIds.length == sortedRequirements.length) {
+                            ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = <String>{};
+                          } else {
+                            ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = allIds;
+                          }
+                        },
+                  child: Text(
+                    selectedIds.length == sortedRequirements.length ? 'Deselect All' : 'Select All',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+                  tooltip: 'Delete Selected',
+                  onPressed: selectedIds.isEmpty
+                      ? null
+                      : () => _confirmBatchDeleteRequirements(context, ref, currentClinic.id, selectedIds),
+                ),
+              ],
+            )
+          : AppBar(
+              title: Text(
+                currentClinic.name,
+                style: AppTextStyles.h1Mobile.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              actions: <Widget>[
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  tooltip: 'Clinic Options',
+                  onSelected: (value) async {
+                    switch (value) {
+                      case 'edit_clinic':
+                        await EditClinicModal.show(context, clinic: currentClinic);
+                        break;
+                      case 'sort_cases':
+                        await SortClinicCasesModal.show(context, clinicId: currentClinic.id);
+                        break;
+                      case 'delete_cases':
+                        ref.read(clinicRequirementSelectionModeProvider(currentClinic.id).notifier).state = true;
+                        ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = <String>{};
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit_clinic',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 20, color: AppColors.onSurface),
+                          SizedBox(width: 12),
+                          Text('Edit Clinic'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'sort_cases',
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort_rounded, size: 20, color: AppColors.onSurface),
+                          SizedBox(width: 12),
+                          Text('Sort Cases'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<String>(
+                      value: 'delete_cases',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_sweep_outlined, size: 20, color: AppColors.error),
+                          SizedBox(width: 12),
+                          Text(
+                            'Delete Cases',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
       body: SafeArea(
         child: clinicReqsAsync.when(
-          data: (requirements) => _buildContent(context, ref, requirements),
+          data: (_) => _buildContent(
+            context,
+            ref,
+            currentClinic,
+            clinicColor,
+            sortedRequirements,
+            isSelectionMode,
+            selectedIds,
+          ),
           loading: () => const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 48.0),
@@ -101,45 +296,55 @@ class ClinicDetailsScreen extends ConsumerWidget {
           ),
           error: (error, stackTrace) {
             AppLogger.error(
-              '[ClinicDetailsScreen] Failed to load requirements for clinic ${clinic.id}: $error',
+              '[ClinicDetailsScreen] Failed to load requirements for clinic ${currentClinic.id}: $error',
               error,
               stackTrace,
             );
             return DenteraErrorState(
               title: 'Requirements Unavailable',
               message: error.toString(),
-              onRetry: () => ref.invalidate(requirementsByClinicProvider(clinic.id)),
+              onRetry: () => ref.invalidate(requirementsByClinicProvider(currentClinic.id)),
             );
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_clinic_details',
-        onPressed: () {
-          AppLogger.info('Opened AddRequirementModal for clinic: ${clinic.id}');
-          AddRequirementModal.show(
-            context,
-            clinicId: clinic.id,
-            clinicName: clinic.name,
-          );
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: const Icon(
-          Icons.add_rounded,
-          size: 26,
-        ),
-      ),
+      floatingActionButton: isSelectionMode
+          ? null
+          : FloatingActionButton(
+              heroTag: 'fab_clinic_details',
+              onPressed: () {
+                AppLogger.info('Opened AddRequirementModal for clinic: ${currentClinic.id}');
+                AddRequirementModal.show(
+                  context,
+                  clinicId: currentClinic.id,
+                  clinicName: currentClinic.name,
+                );
+              },
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                size: 26,
+              ),
+            ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, List<Requirement> requirements) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    Clinic currentClinic,
+    Color clinicColor,
+    List<Requirement> requirements,
+    bool isSelectionMode,
+    Set<String> selectedIds,
+  ) {
     if (requirements.isEmpty) {
-      AppLogger.debug('Clinic details screen rendering zero state - SQLite returned 0 records for clinic ${clinic.id}');
+      AppLogger.debug('Clinic details screen rendering zero state - SQLite returned 0 records for clinic ${currentClinic.id}');
     }
 
     final allCasesAsync = ref.watch(allCasesProvider);
@@ -170,7 +375,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                       progress: overallProgress,
                       size: 80,
                       strokeWidth: 8,
-                      progressColor: _clinicColor,
+                      progressColor: clinicColor,
                       trackColor: AppColors.surfaceContainerHigh,
                     ),
                     const SizedBox(width: 20),
@@ -257,7 +462,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Define clinical quotas and procedural targets for ${clinic.name}.',
+                          'Define clinical quotas and procedural targets for ${currentClinic.name}.',
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.onSurfaceVariant,
                           ),
@@ -276,21 +481,70 @@ class ClinicDetailsScreen extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final req = requirements[index];
                     final List<LinkedPatientCase> linkedCases = _resolveLinkedCases(
-                      allCasesAsync.value,
+                      allCasesAsync.valueOrNull,
                       req,
                       patientMap,
                     );
+                    final isSelected = selectedIds.contains(req.id);
+
+                    if (isSelectionMode) {
+                      return InkWell(
+                        onTap: () {
+                          final newSelected = Set<String>.from(selectedIds);
+                          if (isSelected) {
+                            newSelected.remove(req.id);
+                          } else {
+                            newSelected.add(req.id);
+                          }
+                          ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = newSelected;
+                        },
+                        borderRadius: BorderRadius.circular(18),
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12.0),
+                              child: CircularCheckbox(
+                                isSelected: isSelected,
+                                onChanged: (_) {
+                                  final newSelected = Set<String>.from(selectedIds);
+                                  if (isSelected) {
+                                    newSelected.remove(req.id);
+                                  } else {
+                                    newSelected.add(req.id);
+                                  }
+                                  ref.read(selectedClinicRequirementIdsProvider(currentClinic.id).notifier).state = newSelected;
+                                },
+                              ),
+                            ),
+                            Expanded(
+                              child: RequirementDetailCard(
+                                requirement: req,
+                                accentColor: clinicColor,
+                                linkedCases: linkedCases,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
                     return RequirementDetailCard(
                       requirement: req,
-                      accentColor: _clinicColor,
+                      accentColor: clinicColor,
                       linkedCases: linkedCases,
                       onTap: () {
                         AppLogger.info('Opened requirement cases bottom sheet for requirement: ${req.id}');
                         RequirementCasesBottomSheet.show(
                           context,
                           requirement: req,
-                          accentColor: _clinicColor,
+                          accentColor: clinicColor,
+                        );
+                      },
+                      onEdit: () {
+                        AppLogger.info('Opened EditRequirementModal for requirement: ${req.id}');
+                        EditRequirementModal.show(
+                          context,
+                          requirement: req,
                         );
                       },
                     );

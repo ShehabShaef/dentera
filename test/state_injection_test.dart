@@ -53,6 +53,12 @@ class MockClinicRepo implements ClinicRepository {
   Future<void> addClinic(Clinic clinic) async => _clinics.add(clinic);
 
   @override
+  Future<void> updateClinic(Clinic clinic) async {
+    final idx = _clinics.indexWhere((c) => c.id == clinic.id);
+    if (idx != -1) _clinics[idx] = clinic;
+  }
+
+  @override
   Future<List<Clinic>> getAllClinics() async => List.unmodifiable(_clinics);
 
   @override
@@ -84,6 +90,22 @@ class MockRequirementRepo implements RequirementRepository {
 
   @override
   Future<void> addRequirement(Requirement requirement) async => _requirements.add(requirement);
+
+  @override
+  Future<void> updateRequirement(Requirement requirement) async {
+    final idx = _requirements.indexWhere((r) => r.id == requirement.id);
+    if (idx != -1) _requirements[idx] = requirement;
+  }
+
+  @override
+  Future<void> deleteRequirement(String id) async {
+    _requirements.removeWhere((r) => r.id == id);
+  }
+
+  @override
+  Future<void> deleteRequirements(List<String> ids) async {
+    _requirements.removeWhere((r) => ids.contains(r.id));
+  }
 
   @override
   Future<List<Requirement>> getAllRequirements() async => List.unmodifiable(_requirements);

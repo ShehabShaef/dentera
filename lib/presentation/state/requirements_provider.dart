@@ -60,3 +60,25 @@ final globalQuotaSummaryProvider = Provider<AsyncValue<GlobalQuotaStats>>((ref) 
     );
   });
 });
+
+/// Sorting criteria for clinical requirements / cases within a clinic.
+enum ClinicRequirementSortOption {
+  title,
+  progress,
+  targetCount,
+}
+
+/// Tracks the active sorting preference for requirements of a clinic.
+final clinicRequirementSortOptionProvider =
+    StateProvider.family<ClinicRequirementSortOption, String>(
+  (ref, clinicId) => ClinicRequirementSortOption.title,
+);
+
+/// Tracks selection mode on ClinicDetailsScreen for batch requirement deletion.
+final clinicRequirementSelectionModeProvider =
+    StateProvider.family<bool, String>((ref, clinicId) => false);
+
+/// Tracks selected requirement IDs for batch deletion in a clinic.
+final selectedClinicRequirementIdsProvider =
+    StateProvider.family<Set<String>, String>((ref, clinicId) => <String>{});
+

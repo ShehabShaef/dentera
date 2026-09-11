@@ -50,6 +50,11 @@ class _FakeClinicRepo implements ClinicRepository {
   @override
   Future<void> addClinic(Clinic clinic) async => clinics.add(clinic);
   @override
+  Future<void> updateClinic(Clinic clinic) async {
+    final idx = clinics.indexWhere((c) => c.id == clinic.id);
+    if (idx != -1) clinics[idx] = clinic;
+  }
+  @override
   Future<void> deleteClinic(String id) async => clinics.removeWhere((c) => c.id == id);
   @override
   Future<void> deleteClinics(List<String> ids) async => clinics.removeWhere((c) => ids.contains(c.id));
@@ -67,6 +72,15 @@ class _FakeRequirementRepo implements RequirementRepository {
   final List<Requirement> requirements;
   @override
   Future<void> addRequirement(Requirement requirement) async => requirements.add(requirement);
+  @override
+  Future<void> updateRequirement(Requirement requirement) async {
+    final idx = requirements.indexWhere((r) => r.id == requirement.id);
+    if (idx != -1) requirements[idx] = requirement;
+  }
+  @override
+  Future<void> deleteRequirement(String id) async => requirements.removeWhere((r) => r.id == id);
+  @override
+  Future<void> deleteRequirements(List<String> ids) async => requirements.removeWhere((r) => ids.contains(r.id));
   @override
   Future<List<Requirement>> getAllRequirements() async => requirements;
   @override
