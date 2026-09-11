@@ -9,3 +9,4 @@ export 'patients_provider.dart';
 export 'requirements_provider.dart';
 export 'treatment_plans_provider.dart';
 export 'radiographs_provider.dart';
+export 'preferences_provider.dart';

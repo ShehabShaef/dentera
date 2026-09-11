@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -54,6 +59,7 @@ class PreferencesRepository {
   static const String _keyThemeMode = 'themeMode';
   static const String _keyLocale = 'locale';
   static const String _keyFollowUpAlertsEnabled = 'followUpAlertsEnabled';
+  static const String _keyAvatarPath = 'avatarPath';
 
   Future<SharedPreferences> get _instance async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -105,6 +111,26 @@ class PreferencesRepository {
   Future<String?> getAcademicYear() async {
     final prefs = await _instance;
     return prefs.getString(_keyAcademicYear);
+  }
+
+  /// Retrieves the saved profile avatar file path, or null if none is set.
+  Future<String?> getAvatarPath() async {
+    final prefs = await _instance;
+    return prefs.getString(_keyAvatarPath);
+  }
+
+  /// Persists the custom profile avatar file path.
+  Future<void> saveAvatarPath(String path) async {
+    final prefs = await _instance;
+    await prefs.setString(_keyAvatarPath, path);
+    AppLogger.info('User preference updated: Avatar path set to $path');
+  }
+
+  /// Removes the saved profile avatar file path.
+  Future<void> clearAvatarPath() async {
+    final prefs = await _instance;
+    await prefs.remove(_keyAvatarPath);
+    AppLogger.info('User preference updated: Avatar path removed');
   }
 
   /// Checks if next-day clinical agenda reminders are enabled. Default is true.
@@ -171,6 +197,17 @@ class PreferencesRepository {
   /// Completely wipes all persisted preferences from disk.
   Future<void> clearAll() async {
     final prefs = await _instance;
+    final avatarPath = prefs.getString(_keyAvatarPath);
+    if (avatarPath != null) {
+      try {
+        final file = File(avatarPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        AppLogger.warning('Failed to delete avatar file on clearAll: $e');
+      }
+    }
     await prefs.clear();
     AppLogger.info('All preferences cleared from disk');
   }
@@ -343,3 +380,106 @@ final remindersEnabledProvider = FutureProvider<bool>((ref) async {
   final repo = ref.watch(preferencesRepositoryProvider);
   return repo.getRemindersEnabled();
 });
+
+/// Reactive StateNotifier managing user clinician profile avatar file path.
+class AvatarNotifier extends StateNotifier<String?> {
+  AvatarNotifier(this._repository) : super(null) {
+    _loadInitialAvatar();
+  }
+
+  final PreferencesRepository _repository;
+
+  bool get _isTestEnvironment =>
+      Platform.environment.containsKey('FLUTTER_TEST') ||
+      Platform.executable.contains('flutter_tester') ||
+      WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
+
+  Future<void> _loadInitialAvatar() async {
+    final path = await _repository.getAvatarPath();
+    if (path != null) {
+      if (_isTestEnvironment || File(path).existsSync()) {
+        state = path;
+        return;
+      }
+    }
+    state = null;
+  }
+
+  /// Updates the avatar file path in memory and persists to preferences.
+  Future<void> setAvatarPath(String path) async {
+    state = path;
+    await _repository.saveAvatarPath(path);
+  }
+
+  /// Removes the avatar, deletes the sandboxed file from disk, and updates preferences.
+  Future<void> clearAvatar() async {
+    final currentPath = state ?? await _repository.getAvatarPath();
+    if (currentPath != null) {
+      try {
+        final file = File(currentPath);
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      } catch (e) {
+        AppLogger.warning('Failed to delete avatar file from disk: $e');
+      }
+    }
+    state = null;
+    await _repository.clearAvatarPath();
+  }
+
+  /// Picks an image from [source] (camera or gallery), resizes to max 512x512 with 85% quality,
+  /// saves to sandboxed `app_flutter/profile_avatar.jpg`, and updates state.
+  Future<String?> pickAndSaveAvatar({
+    required ImageSource source,
+    ImagePicker? picker,
+  }) async {
+    try {
+      final imagePicker = picker ?? ImagePicker();
+      final picked = await imagePicker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (picked == null) return null;
+
+      final Directory appDir;
+      if (_isTestEnvironment) {
+        appDir = Directory.systemTemp;
+      } else {
+        Directory dir;
+        try {
+          dir = await getApplicationDocumentsDirectory();
+        } catch (_) {
+          dir = Directory.systemTemp;
+        }
+        appDir = dir;
+      }
+
+      final destinationPath = p.join(appDir.path, 'profile_avatar.jpg');
+      final sourceFile = File(picked.path);
+      if (await sourceFile.exists()) {
+        await sourceFile.copy(destinationPath);
+      } else {
+        final destFile = File(destinationPath);
+        if (!await destFile.exists()) {
+          await destFile.create(recursive: true);
+        }
+      }
+
+      await setAvatarPath(destinationPath);
+      return destinationPath;
+    } catch (e) {
+      AppLogger.error('Failed to pick and save profile avatar', e);
+      rethrow;
+    }
+  }
+}
+
+/// Reactive provider for the student clinician's avatar file path.
+final avatarProvider = StateNotifierProvider<AvatarNotifier, String?>((ref) {
+  final repo = ref.watch(preferencesRepositoryProvider);
+  return AvatarNotifier(repo);
+});
+

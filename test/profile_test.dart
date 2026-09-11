@@ -24,13 +24,15 @@ void main() {
       bool editTapped = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: Scaffold(
-            body: ProfileHeaderCard(
-              name: 'Dr. Shehab Shaif',
-              subtitle: '5th Year Clinical Student',
-              onEdit: () => editTapped = true,
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: ProfileHeaderCard(
+                name: 'Dr. Shehab Shaif',
+                subtitle: '5th Year Clinical Student',
+                onEdit: () => editTapped = true,
+              ),
             ),
           ),
         ),

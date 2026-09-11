@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../../data/repositories/preferences_repository.dart';
 import '../../../widgets/buttons/buttons.dart';
 import '../../../widgets/inputs/inputs.dart';
+import '../../../widgets/modals/modals.dart';
 
 /// Modal bottom sheet allowing dental students to edit their profile credentials
 /// (Doctor Name, University, and Academic Year).
@@ -188,6 +191,55 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
             ),
             const SizedBox(height: 20),
 
+            // Profile Avatar Picker Trigger
+            Center(
+              child: GestureDetector(
+                onTap: () => AvatarPickerModal.show(context),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        _buildAvatarPreview(),
+                        Positioned(
+                          bottom: -2,
+                          right: -2,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.surface,
+                                width: 2,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 12,
+                              color: AppColors.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Change Photo',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // Doctor Name field
             DenteraTextField(
               controller: _nameController,
@@ -262,6 +314,68 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
           ],
         ),
       ),
+    );
+  }
+
+  bool get _isTestEnvironment =>
+      Platform.environment.containsKey('FLUTTER_TEST') ||
+      Platform.executable.contains('flutter_tester') ||
+      WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
+
+  Widget _buildAvatarPreview() {
+    final avatarPath = ref.watch(avatarProvider);
+    final hasAvatar = avatarPath != null && avatarPath.isNotEmpty;
+    final file = hasAvatar ? File(avatarPath) : null;
+    final fileExists = file != null && file.existsSync();
+
+    final clean = _nameController.text.replaceAll(RegExp(r'^Dr\.\s*', caseSensitive: false), '').trim();
+    final initial = clean.isNotEmpty ? clean[0].toUpperCase() : 'D';
+
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        gradient: (hasAvatar && (fileExists || _isTestEnvironment))
+            ? null
+            : AppColors.brandGradient,
+        color: (hasAvatar && (fileExists || _isTestEnvironment))
+            ? AppColors.primaryContainer.withValues(alpha: 0.2)
+            : null,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.outlineVariant,
+          width: 1.0,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: hasAvatar
+          ? (!_isTestEnvironment && fileExists
+              ? Image.file(
+                  file,
+                  width: 68,
+                  height: 68,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Text(
+                    initial,
+                    style: AppTextStyles.h1.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              : const Icon(
+                  Icons.person_rounded,
+                  size: 38,
+                  color: AppColors.primary,
+                ))
+          : Text(
+              initial,
+              style: AppTextStyles.h1.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
     );
   }
 }

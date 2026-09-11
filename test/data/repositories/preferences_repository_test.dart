@@ -91,6 +91,16 @@ void main() {
       expect(await repository.getFollowUpAlertsEnabled(), isTrue);
       expect(await repository.getDoctorName(), isNull);
     });
+
+    test('Avatar path defaults to null and persists updates and clear correctly', () async {
+      expect(await repository.getAvatarPath(), isNull);
+
+      await repository.saveAvatarPath('/path/to/profile_avatar.jpg');
+      expect(await repository.getAvatarPath(), equals('/path/to/profile_avatar.jpg'));
+
+      await repository.clearAvatarPath();
+      expect(await repository.getAvatarPath(), isNull);
+    });
   });
 
   group('Riverpod Notifiers Unit Tests', () {
@@ -159,6 +169,19 @@ void main() {
       expect(updatedProfile.academicYear, equals('Intern'));
 
       expect(await repository.getDoctorName(), equals('Dr. Jane Smith'));
+    });
+
+    test('AvatarNotifier initial value and state transitions', () async {
+      final notifier = AvatarNotifier(repository);
+      expect(notifier.state, isNull);
+
+      await notifier.setAvatarPath('/mock/avatar.jpg');
+      expect(notifier.state, equals('/mock/avatar.jpg'));
+      expect(await repository.getAvatarPath(), equals('/mock/avatar.jpg'));
+
+      await notifier.clearAvatar();
+      expect(notifier.state, isNull);
+      expect(await repository.getAvatarPath(), isNull);
     });
   });
 }

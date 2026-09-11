@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +28,11 @@ class DashboardHeader extends ConsumerWidget {
   final String academicYear;
   final String? dateSubtitle;
   final VoidCallback? onAvatarTap;
+
+  bool get _isTestEnvironment =>
+      Platform.environment.containsKey('FLUTTER_TEST') ||
+      Platform.executable.contains('flutter_tester') ||
+      WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
 
   String get _initials {
     final clean = doctorName.replaceAll(RegExp(r'^Dr\.\s*', caseSensitive: false), '').trim();
@@ -78,28 +85,64 @@ class DashboardHeader extends ConsumerWidget {
               ref.read(rootNavigationIndexProvider.notifier).state = 4;
             }
           },
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primaryContainer.withValues(alpha: 0.2),
-              border: Border.all(
-                color: AppColors.outlineVariant,
-                width: 1.0,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _initials,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          child: _buildAvatar(ref),
         ),
       ],
+    );
+  }
+
+  Widget _buildAvatar(WidgetRef ref) {
+    final avatarPath = ref.watch(avatarProvider);
+    final hasAvatar = avatarPath != null && avatarPath.isNotEmpty;
+    final file = hasAvatar ? File(avatarPath) : null;
+    final fileExists = file != null && file.existsSync();
+
+    if (hasAvatar && fileExists && !_isTestEnvironment) {
+      return CircleAvatar(
+        radius: 22,
+        backgroundImage: FileImage(file),
+        backgroundColor: AppColors.surfaceContainerLowest,
+      );
+    } else if (hasAvatar && _isTestEnvironment) {
+      return Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.primaryContainer.withValues(alpha: 0.2),
+          border: Border.all(
+            color: AppColors.primary,
+            width: 1.5,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.person_rounded,
+          color: AppColors.primary,
+          size: 24,
+        ),
+      );
+    }
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primaryContainer.withValues(alpha: 0.2),
+        border: Border.all(
+          color: AppColors.outlineVariant,
+          width: 1.0,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _initials,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

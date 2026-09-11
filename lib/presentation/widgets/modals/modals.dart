@@ -15,3 +15,4 @@ export 'schedule_appointment_modal.dart';
 export 'sort_clinic_cases_modal.dart';
 export 'sort_clinics_modal.dart';
 export 'sort_patients_modal.dart';
+export 'avatar_picker_modal.dart';
