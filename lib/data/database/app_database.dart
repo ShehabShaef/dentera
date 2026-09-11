@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/logging/app_logger.dart';
 import '../repositories/preferences_repository.dart';
 import 'database_seeder.dart';
 
@@ -35,19 +36,52 @@ class AppDatabase {
     return p.join(documentsDirectory.path, dbName);
   }
 
-  /// Internal database initialization routine.
-  Future<Database> _initDatabase() async {
+  /// Internal database initialization routine with automatic startup integrity audit.
+  Future<Database> _initDatabase({bool runIntegrityAudit = true}) async {
     try {
       final dbPath = await getDatabasePath();
 
-      return await openDatabase(
+      final db = await openDatabase(
         dbPath,
         version: dbVersion,
         onConfigure: _onConfigure,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
-    } catch (e) {
+
+      if (runIntegrityAudit) {
+        final List<Map<String, dynamic>> check =
+            await db.rawQuery('PRAGMA integrity_check;');
+        final bool isHealthy = check.isNotEmpty &&
+            check.first.values.first.toString().trim().toLowerCase() == 'ok';
+
+        if (isHealthy) {
+          AppLogger.info('SQLite startup integrity check passed: database is healthy.');
+        } else {
+          AppLogger.error(
+            'SQLite startup integrity check failed! Corruption detected: $check. Recovering...',
+          );
+          await db.close();
+          final dbFile = File(dbPath);
+          if (await dbFile.exists()) {
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final backupPath = '$dbPath.corrupted_$timestamp.bak';
+            await dbFile.rename(backupPath);
+            AppLogger.warning('Corrupted database safely preserved at: $backupPath');
+          }
+          return await openDatabase(
+            dbPath,
+            version: dbVersion,
+            onConfigure: _onConfigure,
+            onCreate: _onCreate,
+            onUpgrade: _onUpgrade,
+          );
+        }
+      }
+
+      return db;
+    } catch (e, st) {
+      AppLogger.error('Failed to initialize local database: $e', e, st);
       throw LocalDatabaseException('Failed to initialize local database: $e', e);
     }
   }
@@ -258,6 +292,69 @@ class AppDatabase {
       await _database!.close();
       _database = null;
     }
+  }
+
+  /// Performs an explicit SQLite database integrity audit using `PRAGMA integrity_check;`.
+  ///
+  /// Returns `true` if the database passes integrity validation (`'ok'`), or `false`
+  /// if corruption or query failure occurs. If [autoRecover] is `true`, corruption
+  /// automatically triggers the database recovery routine.
+  Future<bool> auditDatabaseIntegrity({
+    Database? targetDatabase,
+    bool autoRecover = true,
+  }) async {
+    final db = targetDatabase ?? await database;
+    try {
+      final List<Map<String, dynamic>> results =
+          await db.rawQuery('PRAGMA integrity_check;');
+
+      final bool isHealthy = results.isNotEmpty &&
+          results.first.values.first.toString().trim().toLowerCase() == 'ok';
+
+      if (isHealthy) {
+        AppLogger.info('SQLite integrity check passed: database is healthy.');
+        return true;
+      } else {
+        AppLogger.error(
+          'SQLite integrity check failed! Corruption reported: $results',
+        );
+        if (autoRecover) {
+          await recoverCorruptedDatabase();
+        }
+        return false;
+      }
+    } catch (e, st) {
+      AppLogger.error('Exception during SQLite integrity check audit: $e', e, st);
+      if (autoRecover) {
+        await recoverCorruptedDatabase();
+      }
+      return false;
+    }
+  }
+
+  /// Recovers from SQLite corruption by closing the active connection, moving the
+  /// damaged database file to a timestamped backup location (`.corrupted_<timestamp>.bak`),
+  /// and re-initializing a clean database with baseline seed data.
+  Future<Database> recoverCorruptedDatabase() async {
+    AppLogger.warning('Initiating automated SQLite database recovery routine...');
+    await close();
+
+    try {
+      final dbPath = await getDatabasePath();
+      final dbFile = File(dbPath);
+      if (await dbFile.exists()) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final backupPath = '$dbPath.corrupted_$timestamp.bak';
+        await dbFile.rename(backupPath);
+        AppLogger.warning('Corrupted SQLite database safely preserved at: $backupPath');
+      }
+    } catch (e, st) {
+      AppLogger.error('Failed to move corrupted database file to backup: $e', e, st);
+    }
+
+    _database = await _initDatabase(runIntegrityAudit: false);
+    AppLogger.info('SQLite database recovery successfully recreated a clean database.');
+    return _database!;
   }
 
   /// Completely resets all operational SQLite tables while preserving the underlying relational schema.

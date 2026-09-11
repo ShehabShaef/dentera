@@ -42,6 +42,13 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
             // Use release signingConfig if keystore exists, otherwise fall back to debug signing for local testing
             val releaseKeystore = file(project.findProperty("MYAPP_RELEASE_STORE_FILE") as String? ?: "dentera-release-key.jks")
             signingConfig = if (releaseKeystore.exists()) {
