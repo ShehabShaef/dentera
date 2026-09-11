@@ -89,6 +89,7 @@ void main() {
       expect(find.text('LOCAL NOTIFICATIONS'), findsOneWidget);
       expect(find.text('Next-Day Agenda Reminders'), findsOneWidget);
       expect(find.text('DATA & OFFLINE BACKUP'), findsOneWidget);
+      expect(find.text('Generate Quota Report'), findsOneWidget);
       expect(find.text('Export Local Backup'), findsOneWidget);
       expect(find.text('Restore from Backup'), findsOneWidget);
       expect(find.text('Reset All Clinical Data'), findsOneWidget);
@@ -288,6 +289,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(followUpAlertsProvider), isFalse);
+    });
+
+    testWidgets('Tapping Generate Quota Report opens GenerateQuotaReportModal', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: ProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final reportTile = find.text('Generate Quota Report');
+      await tester.ensureVisible(reportTile);
+      await tester.tap(reportTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Academic Supervisory Portfolio'), findsOneWidget);
+      expect(find.text('Preview & Print PDF'), findsOneWidget);
     });
   });
 }

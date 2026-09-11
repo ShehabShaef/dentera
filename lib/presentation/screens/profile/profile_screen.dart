@@ -6,7 +6,7 @@ import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
 import '../../state/state.dart';
-import '../../widgets/modals/database_reset_modal.dart';
+import '../../widgets/modals/modals.dart';
 import 'widgets/widgets.dart';
 
 /// Profile & Settings screen managing user profile, preferences, and offline backups.
@@ -397,6 +397,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   SettingsGroupCard(
                     title: 'Data & Offline Backup',
                     children: <Widget>[
+                      SettingsListTile(
+                        icon: Icons.picture_as_pdf_outlined,
+                        title: 'Generate Quota Report',
+                        subtitle: 'Supervisory academic PDF & CSV export',
+                        showDivider: true,
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AppColors.outlineVariant,
+                        ),
+                        onTap: () => GenerateQuotaReportModal.show(context),
+                      ),
                       SettingsListTile(
                         icon: Icons.download_rounded,
                         title: 'Export Local Backup',

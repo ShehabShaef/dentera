@@ -155,5 +155,29 @@ void main() {
       expect(find.text('Completed'), findsOneWidget);
       expect(find.byIcon(Icons.task_alt_rounded), findsOneWidget);
     });
+
+    testWidgets('ClinicDetailsScreen shows Generate Quota Report action and opens modal', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            requirementsByClinicProvider(clinic.id).overrideWith((ref) async => testRequirements),
+            allCasesProvider.overrideWith((ref) async => <CaseRecord>[]),
+          ],
+          child: const MaterialApp(
+            home: ClinicDetailsScreen(clinic: clinic),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final reportButton = find.byTooltip('Generate Quota Report');
+      expect(reportButton, findsOneWidget);
+
+      await tester.tap(reportButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Academic Supervisory Portfolio'), findsOneWidget);
+      expect(find.text('Generate Quota Report'), findsOneWidget);
+    });
   });
 }
