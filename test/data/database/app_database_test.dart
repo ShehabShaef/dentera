@@ -12,6 +12,7 @@ import 'package:dentera/data/repositories/sqlite_case_visit_repository.dart';
 import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
 import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
 import 'package:dentera/data/repositories/sqlite_requirement_repository.dart';
+import 'package:dentera/data/repositories/sqlite_treatment_plan_repository.dart';
 import 'package:dentera/domain/entities/entities.dart';
 
 import '../../setup/test_setup.dart';
@@ -52,6 +53,7 @@ void main() {
           'case_records',
           'appointments',
           'case_visits',
+          'treatment_plans',
         ]),
       );
     });
@@ -855,6 +857,212 @@ void main() {
           'notes',
           'dateScheduled',
           'dateCompleted',
+        ]));
+
+        await upgradedDb.close();
+      } finally {
+        final file = File(tempDbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+    });
+
+    test('SqliteTreatmentPlanRepository performs CRUD operations on treatment_plans', () async {
+      final appDb = AppDatabase.instance;
+      final planRepo = SqliteTreatmentPlanRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-tp-test';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Treatment Plan Patient',
+        age: 32,
+        gender: 'Female',
+        createdAt: DateTime.now(),
+      ));
+
+      // 1. Insert staged treatment plans across phases
+      final plan1 = TreatmentPlan(
+        id: 'tp-1',
+        patientId: patientId,
+        phase: 1,
+        title: 'Emergency Pulpotomy #46',
+        status: TreatmentPlan.statusProposed,
+        targetClinicId: 'clinic-endo',
+        notes: 'Severe acute pulpitis',
+        createdAt: DateTime.parse('2026-09-01T08:00:00.000Z'),
+      );
+      final plan2 = TreatmentPlan(
+        id: 'tp-2',
+        patientId: patientId,
+        phase: 2,
+        title: 'Scaling & Root Planing',
+        status: TreatmentPlan.statusProposed,
+        targetClinicId: 'clinic-perio',
+        createdAt: DateTime.parse('2026-09-01T09:00:00.000Z'),
+      );
+      final plan3 = TreatmentPlan(
+        id: 'tp-3',
+        patientId: patientId,
+        phase: 3,
+        title: 'Class II Composite #36',
+        status: TreatmentPlan.statusProposed,
+        targetClinicId: 'clinic-operative',
+        createdAt: DateTime.parse('2026-09-01T10:00:00.000Z'),
+      );
+
+      await planRepo.addTreatmentPlan(plan1);
+      await planRepo.addTreatmentPlan(plan2);
+      await planRepo.addTreatmentPlan(plan3);
+
+      // 2. Query by patient, asserting ordered by phase ASC
+      final patientPlans = await planRepo.getTreatmentPlansByPatient(patientId);
+      expect(patientPlans, hasLength(3));
+      expect(patientPlans[0].phase, equals(1));
+      expect(patientPlans[0].title, equals('Emergency Pulpotomy #46'));
+      expect(patientPlans[1].phase, equals(2));
+      expect(patientPlans[2].phase, equals(3));
+
+      // 3. Query single item by id
+      final fetched = await planRepo.getTreatmentPlanById('tp-1');
+      expect(fetched, isNotNull);
+      expect(fetched!.title, equals('Emergency Pulpotomy #46'));
+      expect(fetched.treatmentPhase, equals(TreatmentPhase.emergency));
+
+      // 4. Update treatment plan
+      final updatedPlan1 = fetched.copyWith(
+        status: TreatmentPlan.statusApproved,
+        notes: 'Faculty approved for immediate intervention',
+      );
+      await planRepo.updateTreatmentPlan(updatedPlan1);
+
+      final reFetched = await planRepo.getTreatmentPlanById('tp-1');
+      expect(reFetched!.status, equals(TreatmentPlan.statusApproved));
+      expect(reFetched.notes, equals('Faculty approved for immediate intervention'));
+
+      // 5. Delete individual treatment plan
+      await planRepo.deleteTreatmentPlan('tp-3');
+      final remainingPlans = await planRepo.getTreatmentPlansByPatient(patientId);
+      expect(remainingPlans, hasLength(2));
+
+      // Clean up patient
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('enforces foreign key cascade deletion from patients to treatment_plans', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final planRepo = SqliteTreatmentPlanRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-cascade-tp';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Cascade TP Patient',
+        age: 45,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+
+      await planRepo.addTreatmentPlan(TreatmentPlan(
+        id: 'tp-cascade-1',
+        patientId: patientId,
+        phase: 1,
+        title: 'Urgent Incision & Drainage',
+        createdAt: DateTime.now(),
+      ));
+      await planRepo.addTreatmentPlan(TreatmentPlan(
+        id: 'tp-cascade-2',
+        patientId: patientId,
+        phase: 4,
+        title: '6-Month Recall',
+        createdAt: DateTime.now(),
+      ));
+
+      expect(await planRepo.getTreatmentPlansByPatient(patientId), hasLength(2));
+
+      // Delete parent patient
+      await patientRepo.deletePatient(patientId);
+
+      // Verify that treatment_plans rows were automatically cascade deleted by SQLite
+      final rows = await db.query(
+        'treatment_plans',
+        where: 'patientId = ?',
+        whereArgs: [patientId],
+      );
+      expect(rows, isEmpty);
+    });
+
+    test('migrates database from v3 to v4 creating treatment_plans table', () async {
+      final tempDbPath = p.join(
+        Directory.systemTemp.path,
+        'dentera_mig_v4_test_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      try {
+        // Create DB at version 3
+        final db = await openDatabase(
+          tempDbPath,
+          version: 3,
+          onCreate: (db, version) async {
+            await db.execute('''
+              CREATE TABLE patients (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                gender TEXT NOT NULL,
+                createdAt TEXT NOT NULL
+              );
+            ''');
+            await db.execute('''
+              CREATE TABLE case_visits (
+                id TEXT PRIMARY KEY,
+                caseRecordId TEXT NOT NULL,
+                visitNumber INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Pending'
+              );
+            ''');
+          },
+        );
+
+        await db.close();
+
+        // Upgrade to v4
+        final upgradedDb = await openDatabase(
+          tempDbPath,
+          version: 4,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            if (oldVersion < 4) {
+              await db.execute('''
+                CREATE TABLE IF NOT EXISTS treatment_plans (
+                  id TEXT PRIMARY KEY,
+                  patientId TEXT NOT NULL,
+                  phase INTEGER NOT NULL,
+                  title TEXT NOT NULL,
+                  status TEXT NOT NULL DEFAULT 'Proposed',
+                  targetClinicId TEXT,
+                  notes TEXT,
+                  createdAt TEXT NOT NULL,
+                  FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+                );
+              ''');
+            }
+          },
+        );
+
+        final tableInfo = await upgradedDb.rawQuery('PRAGMA table_info(treatment_plans);');
+        final columnNames = tableInfo.map((col) => col['name'] as String).toSet();
+
+        expect(columnNames, containsAll([
+          'id',
+          'patientId',
+          'phase',
+          'title',
+          'status',
+          'targetClinicId',
+          'notes',
+          'createdAt',
         ]));
 
         await upgradedDb.close();

@@ -15,11 +15,10 @@ import 'widgets/widgets.dart';
 /// [patientByIdProvider] and [casesByPatientProvider], handling empty case histories natively
 /// without visual mock fallbacks.
 ///
-/// **Architecture Note (v0.4 UI Scope Reduction):**
-/// In v0.4, unbacked visual components (the static "Treatment Plan" tab and hardcoded "Dental History" card)
-/// were pruned to eliminate visual hallucinations without SQLite database backing.
-/// Phased treatment planning will be restored in a future phase once a dedicated `TreatmentPlan` entity
-/// and database schema are introduced. Patient history is now strictly backed by [patient.medicalHistory].
+/// **Architecture Note (Restoration of Phased Treatment Planning):**
+/// Phased treatment planning is restored and backed by the relational SQLite table `treatment_plans`
+/// and [treatmentPlansByPatientProvider], enabling structured staging across 4 academic care phases:
+/// Emergency, Preventive / Perio, Restorative, and Maintenance.
 ///
 /// Supports navigation either by directly passing a loaded [patient] entity,
 /// or deep-linking via [patientId], which asynchronously resolves the patient
@@ -131,7 +130,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     }
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -254,6 +253,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                   tabs: const <Widget>[
                     Tab(text: 'Clinical Cases'),
                     Tab(text: 'Patient History'),
+                    Tab(text: 'Treatment Plan'),
                   ],
                 ),
               ),
@@ -267,6 +267,9 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
                     // Tab 2: Patient History
                     _buildPatientHistoryTab(patient),
+
+                    // Tab 3: Treatment Plan
+                    TreatmentPlanTab(patient: patient),
                   ],
                 ),
               ),

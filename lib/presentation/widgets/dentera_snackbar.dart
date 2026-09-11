@@ -93,6 +93,51 @@ class DenteraSnackBar {
     return ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  /// Displays a standardized floating success SnackBar using the current [ScaffoldMessenger].
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showSuccess(
+    BuildContext context, {
+    required String message,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    final snackBar = SnackBar(
+      behavior: SnackBarBehavior.floating,
+      elevation: 3,
+      backgroundColor: AppColors.secondary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      content: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.onSecondary,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSecondary,
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      duration: duration,
+    );
+
+    return ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   /// Maps specific SQLite domain exceptions to clear, actionable clinical text.
   static String _formatErrorMessage(String baseMessage, dynamic error) {
     if (error is DatabaseLockedException) {

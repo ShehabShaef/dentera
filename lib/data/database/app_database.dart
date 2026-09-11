@@ -16,7 +16,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String dbName = 'dentera.db';
-  static const int dbVersion = 3;
+  static const int dbVersion = 4;
 
   Database? _database;
 
@@ -82,6 +82,21 @@ class AppDatabase {
           dateScheduled TEXT,
           dateCompleted TEXT,
           FOREIGN KEY (caseRecordId) REFERENCES case_records (id) ON DELETE CASCADE
+        );
+      ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS treatment_plans (
+          id TEXT PRIMARY KEY,
+          patientId TEXT NOT NULL,
+          phase INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'Proposed',
+          targetClinicId TEXT,
+          notes TEXT,
+          createdAt TEXT NOT NULL,
+          FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
         );
       ''');
     }
@@ -186,6 +201,21 @@ class AppDatabase {
       );
     ''');
 
+    // 7. Treatment Plans table
+    batch.execute('''
+      CREATE TABLE treatment_plans (
+        id TEXT PRIMARY KEY,
+        patientId TEXT NOT NULL,
+        phase INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'Proposed',
+        targetClinicId TEXT,
+        notes TEXT,
+        createdAt TEXT NOT NULL,
+        FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+      );
+    ''');
+
     await batch.commit();
 
     // Pre-populate default academic clinics and baseline requirement quotas.
@@ -209,10 +239,11 @@ class AppDatabase {
   /// To ensure atomic and constraint-safe deletion, records must be deleted in strict leaf-to-root order:
   /// 1. `appointments` - references `patients(id)` and `clinics(id)`
   /// 2. `case_visits` - references `case_records(id)`
-  /// 3. `case_records` - references `patients(id)` and `requirements(id)`
-  /// 4. `requirements` - references `clinics(id)`
-  /// 5. `clinics` - root academic clinic department records
-  /// 6. `patients` - root patient profile records
+  /// 3. `treatment_plans` - references `patients(id)`
+  /// 4. `case_records` - references `patients(id)` and `requirements(id)`
+  /// 5. `requirements` - references `clinics(id)`
+  /// 6. `clinics` - root academic clinic department records
+  /// 7. `patients` - root patient profile records
   ///
   /// **Transaction Safety:**
   /// All `DELETE FROM` statements are enclosed within an atomic transaction. If any error occurs,
@@ -232,6 +263,7 @@ class AppDatabase {
     await db.transaction((txn) async {
       await txn.rawDelete('DELETE FROM appointments;');
       await txn.rawDelete('DELETE FROM case_visits;');
+      await txn.rawDelete('DELETE FROM treatment_plans;');
       await txn.rawDelete('DELETE FROM case_records;');
       await txn.rawDelete('DELETE FROM requirements;');
       await txn.rawDelete('DELETE FROM clinics;');
