@@ -42,14 +42,16 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: Scaffold(
-            body: CaseRecordCard(
-              caseRecord: caseRecord,
-              requirementTitle: 'Complete Denture',
-              clinicName: 'Prosthodontics',
-              onTap: () => tapped = true,
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: CaseRecordCard(
+                caseRecord: caseRecord,
+                requirementTitle: 'Complete Denture',
+                clinicName: 'Prosthodontics',
+                onTap: () => tapped = true,
+              ),
             ),
           ),
         ),

@@ -32,11 +32,13 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
     super.key,
     required this.patientId,
     this.patientName,
+    this.caseRecord,
     this.onCaseLogged,
   });
 
   final String patientId;
   final String? patientName;
+  final CaseRecord? caseRecord;
   final ValueChanged<CaseRecord>? onCaseLogged;
 
   /// Convenience static helper to display the [LogCaseRecordModal].
@@ -44,9 +46,10 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
     BuildContext context, {
     required String patientId,
     String? patientName,
+    CaseRecord? caseRecord,
     ValueChanged<CaseRecord>? onCaseLogged,
   }) {
-    AppLogger.info('Opened LogCaseRecordModal for patient: $patientId');
+    AppLogger.info('Opened LogCaseRecordModal for patient: $patientId (editing: ${caseRecord != null})');
     return showModalBottomSheet<CaseRecord>(
       context: context,
       isScrollControlled: true,
@@ -54,6 +57,7 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
       builder: (context) => LogCaseRecordModal(
         patientId: patientId,
         patientName: patientName,
+        caseRecord: caseRecord,
         onCaseLogged: onCaseLogged,
       ),
     );
@@ -65,12 +69,16 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
 
 class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _notesController = TextEditingController();
+  late final TextEditingController _notesController;
 
   String? _selectedClinicId;
   String? _selectedRequirementId;
   String _selectedStatus = 'In Progress';
   bool _isSubmitting = false;
+
+  int _plannedVisitsCount = 1;
+  final List<TextEditingController> _visitLabelControllers = [];
+  List<CaseVisit> _existingVisits = [];
 
   static const List<String> _statuses = <String>[
     'In Progress',
@@ -79,8 +87,71 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController(text: widget.caseRecord?.notes ?? '');
+    if (widget.caseRecord != null) {
+      _selectedRequirementId = widget.caseRecord!.requirementId;
+      _selectedStatus = widget.caseRecord!.status;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadExistingData());
+    } else {
+      _visitLabelControllers.add(TextEditingController(text: 'Visit 1'));
+    }
+  }
+
+  Future<void> _loadExistingData() async {
+    if (widget.caseRecord == null) return;
+    try {
+      final reqs = await ref.read(allRequirementsProvider.future);
+      final req = reqs.where((r) => r.id == widget.caseRecord!.requirementId).firstOrNull;
+      if (req != null && mounted) {
+        setState(() {
+          _selectedClinicId = req.clinicId;
+        });
+      }
+
+      final visits = await ref.read(caseVisitRepositoryProvider).getVisitsByCaseRecordId(widget.caseRecord!.id);
+      if (mounted) {
+        setState(() {
+          _existingVisits = visits;
+          if (visits.isNotEmpty) {
+            _plannedVisitsCount = visits.length.clamp(1, 10);
+            for (final c in _visitLabelControllers) {
+              c.dispose();
+            }
+            _visitLabelControllers.clear();
+            for (final v in visits) {
+              _visitLabelControllers.add(TextEditingController(text: v.title));
+            }
+          } else {
+            if (_visitLabelControllers.isEmpty) {
+              _visitLabelControllers.add(TextEditingController(text: 'Visit 1'));
+            }
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _onPlannedVisitsChanged(int count) {
+    setState(() {
+      _plannedVisitsCount = count;
+      while (_visitLabelControllers.length < count) {
+        final num = _visitLabelControllers.length + 1;
+        _visitLabelControllers.add(TextEditingController(text: 'Visit $num'));
+      }
+      while (_visitLabelControllers.length > count) {
+        _visitLabelControllers.removeLast().dispose();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
+    for (final c in _visitLabelControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -107,44 +178,78 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
 
     final notesText = _notesController.text.trim();
     final isDone = _selectedStatus == 'Completed' || _selectedStatus == 'Evaluated';
+    final isEditing = widget.caseRecord != null;
 
-    // Generate collision-free UUID v4 for the clinical case record.
-    // Offline-first SQLite requires client-side primary key generation that guarantees
-    // global uniqueness without requiring a central server or roundtrip network coordination.
-    final caseId = const Uuid().v4();
-    AppLogger.debug('Generated collision-free UUID [$caseId] for clinical case record.');
+    final caseId = isEditing ? widget.caseRecord!.id : const Uuid().v4();
+    AppLogger.debug('Processing clinical case record [$caseId] (editing: $isEditing)');
 
-    final newCase = CaseRecord(
+    final caseRecord = CaseRecord(
       id: caseId,
       patientId: widget.patientId,
       requirementId: _selectedRequirementId!,
       status: _selectedStatus,
       notes: notesText.isNotEmpty ? notesText : null,
-      dateStarted: DateTime.now(),
-      dateCompleted: isDone ? DateTime.now() : null,
+      dateStarted: isEditing ? widget.caseRecord!.dateStarted : DateTime.now(),
+      dateCompleted: isDone
+          ? (isEditing ? (widget.caseRecord!.dateCompleted ?? DateTime.now()) : DateTime.now())
+          : null,
     );
 
     try {
-      AppLogger.info(
-        'Logged new case record for patient ${widget.patientId} under requirement: ${_selectedRequirementId!} (status: $_selectedStatus)',
-      );
-      await ref.read(caseRecordRepositoryProvider).addCaseRecord(newCase);
+      if (isEditing) {
+        AppLogger.info('Updating case record: $caseId (status: $_selectedStatus)');
+        await ref.read(caseRecordRepositoryProvider).updateCaseRecord(caseRecord);
+      } else {
+        AppLogger.info(
+          'Logged new case record for patient ${widget.patientId} under requirement: ${_selectedRequirementId!} (status: $_selectedStatus)',
+        );
+        await ref.read(caseRecordRepositoryProvider).addCaseRecord(caseRecord);
+      }
+
+      // Persist planned visits
+      final visitsToPersist = <CaseVisit>[];
+      for (int i = 0; i < _plannedVisitsCount; i++) {
+        final title = _visitLabelControllers[i].text.trim().isNotEmpty
+            ? _visitLabelControllers[i].text.trim()
+            : 'Visit ${i + 1}';
+        final existing = i < _existingVisits.length ? _existingVisits[i] : null;
+        final isFirstDone = !isEditing && i == 0 && isDone;
+
+        visitsToPersist.add(CaseVisit(
+          id: existing?.id ?? const Uuid().v4(),
+          caseRecordId: caseId,
+          visitNumber: i + 1,
+          title: title,
+          status: existing?.status ?? (isFirstDone ? 'Completed' : 'Pending'),
+          notes: existing?.notes ?? (isFirstDone && notesText.isNotEmpty ? notesText : null),
+          dateScheduled: existing?.dateScheduled,
+          dateCompleted: existing?.dateCompleted ?? (isFirstDone ? DateTime.now() : null),
+        ));
+      }
+
+      // If editing and visits shrank, delete removed visits
+      for (int i = _plannedVisitsCount; i < _existingVisits.length; i++) {
+        await ref.read(caseVisitRepositoryProvider).deleteCaseVisit(_existingVisits[i].id);
+      }
+
+      await ref.read(caseVisitRepositoryProvider).addCaseVisits(visitsToPersist);
 
       ref.invalidate(casesByPatientProvider(widget.patientId));
       ref.invalidate(casesByRequirementProvider(_selectedRequirementId!));
       ref.invalidate(allCasesProvider);
+      ref.invalidate(caseVisitsByCaseRecordProvider(caseId));
 
-      widget.onCaseLogged?.call(newCase);
+      widget.onCaseLogged?.call(caseRecord);
 
       if (mounted) {
-        Navigator.of(context).pop(newCase);
+        Navigator.of(context).pop(caseRecord);
       }
     } catch (e, st) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to log clinical case',
+          message: isEditing ? 'Failed to update clinical case' : 'Failed to log clinical case',
           error: e,
           stackTrace: st,
         );
@@ -195,7 +300,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Log Clinical Case',
+                          widget.caseRecord != null ? 'Edit Clinical Case' : 'Log Clinical Case',
                           style: AppTextStyles.h2.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -305,6 +410,44 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
               ),
               const SizedBox(height: 16),
 
+              // 5.5 Planned Number of Visits (1-10) & Labels
+              DenteraDropdown<int>(
+                label: 'Planned Number of Visits (1-10)',
+                value: _plannedVisitsCount,
+                prefixIcon: const Icon(Icons.repeat_rounded, size: 20),
+                items: List.generate(10, (i) => i + 1).map((count) {
+                  return DropdownMenuItem<int>(
+                    value: count,
+                    child: Text('$count ${count == 1 ? 'Visit' : 'Visits'}'),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) _onPlannedVisitsChanged(val);
+                },
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                'Visit Milestone Labels',
+                style: AppTextStyles.bodyMd.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(_plannedVisitsCount, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: DenteraTextField(
+                    controller: _visitLabelControllers[index],
+                    label: 'Visit ${index + 1} Label',
+                    hintText: 'e.g., Visit ${index + 1}, Primary Impressions...',
+                    prefixIcon: const Icon(Icons.flag_outlined, size: 18),
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+
               // 6. Clinical Procedure Notes Field
               DenteraTextField(
                 controller: _notesController,
@@ -330,8 +473,14 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: _isSubmitting ? 'Logging...' : 'Log Case Record',
-                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.onPrimary),
+                      text: _isSubmitting
+                          ? 'Saving...'
+                          : (widget.caseRecord != null ? 'Update Case Record' : 'Log Case Record'),
+                      icon: Icon(
+                        widget.caseRecord != null ? Icons.save_outlined : Icons.add_rounded,
+                        size: 18,
+                        color: AppColors.onPrimary,
+                      ),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
                   ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../state/state.dart';
 
 /// Card widget visualizing an individual clinical case record and its evaluation status.
-class CaseRecordCard extends StatelessWidget {
+class CaseRecordCard extends ConsumerWidget {
   const CaseRecordCard({
     super.key,
     required this.caseRecord,
@@ -29,7 +31,8 @@ class CaseRecordCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visitsAsync = ref.watch(caseVisitsByCaseRecordProvider(caseRecord.id));
     final isCompleted = caseRecord.status.toLowerCase().contains('completed') ||
         caseRecord.status.toLowerCase().contains('evaluated');
 
@@ -155,6 +158,65 @@ class CaseRecordCard extends StatelessWidget {
                   ),
                 ],
               ),
+
+              // Multi-Visit Step Indicator
+              visitsAsync.when(
+                data: (visits) {
+                  if (visits.isEmpty) return const SizedBox.shrink();
+                  final totalVisits = visits.length;
+                  final completedVisits =
+                      visits.where((v) => v.status == 'Completed').length;
+                  final progress = totalVisits > 0 ? (completedVisits / totalVisits) : 0.0;
+                  final isAllDone = completedVisits == totalVisits;
+
+                  return Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.outlineVariant.withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.linear_scale_rounded,
+                          size: 16,
+                          color: isAllDone ? AppColors.secondary : AppColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Visit $completedVisits of $totalVisits',
+                          style: AppTextStyles.caption.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 5,
+                              backgroundColor: AppColors.outlineVariant.withValues(alpha: 0.3),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isAllDone ? AppColors.secondary : AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+
               const Divider(
                 height: 20,
                 thickness: 0.8,
