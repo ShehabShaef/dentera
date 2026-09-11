@@ -7,6 +7,7 @@ import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
+import '../case_visits/case_visit_timeline_widget.dart';
 import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
 
@@ -250,6 +251,9 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                 ],
               ),
               const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+
+              // 2.5 Multi-Visit Timeline & Staging
+              CaseVisitTimelineWidget(caseRecordId: widget.caseRecord.id),
 
               // 3. Status Selector
               Column(

@@ -8,6 +8,7 @@ import 'package:dentera/core/error/exceptions.dart';
 import 'package:dentera/data/database/app_database.dart';
 import 'package:dentera/data/repositories/sqlite_appointment_repository.dart';
 import 'package:dentera/data/repositories/sqlite_case_record_repository.dart';
+import 'package:dentera/data/repositories/sqlite_case_visit_repository.dart';
 import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
 import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
 import 'package:dentera/data/repositories/sqlite_requirement_repository.dart';
@@ -50,6 +51,7 @@ void main() {
           'requirements',
           'case_records',
           'appointments',
+          'case_visits',
         ]),
       );
     });
@@ -631,6 +633,237 @@ void main() {
 
       // Clean up patient
       await patientRepo.deletePatient(patientId);
+    });
+
+    test('SqliteCaseVisitRepository supports CRUD, batch insertion, and ordered retrieval', () async {
+      final appDb = AppDatabase.instance;
+      final visitRepo = SqliteCaseVisitRepository(appDb);
+      final caseRepo = SqliteCaseRecordRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-visit-test-1';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Visit Test Patient',
+        age: 29,
+        gender: 'Female',
+        createdAt: DateTime.now(),
+      ));
+
+      const caseId = 'case-visit-test-1';
+      await caseRepo.addCaseRecord(CaseRecord(
+        id: caseId,
+        patientId: patientId,
+        requirementId: 'req-prosth-cd',
+        status: 'In Progress',
+        notes: 'Multi-visit treatment',
+        dateStarted: DateTime.now(),
+      ));
+
+      final visits = [
+        const CaseVisit(
+          id: 'visit-1',
+          caseRecordId: caseId,
+          visitNumber: 1,
+          title: 'Primary Impressions',
+          status: 'Completed',
+          notes: 'Alginate impressions taken',
+        ),
+        const CaseVisit(
+          id: 'visit-2',
+          caseRecordId: caseId,
+          visitNumber: 2,
+          title: 'Final Impressions',
+          status: 'Pending',
+        ),
+        const CaseVisit(
+          id: 'visit-3',
+          caseRecordId: caseId,
+          visitNumber: 3,
+          title: 'Jaw Relation & Wax Try-in',
+          status: 'Pending',
+        ),
+      ];
+
+      // Batch insert visits
+      await visitRepo.addCaseVisits(visits);
+
+      // Retrieve visits by caseRecordId and verify ordering by visitNumber ASC
+      final retrieved = await visitRepo.getVisitsByCaseRecordId(caseId);
+      expect(retrieved.length, equals(3));
+      expect(retrieved[0].visitNumber, equals(1));
+      expect(retrieved[0].title, equals('Primary Impressions'));
+      expect(retrieved[0].status, equals('Completed'));
+      expect(retrieved[1].visitNumber, equals(2));
+      expect(retrieved[2].visitNumber, equals(3));
+
+      // Update visit-2
+      final updatedVisit2 = retrieved[1].copyWith(
+        status: 'Completed',
+        notes: 'Border molding and PVS impression successful',
+        dateCompleted: DateTime.now(),
+      );
+      await visitRepo.updateCaseVisit(updatedVisit2);
+
+      final reFetched = await visitRepo.getVisitsByCaseRecordId(caseId);
+      expect(reFetched[1].status, equals('Completed'));
+      expect(reFetched[1].notes, equals('Border molding and PVS impression successful'));
+      expect(reFetched[1].dateCompleted, isNotNull);
+
+      // Delete individual visit
+      await visitRepo.deleteCaseVisit('visit-3');
+      final afterDelete = await visitRepo.getVisitsByCaseRecordId(caseId);
+      expect(afterDelete.length, equals(2));
+
+      // Clean up case and patient
+      await caseRepo.deleteCaseRecord(caseId);
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('enforces foreign key cascade deletion from case_records to case_visits', () async {
+      final appDb = AppDatabase.instance;
+      final db = await appDb.database;
+      final visitRepo = SqliteCaseVisitRepository(appDb);
+      final caseRepo = SqliteCaseRecordRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-cascade-visit';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Cascade Patient',
+        age: 40,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+
+      const caseId = 'case-cascade-visit-1';
+      await caseRepo.addCaseRecord(CaseRecord(
+        id: caseId,
+        patientId: patientId,
+        requirementId: 'req-prosth-cd',
+        status: 'In Progress',
+        dateStarted: DateTime.now(),
+      ));
+
+      await visitRepo.addCaseVisits([
+        const CaseVisit(
+          id: 'cv-cascade-1',
+          caseRecordId: caseId,
+          visitNumber: 1,
+          title: 'Visit 1',
+        ),
+        const CaseVisit(
+          id: 'cv-cascade-2',
+          caseRecordId: caseId,
+          visitNumber: 2,
+          title: 'Visit 2',
+        ),
+      ]);
+
+      expect(await visitRepo.getVisitsByCaseRecordId(caseId), hasLength(2));
+
+      // Delete the parent case_record
+      await caseRepo.deleteCaseRecord(caseId);
+
+      // Verify that case_visits were cascade deleted by SQLite
+      final remainingVisits = await db.query(
+        'case_visits',
+        where: 'caseRecordId = ?',
+        whereArgs: [caseId],
+      );
+      expect(remainingVisits, isEmpty);
+
+      // Clean up patient
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('migrates database from v2 to v3 creating case_visits table', () async {
+      final tempDbPath = p.join(
+        Directory.systemTemp.path,
+        'dentera_mig_v3_test_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      try {
+        // Create DB at version 2
+        final db = await openDatabase(
+          tempDbPath,
+          version: 2,
+          onCreate: (db, version) async {
+            await db.execute('''
+              CREATE TABLE patients (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                gender TEXT NOT NULL,
+                phoneNumber TEXT,
+                medicalHistory TEXT,
+                chiefComplaint TEXT,
+                historyOfChiefComplaint TEXT,
+                dentalHistory TEXT,
+                medications TEXT,
+                diagnosticAids TEXT,
+                createdAt TEXT NOT NULL
+              );
+            ''');
+            await db.execute('''
+              CREATE TABLE case_records (
+                id TEXT PRIMARY KEY,
+                patientId TEXT NOT NULL,
+                requirementId TEXT NOT NULL,
+                status TEXT NOT NULL,
+                notes TEXT,
+                dateStarted TEXT NOT NULL,
+                dateCompleted TEXT
+              );
+            ''');
+          },
+        );
+
+        await db.close();
+
+        // Upgrade to v3
+        final upgradedDb = await openDatabase(
+          tempDbPath,
+          version: 3,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            if (oldVersion < 3) {
+              await db.execute('''
+                CREATE TABLE IF NOT EXISTS case_visits (
+                  id TEXT PRIMARY KEY,
+                  caseRecordId TEXT NOT NULL,
+                  visitNumber INTEGER NOT NULL,
+                  title TEXT NOT NULL,
+                  status TEXT NOT NULL DEFAULT 'Pending',
+                  notes TEXT,
+                  dateScheduled TEXT,
+                  dateCompleted TEXT,
+                  FOREIGN KEY (caseRecordId) REFERENCES case_records (id) ON DELETE CASCADE
+                );
+              ''');
+            }
+          },
+        );
+
+        final tableInfo = await upgradedDb.rawQuery('PRAGMA table_info(case_visits);');
+        final columnNames = tableInfo.map((col) => col['name'] as String).toSet();
+
+        expect(columnNames, containsAll([
+          'id',
+          'caseRecordId',
+          'visitNumber',
+          'title',
+          'status',
+          'notes',
+          'dateScheduled',
+          'dateCompleted',
+        ]));
+
+        await upgradedDb.close();
+      } finally {
+        final file = File(tempDbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
     });
   });
 }

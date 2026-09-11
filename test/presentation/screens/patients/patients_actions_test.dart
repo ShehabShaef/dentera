@@ -6,6 +6,7 @@ import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/data/database/database_providers.dart';
 import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/domain/repositories/case_record_repository.dart';
+import 'package:dentera/domain/repositories/case_visit_repository.dart';
 import 'package:dentera/domain/repositories/clinic_repository.dart';
 import 'package:dentera/domain/repositories/patient_repository.dart';
 import 'package:dentera/domain/repositories/requirement_repository.dart';
@@ -159,6 +160,42 @@ class MockCaseRecordRepository implements CaseRecordRepository {
   }
 }
 
+class MockCaseVisitRepository implements CaseVisitRepository {
+  final List<CaseVisit> visits = [];
+
+  @override
+  Future<void> addCaseVisit(CaseVisit caseVisit) async {
+    visits.removeWhere((v) => v.id == caseVisit.id);
+    visits.add(caseVisit);
+  }
+
+  @override
+  Future<void> addCaseVisits(List<CaseVisit> caseVisits) async {
+    for (final v in caseVisits) {
+      await addCaseVisit(v);
+    }
+  }
+
+  @override
+  Future<void> updateCaseVisit(CaseVisit caseVisit) async {
+    final idx = visits.indexWhere((v) => v.id == caseVisit.id);
+    if (idx != -1) visits[idx] = caseVisit;
+  }
+
+  @override
+  Future<void> deleteCaseVisit(String id) async {
+    visits.removeWhere((v) => v.id == id);
+  }
+
+  @override
+  Future<List<CaseVisit>> getVisitsByCaseRecordId(String caseRecordId) async {
+    return visits.where((v) => v.caseRecordId == caseRecordId).toList();
+  }
+
+  @override
+  Future<List<CaseVisit>> getAllVisits() async => List.from(visits);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -211,12 +248,14 @@ void main() {
     late MockClinicRepository mockClinicRepo;
     late MockRequirementRepository mockRequirementRepo;
     late MockCaseRecordRepository mockCaseRepo;
+    late MockCaseVisitRepository mockCaseVisitRepo;
 
     setUp(() {
       mockPatientRepo = MockPatientRepository([testPatient1, testPatient2]);
       mockClinicRepo = MockClinicRepository([testClinic]);
       mockRequirementRepo = MockRequirementRepository([testRequirement]);
       mockCaseRepo = MockCaseRecordRepository([testCaseRecord]);
+      mockCaseVisitRepo = MockCaseVisitRepository();
     });
 
     List<Override> buildOverrides() {
@@ -225,6 +264,7 @@ void main() {
         clinicRepositoryProvider.overrideWithValue(mockClinicRepo),
         requirementRepositoryProvider.overrideWithValue(mockRequirementRepo),
         caseRecordRepositoryProvider.overrideWithValue(mockCaseRepo),
+        caseVisitRepositoryProvider.overrideWithValue(mockCaseVisitRepo),
       ];
     }
 
@@ -410,6 +450,7 @@ void main() {
       await tester.pump();
 
       // Submit
+      await tester.ensureVisible(find.text('Log Case Record'));
       await tester.tap(find.text('Log Case Record'));
       await tester.pumpAndSettle();
 

@@ -1,5 +1,6 @@
 export 'appointment_repository.dart';
 export 'case_record_repository.dart';
+export 'case_visit_repository.dart';
 export 'clinic_repository.dart';
 export 'dental_catalog_repository.dart';
 export 'patient_repository.dart';
