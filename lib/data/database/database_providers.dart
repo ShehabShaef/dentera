@@ -44,3 +44,10 @@ final caseVisitRepositoryProvider = Provider<CaseVisitRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
   return SqliteCaseVisitRepository(database);
 });
+
+/// Riverpod provider for the [TreatmentPlanRepository].
+final treatmentPlanRepositoryProvider = Provider<TreatmentPlanRepository>((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return SqliteTreatmentPlanRepository(database);
+});
+

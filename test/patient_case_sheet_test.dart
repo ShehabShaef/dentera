@@ -72,6 +72,7 @@ void main() {
         ProviderScope(
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => <CaseRecord>[]),
+            treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
@@ -100,6 +101,7 @@ void main() {
         ProviderScope(
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
+            treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-01',
@@ -137,11 +139,16 @@ void main() {
       expect(find.textContaining('r-01'), findsNothing);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
-      // Assert unbacked Treatment Plan tab was pruned
-      expect(find.text('Treatment Plan'), findsNothing);
+      // Assert restored Treatment Plan tab exists
+      expect(find.text('Treatment Plan'), findsOneWidget);
 
-      // Verify exactly 2 tabs exist in TabBar (Clinical Cases and Patient History)
-      expect(find.byType(Tab), findsNWidgets(2));
+      // Verify exactly 3 tabs exist in TabBar (Clinical Cases, Patient History, and Treatment Plan)
+      expect(find.byType(Tab), findsNWidgets(3));
+
+      // Switch to Treatment Plan Tab
+      await tester.tap(find.text('Treatment Plan'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TreatmentPlanTab), findsOneWidget);
 
       // Switch to Patient History Tab
       await tester.tap(find.text('Patient History'));
@@ -162,6 +169,7 @@ void main() {
         ProviderScope(
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [testCaseRecord]),
+            treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-01',
@@ -210,6 +218,7 @@ void main() {
         ProviderScope(
           overrides: [
             casesByPatientProvider(patient.id).overrideWith((ref) async => [endoCase]),
+            treatmentPlansByPatientProvider(patient.id).overrideWith((ref) async => []),
             allRequirementsProvider.overrideWith((ref) async => [
               const Requirement(
                 id: 'r-endo-01',

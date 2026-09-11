@@ -33,12 +33,16 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
     required this.patientId,
     this.patientName,
     this.caseRecord,
+    this.initialClinicId,
+    this.initialNotes,
     this.onCaseLogged,
   });
 
   final String patientId;
   final String? patientName;
   final CaseRecord? caseRecord;
+  final String? initialClinicId;
+  final String? initialNotes;
   final ValueChanged<CaseRecord>? onCaseLogged;
 
   /// Convenience static helper to display the [LogCaseRecordModal].
@@ -47,6 +51,8 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
     required String patientId,
     String? patientName,
     CaseRecord? caseRecord,
+    String? initialClinicId,
+    String? initialNotes,
     ValueChanged<CaseRecord>? onCaseLogged,
   }) {
     AppLogger.info('Opened LogCaseRecordModal for patient: $patientId (editing: ${caseRecord != null})');
@@ -58,6 +64,8 @@ class LogCaseRecordModal extends ConsumerStatefulWidget {
         patientId: patientId,
         patientName: patientName,
         caseRecord: caseRecord,
+        initialClinicId: initialClinicId,
+        initialNotes: initialNotes,
         onCaseLogged: onCaseLogged,
       ),
     );
@@ -89,7 +97,10 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.caseRecord?.notes ?? '');
+    _notesController = TextEditingController(
+      text: widget.caseRecord?.notes ?? widget.initialNotes ?? '',
+    );
+    _selectedClinicId = widget.initialClinicId;
     if (widget.caseRecord != null) {
       _selectedRequirementId = widget.caseRecord!.requirementId;
       _selectedStatus = widget.caseRecord!.status;

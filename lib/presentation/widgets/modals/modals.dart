@@ -1,6 +1,7 @@
 export 'add_clinic_modal.dart';
 export 'add_patient_modal.dart';
 export 'add_requirement_modal.dart';
+export 'add_treatment_plan_modal.dart';
 export 'database_reset_modal.dart';
 export 'edit_appointment_modal.dart';
 export 'edit_clinic_modal.dart';

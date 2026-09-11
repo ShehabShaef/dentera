@@ -7,3 +7,4 @@ export 'dental_catalog_provider.dart';
 export 'navigation_provider.dart';
 export 'patients_provider.dart';
 export 'requirements_provider.dart';
+export 'treatment_plans_provider.dart';
