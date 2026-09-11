@@ -219,11 +219,19 @@ class ClinicDetailsScreen extends ConsumerWidget {
                 ),
               ),
               actions: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  tooltip: 'Generate Quota Report',
+                  onPressed: () => GenerateQuotaReportModal.show(context, clinic: currentClinic),
+                ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded),
                   tooltip: 'Clinic Options',
                   onSelected: (value) async {
                     switch (value) {
+                      case 'generate_report':
+                        await GenerateQuotaReportModal.show(context, clinic: currentClinic);
+                        break;
                       case 'edit_clinic':
                         await EditClinicModal.show(context, clinic: currentClinic);
                         break;
@@ -237,6 +245,21 @@ class ClinicDetailsScreen extends ConsumerWidget {
                     }
                   },
                   itemBuilder: (context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'generate_report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf_outlined, size: 20, color: AppColors.onSurface),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Generate Quota Report',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem<String>(
                       value: 'edit_clinic',
                       child: Row(
