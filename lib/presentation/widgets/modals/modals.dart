@@ -2,6 +2,7 @@ export 'add_clinic_modal.dart';
 export 'add_patient_modal.dart';
 export 'add_requirement_modal.dart';
 export 'database_reset_modal.dart';
+export 'edit_appointment_modal.dart';
 export 'edit_clinic_modal.dart';
 export 'edit_patient_modal.dart';
 export 'edit_requirement_modal.dart';
@@ -12,4 +13,3 @@ export 'schedule_appointment_modal.dart';
 export 'sort_clinic_cases_modal.dart';
 export 'sort_clinics_modal.dart';
 export 'sort_patients_modal.dart';
-

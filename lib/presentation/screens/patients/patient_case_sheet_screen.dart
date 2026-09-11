@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
@@ -367,16 +368,97 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                 'Dental Department';
             final clinicColor = _parseColor(clinic?.colorHex);
 
-            return CaseRecordCard(
-              caseRecord: item,
-              requirementTitle: procedureTitle,
-              clinicName: clinicName,
-              clinicColor: clinicColor,
-              onTap: () => EvaluateCaseModal.show(
-                context,
+            return Dismissible(
+              key: ValueKey('case_dismiss_${item.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20.0),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.onError,
+                  size: 24,
+                ),
+              ),
+              confirmDismiss: (direction) async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Delete Case Record'),
+                    content: Text(
+                      'Are you sure you want to delete this case record for "$procedureTitle"?\n\n'
+                      'If this case was marked as completed, your requirement completed count will automatically be decremented.',
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(true),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                return confirmed ?? false;
+              },
+              onDismissed: (direction) async {
+                try {
+                  await ref.read(caseRecordRepositoryProvider).deleteCaseRecord(item.id);
+                  AppLogger.info('Successfully deleted case record ${item.id}');
+                  ref.invalidate(casesByPatientProvider(patient.id));
+                  ref.invalidate(casesByRequirementProvider(item.requirementId));
+                  ref.invalidate(allCasesProvider);
+                  ref.invalidate(allRequirementsProvider);
+                  ref.invalidate(globalQuotaSummaryProvider);
+                  final reqs = ref.read(allRequirementsProvider).valueOrNull;
+                  if (reqs != null) {
+                    for (final r in reqs) {
+                      if (r.id == item.requirementId && r.clinicId.isNotEmpty) {
+                        ref.invalidate(requirementsByClinicProvider(r.clinicId));
+                      }
+                    }
+                  }
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Case record deleted')),
+                    );
+                  }
+                } catch (e, st) {
+                  AppLogger.error('Failed to delete case record ${item.id}: $e', e, st);
+                }
+              },
+              child: CaseRecordCard(
                 caseRecord: item,
-                patientName: patient.name,
-                procedureTitle: procedureTitle,
+                requirementTitle: procedureTitle,
+                clinicName: clinicName,
+                clinicColor: clinicColor,
+                onTap: () => EvaluateCaseModal.show(
+                  context,
+                  caseRecord: item,
+                  patientName: patient.name,
+                  procedureTitle: procedureTitle,
+                ),
+                onEdit: () => EvaluateCaseModal.show(
+                  context,
+                  caseRecord: item,
+                  patientName: patient.name,
+                  procedureTitle: procedureTitle,
+                ),
+                onDelete: () => _confirmDeleteCaseRecord(
+                  context,
+                  item,
+                  procedureTitle,
+                  patient,
+                ),
               ),
             );
           },
@@ -398,6 +480,75 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         onRetry: () => ref.invalidate(casesByPatientProvider(patient.id)),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteCaseRecord(
+    BuildContext context,
+    CaseRecord caseRecord,
+    String procedureTitle,
+    Patient patient,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Case Record'),
+        content: Text(
+          'Are you sure you want to delete this case record for "$procedureTitle"?\n\n'
+          'If this case was marked as completed, your requirement completed count will automatically be decremented.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(caseRecordRepositoryProvider).deleteCaseRecord(caseRecord.id);
+        AppLogger.info('Successfully deleted case record ${caseRecord.id}');
+
+        ref.invalidate(casesByPatientProvider(patient.id));
+        ref.invalidate(casesByRequirementProvider(caseRecord.requirementId));
+        ref.invalidate(allCasesProvider);
+        ref.invalidate(allRequirementsProvider);
+        ref.invalidate(globalQuotaSummaryProvider);
+
+        final reqs = ref.read(allRequirementsProvider).valueOrNull;
+        if (reqs != null) {
+          for (final r in reqs) {
+            if (r.id == caseRecord.requirementId && r.clinicId.isNotEmpty) {
+              ref.invalidate(requirementsByClinicProvider(r.clinicId));
+            }
+          }
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Case record deleted')),
+          );
+        }
+      } catch (e, st) {
+        AppLogger.error('Failed to delete case record ${caseRecord.id}: $e', e, st);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete case record: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// Builds the standardized zero state display when no clinical cases exist for this patient.

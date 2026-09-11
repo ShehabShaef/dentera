@@ -6,6 +6,8 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:dentera/core/error/exceptions.dart';
 import 'package:dentera/data/database/app_database.dart';
+import 'package:dentera/data/repositories/sqlite_appointment_repository.dart';
+import 'package:dentera/data/repositories/sqlite_case_record_repository.dart';
 import 'package:dentera/data/repositories/sqlite_clinic_repository.dart';
 import 'package:dentera/data/repositories/sqlite_patient_repository.dart';
 import 'package:dentera/data/repositories/sqlite_requirement_repository.dart';
@@ -523,6 +525,109 @@ void main() {
       // Verify child case records were cascade deleted
       final remainingCases = await db.query('case_records', where: 'id IN (?, ?)', whereArgs: ['case-req-1', 'case-req-2']);
       expect(remainingCases, isEmpty);
+
+      // Clean up patient
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('SqliteCaseRecordRepository.deleteCaseRecord decrements requirement completedCount atomically when deleting a completed case', () async {
+      final appDb = AppDatabase.instance;
+      final reqRepo = SqliteRequirementRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+      final caseRepo = SqliteCaseRecordRepository(appDb);
+
+      const patientId = 'patient-case-delete-sync';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Case Sync Patient',
+        age: 26,
+        gender: 'Female',
+        createdAt: DateTime.now(),
+      ));
+
+      const reqId = 'req-case-delete-sync';
+      await reqRepo.addRequirement(const Requirement(
+        id: reqId,
+        clinicId: 'clinic-prosth',
+        title: 'Quota Decrement Target',
+        targetCount: 5,
+        completedCount: 0,
+      ));
+
+      const caseId = 'case-to-delete-sync';
+      final completedCase = CaseRecord(
+        id: caseId,
+        patientId: patientId,
+        requirementId: reqId,
+        status: 'Completed',
+        notes: 'Finished treatment',
+        dateStarted: DateTime.now(),
+        dateCompleted: DateTime.now(),
+      );
+
+      // Inserting completed case should increment completedCount to 1
+      await caseRepo.addCaseRecord(completedCase);
+
+      final reqAfterAdd = await reqRepo.getRequirementsByClinicId('clinic-prosth');
+      final updatedReq = reqAfterAdd.firstWhere((r) => r.id == reqId);
+      expect(updatedReq.completedCount, equals(1));
+
+      // Deleting the completed case should atomically decrement completedCount back to 0
+      await caseRepo.deleteCaseRecord(caseId);
+
+      final reqAfterDelete = await reqRepo.getRequirementsByClinicId('clinic-prosth');
+      final decrementedReq = reqAfterDelete.firstWhere((r) => r.id == reqId);
+      expect(decrementedReq.completedCount, equals(0));
+
+      // Clean up
+      await reqRepo.deleteRequirement(reqId);
+      await patientRepo.deletePatient(patientId);
+    });
+
+    test('SqliteAppointmentRepository.updateAppointment and deleteAppointment properly mutate and remove appointments', () async {
+      final appDb = AppDatabase.instance;
+      final aptRepo = SqliteAppointmentRepository(appDb);
+      final patientRepo = SqlitePatientRepository(appDb);
+
+      const patientId = 'patient-apt-crud-test';
+      await patientRepo.addPatient(Patient(
+        id: patientId,
+        name: 'Apt Test Patient',
+        age: 32,
+        gender: 'Male',
+        createdAt: DateTime.now(),
+      ));
+
+      const aptId = 'apt-crud-test-1';
+      final initialApt = Appointment(
+        id: aptId,
+        patientId: patientId,
+        clinicId: 'clinic-prosth',
+        scheduledDate: DateTime(2026, 9, 15, 10, 0),
+        status: 'Scheduled',
+        procedureDescription: 'Initial Consultation',
+      );
+
+      await aptRepo.addAppointment(initialApt);
+
+      final updatedApt = initialApt.copyWith(
+        scheduledDate: DateTime(2026, 9, 15, 14, 30),
+        status: 'Completed',
+        procedureDescription: 'Follow-up Procedure',
+      );
+
+      await aptRepo.updateAppointment(updatedApt);
+
+      final apts = await aptRepo.getAppointmentsByDate(DateTime(2026, 9, 15));
+      expect(apts.length, equals(1));
+      expect(apts.first.status, equals('Completed'));
+      expect(apts.first.procedureDescription, equals('Follow-up Procedure'));
+      expect(apts.first.scheduledDate.hour, equals(14));
+
+      await aptRepo.deleteAppointment(aptId);
+
+      final remainingApts = await aptRepo.getAppointmentsByDate(DateTime(2026, 9, 15));
+      expect(remainingApts, isEmpty);
 
       // Clean up patient
       await patientRepo.deletePatient(patientId);
