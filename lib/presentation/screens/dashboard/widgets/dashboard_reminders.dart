@@ -1,33 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../state/state.dart';
+import '../../clinics/clinic_details_screen.dart';
+import '../../patients/patient_case_sheet_screen.dart';
 
-/// Clinical reminder item data model.
-class ClinicalReminderItem {
-  const ClinicalReminderItem({
-    required this.message,
-    required this.icon,
-    this.type = ReminderType.info,
-  });
-
-  final String message;
-  final IconData icon;
-  final ReminderType type;
-}
-
-enum ReminderType { warning, info, neutral }
-
-/// Horizontal scrolling reminder pills row dynamically populated from Riverpod SQLite state.
+/// Horizontal scrolling reminder pills row dynamically populated from Riverpod clinical state.
 ///
-/// **Architecture Note (v0.4 UI Scope Reduction):**
-/// In v0.4, all hardcoded visual mock reminders ('Review clinical quota targets',
-/// 'Sign completed charts by EOD', 'Restock procedural supplies') were pruned.
-/// This widget now dynamically evaluates active appointments from [dailyAppointmentsProvider]
-/// and [upcomingAppointmentsProvider]. If no appointments require immediate clinical attention,
-/// it gracefully returns [SizedBox.shrink] without consuming layout space.
+/// Intelligently displays prioritized clinical reminder pills:
+/// - Overdue cases (>=14 days in progress without evaluation)
+/// - Imminent appointments (<2 hours)
+/// - Clinical department quota pacing alerts (<25% completed)
+/// - General schedule summaries
+///
+/// Tapping a reminder routes directly to the relevant case, appointment, or clinic screen.
 class DashboardReminders extends ConsumerWidget {
   const DashboardReminders({
     super.key,
@@ -35,50 +23,62 @@ class DashboardReminders extends ConsumerWidget {
   });
 
   /// Optional explicit reminders list. If null, reminders are dynamically evaluated
-  /// from Riverpod appointment state.
+  /// from [clinicalRemindersProvider].
   final List<ClinicalReminderItem>? reminders;
+
+  void _handleReminderTap(BuildContext context, WidgetRef ref, ClinicalReminderItem item) {
+    if (item.onTap != null) {
+      item.onTap!();
+      return;
+    }
+
+    if (item.caseRecord != null) {
+      AppLogger.info('Navigating to PatientCaseSheetScreen for overdue case: ${item.caseRecord!.id}');
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => PatientCaseSheetScreen(
+            patientId: item.caseRecord!.patientId,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (item.appointment != null) {
+      AppLogger.info('Navigating to PatientCaseSheetScreen for imminent appointment: ${item.appointment!.id}');
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => PatientCaseSheetScreen(
+            patientId: item.appointment!.patientId,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (item.clinic != null) {
+      AppLogger.info('Navigating to ClinicDetailsScreen for lagging quota: ${item.clinic!.name}');
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => ClinicDetailsScreen(
+            clinic: item.clinic!,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (item.category == ReminderCategory.generalSchedule) {
+      AppLogger.info('Switching root navigation tab to Schedule (Appointments)');
+      ref.read(rootNavigationIndexProvider.notifier).state = 3;
+      return;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    List<ClinicalReminderItem> activeReminders;
-
-    if (reminders != null) {
-      activeReminders = reminders!;
-    } else {
-      activeReminders = <ClinicalReminderItem>[];
-
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final todayApts = ref.watch(dailyAppointmentsProvider(today)).valueOrNull ?? const [];
-      final upcomingApts = ref.watch(upcomingAppointmentsProvider).valueOrNull ?? const [];
-
-      // Check for pending or scheduled appointments today
-      final pendingOrScheduledToday = todayApts.where((apt) {
-        final status = apt.status.toLowerCase();
-        return status == 'pending' || status == 'scheduled' || status == 'confirmed';
-      }).toList();
-
-      if (pendingOrScheduledToday.isNotEmpty) {
-        activeReminders.add(
-          ClinicalReminderItem(
-            message: '${pendingOrScheduledToday.length} appointment(s) scheduled today',
-            icon: Icons.schedule,
-            type: ReminderType.warning,
-          ),
-        );
-      }
-
-      // Check for upcoming appointments tomorrow and beyond
-      if (upcomingApts.isNotEmpty) {
-        activeReminders.add(
-          ClinicalReminderItem(
-            message: '${upcomingApts.length} upcoming appointment(s) scheduled',
-            icon: Icons.event_note,
-            type: ReminderType.info,
-          ),
-        );
-      }
-    }
+    final List<ClinicalReminderItem> activeReminders =
+        reminders ?? ref.watch(clinicalRemindersProvider);
 
     if (activeReminders.isEmpty) {
       AppLogger.debug('Dashboard reminders returning SizedBox.shrink() due to empty state');
@@ -100,10 +100,16 @@ class DashboardReminders extends ConsumerWidget {
           Color borderColor;
 
           switch (item.type) {
-            case ReminderType.warning:
-              bgColor = AppColors.error.withValues(alpha: 0.1);
+            case ReminderType.alert:
+              bgColor = AppColors.error.withValues(alpha: 0.12);
               textColor = AppColors.error;
-              borderColor = AppColors.error.withValues(alpha: 0.25);
+              borderColor = AppColors.error.withValues(alpha: 0.4);
+              break;
+            case ReminderType.warning:
+              const warningColor = Color(0xFFD97706);
+              bgColor = warningColor.withValues(alpha: 0.12);
+              textColor = const Color(0xFFB45309);
+              borderColor = warningColor.withValues(alpha: 0.4);
               break;
             case ReminderType.info:
               bgColor = AppColors.secondary.withValues(alpha: 0.1);
@@ -117,30 +123,37 @@ class DashboardReminders extends ConsumerWidget {
               break;
           }
 
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: bgColor,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(9999),
-              border: Border.all(color: borderColor, width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(
-                  item.icon,
-                  size: 16,
-                  color: textColor,
+              onTap: () => _handleReminderTap(context, ref, item),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(9999),
+                  border: Border.all(color: borderColor, width: 1),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  item.message,
-                  style: AppTextStyles.caption.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      item.icon,
+                      size: 16,
+                      color: textColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      item.message,
+                      style: AppTextStyles.caption.copyWith(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
