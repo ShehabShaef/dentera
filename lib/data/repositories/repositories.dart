@@ -6,3 +6,4 @@ export 'sqlite_clinic_repository.dart';
 export 'sqlite_patient_repository.dart';
 export 'sqlite_requirement_repository.dart';
 export 'sqlite_treatment_plan_repository.dart';
+export 'sqlite_radiograph_repository.dart';

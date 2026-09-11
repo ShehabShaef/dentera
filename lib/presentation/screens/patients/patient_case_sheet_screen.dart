@@ -663,6 +663,10 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
             emptyPlaceholder: 'No radiographs, pulp tests, or diagnostic aids logged.',
             onEdit: onEditAnamnesis,
           ),
+          const SizedBox(height: 12),
+
+          // 7. Attached Radiographs (X-Rays) Gallery
+          RadiographsGallerySection(patient: patient),
         ],
       ),
     );

@@ -51,3 +51,9 @@ final treatmentPlanRepositoryProvider = Provider<TreatmentPlanRepository>((ref) 
   return SqliteTreatmentPlanRepository(database);
 });
 
+/// Riverpod provider for the [RadiographRepository].
+final radiographRepositoryProvider = Provider<RadiographRepository>((ref) {
+  final database = ref.watch(appDatabaseProvider);
+  return SqliteRadiographRepository(database);
+});
+

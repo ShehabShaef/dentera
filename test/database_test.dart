@@ -87,6 +87,18 @@ void main() {
               FOREIGN KEY (clinicId) REFERENCES clinics (id) ON DELETE CASCADE
             );
           ''');
+          batch.execute('''
+            CREATE TABLE patient_radiographs (
+              id TEXT PRIMARY KEY,
+              patientId TEXT NOT NULL,
+              filePath TEXT NOT NULL,
+              type TEXT NOT NULL,
+              notes TEXT,
+              captureDate TEXT NOT NULL,
+              createdAt TEXT NOT NULL,
+              FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
+            );
+          ''');
           await batch.commit();
         },
       ),

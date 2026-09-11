@@ -6,3 +6,4 @@ export 'dental_catalog_repository.dart';
 export 'patient_repository.dart';
 export 'requirement_repository.dart';
 export 'treatment_plan_repository.dart';
+export 'radiograph_repository.dart';
