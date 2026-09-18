@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../widgets/widgets.dart';
 
 /// Step 2 of Onboarding: University / Dental School Selection.
@@ -30,7 +31,7 @@ class UniversityPage extends StatelessWidget {
               children: <Widget>[
                 // Title & Subtitle
                 Text(
-                  'Your Institution',
+                  context.l10n.yourInstitution,
                   style: AppTextStyles.h1,
                 ),
                 const SizedBox(height: 8),
@@ -44,7 +45,7 @@ class UniversityPage extends StatelessWidget {
 
                 // Input Field
                 DenteraTextField(
-                  label: 'University / School',
+                  label: context.l10n.universityOrSchool,
                   hintText: "e.g., University of Sana'a",
                   controller: universityController,
                   textInputAction: TextInputAction.next,
@@ -64,7 +65,7 @@ class UniversityPage extends StatelessWidget {
                     TextButton(
                       onPressed: onBack,
                       child: Text(
-                        'Back',
+                        context.l10n.back,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
@@ -73,7 +74,7 @@ class UniversityPage extends StatelessWidget {
                     ),
                     PrimaryButton(
                       isFullWidth: false,
-                      text: 'Continue',
+                      text: context.l10n.continueButton,
                       icon: const Icon(
                         Icons.arrow_forward_rounded,
                         size: 18,

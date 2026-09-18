@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 import '../../../widgets/cards/base_card.dart';
 import '../../../widgets/modals/add_radiograph_modal.dart';
@@ -75,7 +76,7 @@ class RadiographsGallerySection extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           Text(
-                            'Radiographs',
+                            context.l10n.radiographs,
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w600,
                               color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
@@ -89,7 +90,6 @@ class RadiographsGallerySection extends ConsumerWidget {
                                 color: isDark
                                     ? AppDarkColors.primaryTeal.withValues(alpha: 0.15)
                                     : AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '${items.length}',
@@ -107,7 +107,7 @@ class RadiographsGallerySection extends ConsumerWidget {
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
-                      label: const Text('Attach X-Ray'),
+                      label: Text(context.l10n.attachXRay),
                       style: OutlinedButton.styleFrom(
                         minimumSize: Size.zero,
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -172,7 +172,7 @@ class RadiographsGallerySection extends ConsumerWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'No radiographs attached. Attach periapical, bitewing, or panoramic X-rays for offline diagnostic review.',
+              '${context.l10n.noRadiographsAttached}. ${context.l10n.attachRadiographDescription}',
               style: AppTextStyles.caption.copyWith(
                 color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                 fontStyle: FontStyle.italic,
@@ -186,7 +186,7 @@ class RadiographsGallerySection extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             ),
             onPressed: () => _openAddRadiograph(context),
-            child: const Text('Attach'),
+            child: Text(context.l10n.attach),
           ),
         ],
       ),

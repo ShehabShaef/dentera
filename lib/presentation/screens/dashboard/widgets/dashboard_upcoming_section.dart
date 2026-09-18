@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 import '../../patients/patient_case_sheet_screen.dart';
 
@@ -79,7 +80,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              "Tomorrow's Patients",
+              context.l10n.tomorrowsPatients,
               style: AppTextStyles.h2.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppDarkColors.textPrimary : null,
@@ -107,7 +108,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                'No upcoming patients scheduled for tomorrow.',
+                context.l10n.noUpcomingPatientsTomorrow,
                 style: AppTextStyles.caption.copyWith(
                   color: mutedTextColor,
                 ),
@@ -224,7 +225,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
               }
             },
             child: Text(
-              'View Full Schedule',
+              context.l10n.viewFullSchedule,
               style: AppTextStyles.caption.copyWith(
                 color: primaryColor,
                 fontWeight: FontWeight.w600,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../widgets/widgets.dart';
 
 /// Step 1 of Onboarding: Welcome & Doctor Name.
@@ -62,12 +63,12 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   // Title & Subtitle
                   Text(
-                    'Welcome, Doctor.',
+                    context.l10n.welcomeDoctor,
                     style: AppTextStyles.h1,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Let's set up your clinical workspace. What's your name?",
+                    context.l10n.setupClinicalWorkspace,
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,
                     ),
@@ -76,7 +77,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   // Input Field
                   DenteraTextField(
-                    label: 'Full Name',
+                    label: context.l10n.fullName,
                     hintText: 'Dr. First Name Last Name',
                     controller: widget.nameController,
                     textInputAction: TextInputAction.next,
@@ -87,7 +88,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your name';
+                        return context.l10n.pleaseEnterYourName;
                       }
                       return null;
                     },
@@ -102,7 +103,7 @@ class _WelcomePageState extends State<WelcomePage> {
                       PrimaryButton(
                         isFullWidth: true,
                         isLoading: widget.isLoading,
-                        text: 'Continue',
+                        text: context.l10n.continueButton,
                         icon: const Icon(
                           Icons.arrow_forward_rounded,
                           size: 18,
@@ -116,7 +117,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           child: TextButton(
                             onPressed: widget.isLoading ? null : widget.onContinueAsGuest,
                             child: Text(
-                              'Continue as a guest',
+                              context.l10n.continueAsGuest,
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,

@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../case_visits/case_visit_timeline_widget.dart';
@@ -163,11 +164,24 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
         setState(() => _isSubmitting = false);
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to evaluate case record',
+          message: context.l10n.failedToEvaluateCase,
           error: e,
           stackTrace: st,
         );
       }
+    }
+  }
+
+  String _formatStatus(String status, BuildContext context) {
+    switch (status) {
+      case 'In Progress':
+        return context.l10n.statusInProgress;
+      case 'Evaluated':
+        return context.l10n.statusEvaluated;
+      case 'Completed':
+        return context.l10n.statusCompleted;
+      default:
+        return status;
     }
   }
 
@@ -180,13 +194,13 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
       orElse: () => Requirement(
         id: widget.caseRecord.requirementId,
         clinicId: '',
-        title: widget.procedureTitle ?? 'Clinical Procedure',
+        title: widget.procedureTitle ?? context.l10n.clinicalProcedure,
         targetCount: 1,
         completedCount: 0,
       ),
     );
     final procedureName = widget.procedureTitle ??
-        (req != null && req.title.isNotEmpty ? req.title : 'Clinical Procedure');
+        (req != null && req.title.isNotEmpty ? req.title : context.l10n.clinicalProcedure);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -228,7 +242,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Evaluate Case Record',
+                          context.l10n.evaluateCaseRecord,
                           style: AppTextStyles.h2.copyWith(
                             color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -262,7 +276,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'Procedure Status',
+                    context.l10n.procedureStatus,
                     style: AppTextStyles.bodyMd.copyWith(
                       color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                       fontWeight: FontWeight.w600,
@@ -282,7 +296,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
 
                       return ChoiceChip(
                         label: Text(
-                          status,
+                          _formatStatus(status, context),
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                             color: isSelected ? (isDark ? AppDarkColors.onTeal : Colors.white) : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
@@ -313,8 +327,8 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
               // 4. Grade / Score Input
               DenteraTextField(
                 controller: _gradeController,
-                label: 'Grade / Score (Optional)',
-                hintText: 'e.g., 9.0/10, Pass, A',
+                label: context.l10n.gradeScoreOptional,
+                hintText: context.l10n.gradeScoreHint,
                 prefixIcon: const Icon(Icons.grade_outlined, size: 20),
                 textCapitalization: TextCapitalization.characters,
               ),
@@ -323,8 +337,8 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
               // 5. Clinical Notes & Feedback
               DenteraTextField(
                 controller: _notesController,
-                label: 'Clinical Notes & Evaluation Remarks',
-                hintText: 'e.g., Margins well-adapted, patient tolerated procedure well...',
+                label: context.l10n.evaluationRemarks,
+                hintText: context.l10n.evaluationRemarksHint,
                 prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
@@ -337,7 +351,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -345,7 +359,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: _isSubmitting ? 'Saving...' : 'Save Evaluation',
+                      text: _isSubmitting ? context.l10n.saving : context.l10n.saveEvaluation,
                       icon: Icon(Icons.check_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),

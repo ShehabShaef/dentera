@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 
 /// Modal bottom sheet allowing users to select the sorting order of the clinical departments.
@@ -27,20 +28,20 @@ class SortClinicsModal extends ConsumerWidget {
     final sortOptions = <Map<String, dynamic>>[
       {
         'option': ClinicSortOption.name,
-        'title': 'Name (A to Z)',
-        'subtitle': 'Alphabetical order by clinic name',
+        'title': context.l10n.sortByName,
+        'subtitle': context.l10n.sortByNameSubtitle,
         'icon': Icons.sort_by_alpha_rounded,
       },
       {
         'option': ClinicSortOption.academicYear,
-        'title': 'Academic Year',
-        'subtitle': 'Order by target academic year curriculum',
+        'title': context.l10n.sortByAcademicYear,
+        'subtitle': context.l10n.sortByAcademicYearSubtitle,
         'icon': Icons.school_outlined,
       },
       {
         'option': ClinicSortOption.quotaProgress,
-        'title': 'Quota Progress',
-        'subtitle': 'Highest percentage of completed requirements first',
+        'title': context.l10n.sortByQuotaProgress,
+        'subtitle': context.l10n.sortByQuotaProgressSubtitle,
         'icon': Icons.donut_large_rounded,
       },
     ];
@@ -84,7 +85,7 @@ class SortClinicsModal extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sort Clinics',
+                        context.l10n.sortClinics,
                         style: AppTextStyles.h2.copyWith(
                           color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -92,7 +93,7 @@ class SortClinicsModal extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Order clinical departments by academic criteria',
+                        context.l10n.orderClinicsSubtitle,
                         style: AppTextStyles.caption.copyWith(
                           color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),

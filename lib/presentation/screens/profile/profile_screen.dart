@@ -5,6 +5,7 @@ import '../../../core/services/database_backup_service.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/modals/modals.dart';
 import 'widgets/widgets.dart';
@@ -33,7 +34,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(
-            'Choose App Theme',
+            context.l10n.chooseAppTheme,
             style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.w600),
           ),
           content: RadioGroup<ThemeMode>(
@@ -44,19 +45,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Navigator.of(dialogContext).pop();
               }
             },
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 RadioListTile<ThemeMode>(
-                  title: Text('System Default'),
+                  title: Text(context.l10n.themeSystem),
                   value: ThemeMode.system,
                 ),
                 RadioListTile<ThemeMode>(
-                  title: Text('Light'),
+                  title: Text(context.l10n.light),
                   value: ThemeMode.light,
                 ),
                 RadioListTile<ThemeMode>(
-                  title: Text('Dark'),
+                  title: Text(context.l10n.dark),
                   value: ThemeMode.dark,
                 ),
               ],
@@ -65,7 +66,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
           ],
         );
@@ -80,7 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(
-            'Choose Language',
+            context.l10n.chooseLanguage,
             style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.w600),
           ),
           content: RadioGroup<String>(
@@ -91,15 +92,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Navigator.of(dialogContext).pop();
               }
             },
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 RadioListTile<String>(
-                  title: Text('English'),
+                  title: Text(context.l10n.english),
                   value: 'en',
                 ),
                 RadioListTile<String>(
-                  title: Text('العربية (Arabic)'),
+                  title: Text(context.l10n.arabic),
                   value: 'ar',
                 ),
               ],
@@ -108,7 +109,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
           ],
         );
@@ -166,21 +167,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Restore Database Backup?'),
-        content: const Text(
-          'Restoring a database will overwrite your current clinical data, patients, and quotas with the selected backup file.\n\nAre you sure you want to proceed?',
+        title: Text(context.l10n.restoreDatabaseBackupTitle),
+        content: Text(
+          context.l10n.restoreDatabaseConfirmationDetailed,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Restore'),
+            child: Text(context.l10n.restore),
           ),
         ],
       ),
@@ -267,15 +268,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final currentThemeMode = ref.watch(themeModeProvider);
     final themeLabel = switch (currentThemeMode) {
-      ThemeMode.system => 'System Default',
-      ThemeMode.light => 'Light',
-      ThemeMode.dark => 'Dark',
+      ThemeMode.system => context.l10n.themeSystem,
+      ThemeMode.light => context.l10n.light,
+      ThemeMode.dark => context.l10n.dark,
     };
 
     final currentLocale = ref.watch(localeProvider);
     final languageLabel = switch (currentLocale) {
-      'ar' => 'العربية (Arabic)',
-      _ => 'English',
+      'ar' => context.l10n.arabic,
+      _ => context.l10n.english,
     };
 
     final agendaRemindersEnabled = ref.watch(agendaRemindersProvider);
@@ -286,7 +287,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Settings',
+          context.l10n.settings,
           style: AppTextStyles.h1Mobile.copyWith(
             color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
             fontWeight: FontWeight.w600,
@@ -313,11 +314,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                   // 2. Preferences
                   SettingsGroupCard(
-                    title: 'Preferences',
+                    title: context.l10n.preferences,
                     children: <Widget>[
                       SettingsListTile(
                         icon: Icons.dark_mode_outlined,
-                        title: 'App Theme',
+                        title: context.l10n.appTheme,
                         showDivider: true,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -340,7 +341,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       SettingsListTile(
                         icon: Icons.language_outlined,
-                        title: 'Language',
+                        title: context.l10n.language,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -366,21 +367,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                   // 3. Local Notifications
                   SettingsGroupCard(
-                    title: 'Local Notifications',
+                    title: context.l10n.localNotifications,
                     children: <Widget>[
                       SettingsListTile(
                         icon: Icons.event_outlined,
-                        title: 'Next-Day Agenda Reminders',
+                        title: context.l10n.agendaReminders,
                         showDivider: true,
                         trailing: Switch.adaptive(
-                          value: agendaRemindersEnabled,
+                           value: agendaRemindersEnabled,
                           activeTrackColor: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                           onChanged: _onToggleAgendaReminders,
                         ),
                       ),
                       SettingsListTile(
                         icon: Icons.notifications_active_outlined,
-                        title: 'Patient Follow-up Alerts',
+                        title: context.l10n.patientFollowUpAlerts,
                         trailing: Switch.adaptive(
                           value: followUpAlertsEnabled,
                           activeTrackColor: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
@@ -395,11 +396,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                   // 4. Data & Offline Backup
                   SettingsGroupCard(
-                    title: 'Data & Offline Backup',
+                    title: context.l10n.dataAndOfflineBackup,
                     children: <Widget>[
                       SettingsListTile(
                         icon: Icons.picture_as_pdf_outlined,
-                        title: 'Generate Quota Report',
+                        title: context.l10n.generateQuotaReport,
                         subtitle: 'Supervisory academic PDF & CSV export',
                         showDivider: true,
                         trailing: Icon(
@@ -411,8 +412,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       SettingsListTile(
                         icon: Icons.download_rounded,
-                        title: 'Export Local Backup',
-                        subtitle: 'Save an encrypted SQLite copy to your device',
+                        title: context.l10n.exportLocalBackup,
+                        subtitle: context.l10n.exportBackupSubtitle,
                         showDivider: true,
                         trailing: Icon(
                           Icons.chevron_right_rounded,
@@ -423,8 +424,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       SettingsListTile(
                         icon: Icons.upload_rounded,
-                        title: 'Restore from Backup',
-                        subtitle: 'Import data from a local backup file',
+                        title: context.l10n.restoreFromBackup,
+                        subtitle: context.l10n.restoreBackupSubtitle,
                         trailing: Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
@@ -438,11 +439,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                   // 5. About & Security
                   SettingsGroupCard(
-                    title: 'About',
+                    title: context.l10n.about,
                     children: <Widget>[
                       SettingsListTile(
                         icon: Icons.info_outline_rounded,
-                        title: 'App Version',
+                        title: context.l10n.appVersion,
                         showDivider: true,
                         trailing: Text(
                           appVersion,
@@ -453,9 +454,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       SettingsListTile(
                         icon: Icons.lock_outline_rounded,
-                        title: 'Privacy & Security',
+                        title: context.l10n.privacyAndSecurity,
                         trailing: Text(
-                          '100% On-Device',
+                          context.l10n.onDeviceOnly,
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                             fontWeight: FontWeight.w600,
@@ -476,7 +477,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         size: 20,
                       ),
                       label: Text(
-                        'Reset All Clinical Data',
+                        context.l10n.resetAllClinicalData,
                         style: AppTextStyles.bodyMd.copyWith(
                           color: AppColors.error,
                           fontWeight: FontWeight.w600,

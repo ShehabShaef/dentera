@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'clinic_details_screen.dart';
@@ -40,6 +41,27 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     'Orthodontics',
   ];
 
+  String _getCategoryLabel(BuildContext context, String category) {
+    switch (category) {
+      case 'All':
+        return context.l10n.all;
+      case 'Prosthodontics':
+        return context.l10n.prosthodontics;
+      case 'Operative':
+        return context.l10n.operative;
+      case 'Endodontics':
+        return context.l10n.endodontics;
+      case 'Oral Surgery':
+        return context.l10n.oralSurgery;
+      case 'Periodontics':
+        return context.l10n.periodontics;
+      case 'Orthodontics':
+        return context.l10n.orthodontics;
+      default:
+        return category;
+    }
+  }
+
   void _toggleClinicSelection(String id) {
     final current = ref.read(selectedClinicIdsProvider);
     if (current.contains(id)) {
@@ -56,14 +78,14 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Selected Clinics?'),
+        title: Text(context.l10n.deleteSelectedClinics),
         content: Text(
-          'Deleting $count clinic${count > 1 ? 's' : ''} will permanently remove all associated requirements, clinical case records, and scheduled appointments due to cascade deletion.\n\nThis action cannot be undone. Are you sure you want to proceed?',
+          'Deleting $count clinic${count > 1 ? 's' : ''} will permanently remove all associated requirements, clinical case records, and scheduled appointments.\n\nThis action cannot be undone. Are you sure you want to proceed?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -71,7 +93,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
               foregroundColor: AppColors.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -137,16 +159,16 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                 ref.read(clinicSelectionModeProvider.notifier).state = false;
                 ref.read(selectedClinicIdsProvider.notifier).state = <String>{};
               },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
+              child: Text(
+                context.l10n.cancel,
+                style: const TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             title: Text(
-              '${selectedIds.length} Selected',
+              context.l10n.selectedCount(selectedIds.length),
               style: AppTextStyles.h2.copyWith(
                 color: AppColors.onSurface,
                 fontWeight: FontWeight.w700,
@@ -165,7 +187,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                   }
                 },
                 child: Text(
-                  isAllSelected ? 'Deselect All' : 'Select All',
+                  isAllSelected ? context.l10n.deselectAll : context.l10n.selectAll,
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -184,14 +206,14 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                       ? null
                       : () => _confirmBatchDeleteClinics(selectedIds),
                   icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  label: Text('Delete (${selectedIds.length})'),
+                  label: Text(context.l10n.deleteCount(selectedIds.length)),
                 ),
               ),
             ],
           )
         : AppBar(
             title: Text(
-              'Clinics & Requirements',
+              context.l10n.clinicsAndRequirements,
               style: AppTextStyles.h1Mobile.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -210,23 +232,23 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                   }
                 },
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'sort',
                     child: Row(
                       children: [
-                        Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
-                        SizedBox(width: 12),
-                        Text('Sort Clinics'),
+                        const Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.sortClinics),
                       ],
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
-                        SizedBox(width: 12),
-                        Text('Delete Clinics'),
+                        const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.deleteClinics),
                       ],
                     ),
                   ),
@@ -284,7 +306,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                               boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
                             ),
                             child: Text(
-                              category,
+                              _getCategoryLabel(context, category),
                               style: AppTextStyles.caption.copyWith(
                                 color: isSelected
                                     ? (isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer)
@@ -425,11 +447,11 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
   Widget _buildZeroState() {
     return DenteraEmptyState(
       icon: Icons.account_balance_outlined,
-      title: 'No clinics added yet',
-      subtitle: 'Register your clinical departments to track quotas and case progress.',
+      title: context.l10n.noClinicsAddedYet,
+      subtitle: context.l10n.registerClinicalDepartments,
       actionButton: PrimaryButton(
         isFullWidth: false,
-        text: 'Add Dental Clinic',
+        text: context.l10n.addDentalClinic,
         icon: const Icon(
           Icons.add_chart_rounded,
           color: AppColors.onPrimary,
@@ -447,8 +469,8 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
   Widget _buildEmptyFilterState() {
     return DenteraEmptyState(
       icon: Icons.search_off_rounded,
-      title: 'No clinics found in "$_selectedCategory"',
-      subtitle: 'Try selecting "All" or a different clinical category.',
+      title: context.l10n.noClinicsFoundInCategory(_selectedCategory),
+      subtitle: context.l10n.trySelectingAllOrDifferentCategory,
     );
   }
 

@@ -7,6 +7,7 @@ import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/constants/dental_catalog.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -193,7 +194,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Add Dental Clinic',
+                          context.l10n.addDentalClinic,
                           style: AppTextStyles.h2.copyWith(
                             color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -201,7 +202,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Create a new clinical department to track quotas',
+                          context.l10n.createClinicSubtitle,
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
@@ -219,7 +220,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
 
               // 3. Department Dropdown (Standard 10 departments + Other...)
               DenteraDropdown<String>(
-                label: 'Department',
+                label: context.l10n.department,
                 value: _selectedDepartment,
                 prefixIcon: const Icon(Icons.medical_services_outlined, size: 20),
                 items: DentalCatalog.departmentOptions
@@ -251,7 +252,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
               if (_selectedDepartment == DentalCatalog.otherOption) ...[
                 DenteraTextField(
                   controller: _nameController,
-                  label: 'Clinic Name',
+                  label: context.l10n.clinicName,
                   hintText: 'e.g., Orthodontics or Pedodontics',
                   prefixIcon: const Icon(Icons.edit_outlined, size: 20),
                   textCapitalization: TextCapitalization.words,
@@ -270,7 +271,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
 
               // 4. Academic Year Dropdown
               DenteraDropdown<String>(
-                label: 'Academic Year',
+                label: context.l10n.academicYear,
                 value: _selectedAcademicYear,
                 prefixIcon: const Icon(Icons.school_outlined, size: 20),
                 items: _academicYears
@@ -291,7 +292,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
 
               // 5. Color Theme Selection
               Text(
-                'Department Theme Color',
+                context.l10n.departmentThemeColor,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -347,7 +348,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -355,7 +356,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                      text: _isSubmitting ? 'Saving...' : 'Save Clinic',
+                      text: _isSubmitting ? context.l10n.saving : context.l10n.saveClinic,
                       icon: Icon(Icons.add_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -122,8 +123,8 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
         DenteraSnackBar.showSuccess(
           context,
           message: isEditing
-              ? 'Treatment plan item updated successfully'
-              : 'Treatment plan item staged for Phase $_selectedPhase',
+              ? context.l10n.treatmentItemUpdated
+              : context.l10n.treatmentItemStaged(_selectedPhase),
         );
       }
     } catch (e) {
@@ -132,10 +133,36 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
         setState(() => _isSubmitting = false);
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to save treatment plan: ${e.toString()}',
+          message: context.l10n.failedToSaveTreatmentPlan(e.toString()),
           error: e,
         );
       }
+    }
+  }
+
+  String _formatPhase(TreatmentPhase phase, BuildContext context) {
+    switch (phase) {
+      case TreatmentPhase.emergency:
+        return context.l10n.phaseEmergency;
+      case TreatmentPhase.preventivePerio:
+        return context.l10n.phasePreventivePerio;
+      case TreatmentPhase.restorative:
+        return context.l10n.phaseRestorative;
+      case TreatmentPhase.maintenance:
+        return context.l10n.phaseMaintenance;
+    }
+  }
+
+  String _formatTreatmentStatus(String status, BuildContext context) {
+    switch (status) {
+      case TreatmentPlan.statusProposed:
+        return context.l10n.statusProposed;
+      case TreatmentPlan.statusApproved:
+        return context.l10n.statusApproved;
+      case TreatmentPlan.statusCompleted:
+        return context.l10n.statusCompleted;
+      default:
+        return status;
     }
   }
 
@@ -181,7 +208,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
 
               // Title
               Text(
-                isEditing ? 'Edit Treatment Plan Item' : 'Stage Proposed Treatment',
+                isEditing ? context.l10n.editTreatmentPlanItem : context.l10n.stageProposedTreatment,
                 style: AppTextStyles.h1Mobile.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
@@ -190,7 +217,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
               if (widget.patientName != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'Patient: ${widget.patientName}',
+                  context.l10n.patientLabel(widget.patientName!),
                   style: AppTextStyles.caption.copyWith(
                     color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
@@ -200,7 +227,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
 
               // Academic Phase Selector
               Text(
-                'Academic Treatment Phase',
+                context.l10n.academicTreatmentPhase,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -231,7 +258,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                   return DropdownMenuItem<int>(
                     value: phase.value,
                     child: Text(
-                      phase.label,
+                      _formatPhase(phase, context),
                       style: AppTextStyles.bodyMd.copyWith(
                         fontWeight: FontWeight.w500,
                         color: isDark ? AppDarkColors.textPrimary : null,
@@ -249,7 +276,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
 
               // Proposed Procedure Title
               Text(
-                'Proposed Procedure / Treatment Title',
+                context.l10n.proposedTreatmentTitle,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -259,7 +286,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  hintText: 'e.g., Scaling & Root Planing, Anterior RCT, Class II Composite',
+                  hintText: context.l10n.proposedTreatmentTitleHint,
                   filled: true,
                   fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
@@ -278,7 +305,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
-                    return 'Please enter a treatment procedure title';
+                    return context.l10n.pleaseEnterTreatmentTitle;
                   }
                   return null;
                 },
@@ -287,7 +314,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
 
               // Target Department / Clinic
               Text(
-                'Target Clinical Department (Optional)',
+                context.l10n.targetDepartmentOptional,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -300,7 +327,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                     initialValue: _selectedClinicId,
                     dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
                     decoration: InputDecoration(
-                      hintText: 'General / Interdisciplinary',
+                      hintText: context.l10n.generalInterdisciplinary,
                       filled: true,
                       fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                       border: OutlineInputBorder(
@@ -321,7 +348,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                       DropdownMenuItem<String?>(
                         value: null,
                         child: Text(
-                          'General / Interdisciplinary',
+                          context.l10n.generalInterdisciplinary,
                           style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null),
                         ),
                       ),
@@ -339,13 +366,13 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => const Text('Failed to load clinic departments'),
+                error: (_, _) => Text(context.l10n.failedToLoadClinics),
               ),
               const SizedBox(height: 16),
 
               // Status Selector
               Text(
-                'Treatment Status',
+                context.l10n.treatmentStatus,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -376,7 +403,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                   return DropdownMenuItem<String>(
                     value: status,
                     child: Text(
-                      status,
+                      _formatTreatmentStatus(status, context),
                       style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null),
                     ),
                   );
@@ -391,7 +418,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
 
               // Clinical Notes
               Text(
-                'Clinical Notes / Faculty Instructions',
+                context.l10n.facultyInstructions,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -402,7 +429,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 controller: _notesController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'Add clinical justification, tooth numbers, or supervisor notes...',
+                  hintText: context.l10n.facultyInstructionsHint,
                   filled: true,
                   fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
@@ -427,7 +454,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 children: <Widget>[
                   Expanded(
                     child: SecondaryButton(
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -435,10 +462,10 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                   Expanded(
                     child: PrimaryButton(
                       text: _isSubmitting
-                          ? 'Saving...'
+                          ? context.l10n.saving
                           : isEditing
-                              ? 'Update Treatment'
-                              : 'Stage Treatment',
+                              ? context.l10n.updateTreatment
+                              : context.l10n.stageTreatment,
                       isLoading: _isSubmitting,
                       onPressed: _isSubmitting ? null : _handleSubmit,
                     ),

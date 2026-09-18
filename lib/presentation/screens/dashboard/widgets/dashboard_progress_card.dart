@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../widgets/widgets.dart';
 
 /// Overview card presenting global quota metrics and department breakdowns.
@@ -44,7 +45,7 @@ class DashboardProgressCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Reqs',
+                  context.l10n.reqs,
                   style: AppTextStyles.labelCaps.copyWith(
                     color: mutedTextColor,
                   ),
@@ -58,7 +59,7 @@ class DashboardProgressCard extends StatelessWidget {
           Expanded(
             child: requirements.isEmpty
                 ? Text(
-                    'No active requirements',
+                    context.l10n.noActiveRequirements,
                     style: AppTextStyles.caption.copyWith(
                       color: mutedTextColor,
                     ),

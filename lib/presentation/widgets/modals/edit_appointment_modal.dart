@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -299,7 +300,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Edit Appointment',
+                            context.l10n.editAppointment,
                             style: AppTextStyles.h2.copyWith(
                               color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -307,7 +308,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Update schedule, clinic department, and notes',
+                            context.l10n.updateScheduleNotesSubtitle,
                             style: AppTextStyles.caption.copyWith(
                               color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                             ),
@@ -352,7 +353,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
 
                 // 4. Clinic Department Selection
                 Text(
-                  'Clinical Department',
+                  context.l10n.clinicalDepartments,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -396,7 +397,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                       onChanged: (val) {
                         if (val != null) setState(() => _selectedClinicId = val);
                       },
-                      validator: (val) => val == null ? 'Please select a clinic' : null,
+                      validator: (val) => val == null ? context.l10n.pleaseSelectClinic : null,
                     );
                   },
                   loading: () => const Center(
@@ -405,13 +406,13 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                  error: (_, _) => const Text('Failed to load clinics'),
+                  error: (_, _) => Text(context.l10n.failedToLoadClinics),
                 ),
                 const SizedBox(height: 16),
 
                 // 5. Date & Time Row
                 Text(
-                  'Schedule Date & Time',
+                  context.l10n.scheduleDateTime,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -495,7 +496,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
 
                 // 6. Appointment Status Selection
                 Text(
-                  'Appointment Status',
+                  context.l10n.appointmentStatus,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -506,8 +507,28 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                   spacing: 8,
                   children: _statuses.map((status) {
                     final isSelected = status == _selectedStatus;
+                    String statusLabel;
+                    switch (status) {
+                      case 'Scheduled':
+                        statusLabel = context.l10n.statusScheduled;
+                        break;
+                      case 'Confirmed':
+                        statusLabel = context.l10n.statusConfirmed;
+                        break;
+                      case 'In Progress':
+                        statusLabel = context.l10n.statusInProgress;
+                        break;
+                      case 'Completed':
+                        statusLabel = context.l10n.statusCompleted;
+                        break;
+                      case 'Cancelled':
+                        statusLabel = context.l10n.statusCancelled;
+                        break;
+                      default:
+                        statusLabel = status;
+                    }
                     return ChoiceChip(
-                      label: Text(status),
+                      label: Text(statusLabel),
                       selected: isSelected,
                       onSelected: (selected) {
                         if (selected) setState(() => _selectedStatus = status);
@@ -528,7 +549,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
 
                 // 7. Procedure Notes
                 Text(
-                  'Procedure & Clinical Notes',
+                  context.l10n.procedureAndClinicalNotes,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -549,7 +570,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                     Expanded(
                       child: SecondaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        text: 'Cancel',
+                        text: context.l10n.cancel,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
@@ -557,7 +578,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                     Expanded(
                       child: PrimaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                        text: _isSubmitting ? 'Saving...' : 'Save Changes',
+                        text: _isSubmitting ? context.l10n.saving : context.l10n.saveChanges,
                         icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                         onPressed: _isSubmitting ? null : _submit,
                       ),

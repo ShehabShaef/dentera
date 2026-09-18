@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
@@ -142,7 +143,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit Patient',
+              tooltip: context.l10n.editPatient,
               onPressed: () => EditPatientModal.show(
                 context,
                 patient: patient,
@@ -209,7 +210,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${patient.gender}, ${patient.age} yrs • ${patient.phoneNumber ?? 'No Phone'}',
+                                '${patient.gender}, ${patient.age} yrs • ${patient.phoneNumber ?? context.l10n.noPhone}',
                                 style: AppTextStyles.caption.copyWith(
                                   color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
@@ -254,10 +255,10 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                   unselectedLabelStyle: AppTextStyles.caption.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
-                  tabs: const <Widget>[
-                    Tab(text: 'Clinical Cases'),
-                    Tab(text: 'Patient History'),
-                    Tab(text: 'Treatment Plan'),
+                  tabs: <Widget>[
+                    Tab(text: context.l10n.clinicalCases),
+                    Tab(text: context.l10n.patientHistory),
+                    Tab(text: context.l10n.treatmentPlan),
                   ],
                 ),
               ),
@@ -282,7 +283,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'fab_case_sheet',
-          tooltip: 'Log Case Record',
+          tooltip: context.l10n.logCaseRecord,
           onPressed: () => LogCaseRecordModal.show(
             context,
             patientId: patient.id,
@@ -395,21 +396,20 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    title: const Text('Delete Case Record'),
+                    title: Text(context.l10n.deleteCaseRecord),
                     content: Text(
-                      'Are you sure you want to delete this case record for "$procedureTitle"?\n\n'
-                      'If this case was marked as completed, your requirement completed count will automatically be decremented.',
+                      context.l10n.deleteCaseRecordConfirmation,
                     ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.of(dialogContext).pop(false),
-                        child: const Text('Cancel'),
+                        child: Text(context.l10n.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(dialogContext).pop(true),
-                        child: const Text(
-                          'Delete',
-                          style: TextStyle(color: AppColors.error),
+                        child: Text(
+                          context.l10n.delete,
+                          style: const TextStyle(color: AppColors.error),
                         ),
                       ),
                     ],
@@ -436,7 +436,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                   }
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Case record deleted')),
+                      SnackBar(content: Text(context.l10n.caseRecordDeleted)),
                     );
                   }
                 } catch (e, st) {
@@ -498,21 +498,20 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Case Record'),
+        title: Text(context.l10n.deleteCaseRecord),
         content: Text(
-          'Are you sure you want to delete this case record for "$procedureTitle"?\n\n'
-          'If this case was marked as completed, your requirement completed count will automatically be decremented.',
+          context.l10n.deleteCaseRecordConfirmation,
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              context.l10n.delete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -541,7 +540,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Case record deleted')),
+            SnackBar(content: Text(context.l10n.caseRecordDeleted)),
           );
         }
       } catch (e, st) {
@@ -567,11 +566,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
   Widget _buildEmptyCasesState(Patient patient) {
     return DenteraEmptyState(
       icon: Icons.assignment_late_outlined,
-      title: 'No clinical cases logged yet',
-      subtitle: 'Start logging procedural cases and treatments completed for ${patient.name}.',
+      title: context.l10n.noClinicalCasesLoggedYet,
+      subtitle: context.l10n.startLoggingCases(patient.name),
       actionButton: PrimaryButton(
         isFullWidth: false,
-        text: 'Log First Case',
+        text: context.l10n.logFirstCase,
         icon: const Icon(
           Icons.add_rounded,
           color: AppColors.onPrimary,
@@ -605,7 +604,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
         children: <Widget>[
           // 1. Chief Complaint (CC)
           _AnamnesisSectionCard(
-            title: 'Chief Complaint (CC)',
+            title: context.l10n.chiefComplaint,
             icon: Icons.record_voice_over_outlined,
             iconColor: AppColors.primary,
             content: patient.chiefComplaint,
@@ -616,7 +615,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
           // 2. History of Chief Complaint (HCC)
           _AnamnesisSectionCard(
-            title: 'History of Chief Complaint (HCC)',
+            title: context.l10n.historyOfChiefComplaint,
             icon: Icons.history_edu_outlined,
             iconColor: AppColors.secondary,
             content: patient.historyOfChiefComplaint,
@@ -627,7 +626,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
           // 3. Medical History & Allergies
           _AnamnesisSectionCard(
-            title: 'Medical History & Allergies',
+            title: context.l10n.medicalHistoryAndAllergies,
             icon: hasMedicalHistory ? Icons.warning_amber_rounded : Icons.health_and_safety_outlined,
             iconColor: hasMedicalHistory ? AppColors.error : AppColors.secondary,
             content: patient.medicalHistory,
@@ -638,7 +637,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
           // 4. Dental History
           _AnamnesisSectionCard(
-            title: 'Dental History',
+            title: context.l10n.dentalHistory,
             icon: Icons.medical_services_outlined,
             iconColor: AppColors.primary,
             content: patient.dentalHistory,
@@ -649,7 +648,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
           // 5. Current Medications
           _AnamnesisSectionCard(
-            title: 'Current Medications',
+            title: context.l10n.currentMedications,
             icon: Icons.medication_outlined,
             iconColor: AppColors.secondary,
             content: patient.medications,
@@ -660,7 +659,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
           // 6. Diagnostic Aids & Investigations
           _AnamnesisSectionCard(
-            title: 'Diagnostic Aids',
+            title: context.l10n.diagnosticAids,
             icon: Icons.biotech_outlined,
             iconColor: AppColors.primary,
             content: patient.diagnosticAids,

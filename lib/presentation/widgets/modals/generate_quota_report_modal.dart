@@ -7,6 +7,7 @@ import '../../../core/services/report_generator_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -133,7 +134,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
       if (mounted) {
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to generate PDF report',
+          message: context.l10n.failedToGeneratePdf,
           error: e,
           stackTrace: st,
         );
@@ -156,7 +157,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
       if (mounted) {
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to share PDF report',
+          message: context.l10n.failedToSharePdf,
           error: e,
           stackTrace: st,
         );
@@ -179,7 +180,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
       if (mounted) {
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to export CSV grading sheet',
+          message: context.l10n.failedToExportCsv,
           error: e,
           stackTrace: st,
         );
@@ -245,7 +246,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
     final dateFormat = DateFormat('MMM d, yyyy');
     final String dateRangeDisplay = _selectedStartDate != null && _selectedEndDate != null
         ? '${dateFormat.format(_selectedStartDate!)} – ${dateFormat.format(_selectedEndDate!)}'
-        : 'All Time (Complete Record)';
+        : context.l10n.allTimeCompleteRecord;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -300,7 +301,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Academic Supervisory Portfolio',
+                        context.l10n.academicSupervisoryPortfolio,
                         style: AppTextStyles.caption.copyWith(
                           color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -309,7 +310,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Generate Quota Report',
+                        context.l10n.generateQuotaReport,
                         style: AppTextStyles.h2.copyWith(
                           color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                           fontWeight: FontWeight.w700,
@@ -365,7 +366,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
 
             // Scope Selector: Department / Clinic
             Text(
-              'Department Scope',
+              context.l10n.departmentScope,
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -388,7 +389,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                   items: [
                     DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('All Departments & Clinics', style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null)),
+                      child: Text(context.l10n.allDepartmentsAndClinics, style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null)),
                     ),
                     ...dropdownClinics.map(
                       (c) => DropdownMenuItem<String?>(
@@ -409,7 +410,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
 
             // Date Range Picker
             Text(
-              'Case Date Range',
+              context.l10n.caseDateRange,
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -452,7 +453,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                         icon: Icon(Icons.close_rounded, size: 18, color: isDark ? AppDarkColors.textSecondary : null),
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
-                        tooltip: 'Clear Date Filter',
+                        tooltip: context.l10n.clearDateFilter,
                         onPressed: _clearDateRange,
                       )
                     else
@@ -475,17 +476,17 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                 children: <Widget>[
                   _MetricBadge(
                     count: visibleClinics.length,
-                    label: visibleClinics.length == 1 ? 'Clinic' : 'Clinics',
+                    label: visibleClinics.length == 1 ? context.l10n.clinicSingular : context.l10n.clinicsPlural,
                   ),
                   Container(width: 1, height: 24, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   _MetricBadge(
                     count: visibleReqs.length,
-                    label: visibleReqs.length == 1 ? 'Requirement' : 'Requirements',
+                    label: visibleReqs.length == 1 ? context.l10n.requirementSingular : context.l10n.requirementsPlural,
                   ),
                   Container(width: 1, height: 24, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   _MetricBadge(
                     count: visibleCases.length,
-                    label: visibleCases.length == 1 ? 'Case Log' : 'Case Logs',
+                    label: visibleCases.length == 1 ? context.l10n.caseLogSingular : context.l10n.caseLogsPlural,
                   ),
                 ],
               ),
@@ -503,7 +504,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
             else ...[
               // Preview & Print PDF Button
               PrimaryButton(
-                text: 'Preview & Print PDF',
+                text: context.l10n.previewAndPrintPdf,
                 icon: Icon(Icons.print_rounded, size: 20, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                 onPressed: _handlePreviewAndPrint,
               ),
@@ -511,7 +512,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
 
               // Share PDF Button
               SecondaryButton(
-                text: 'Share PDF Report',
+                text: context.l10n.sharePdfReport,
                 icon: Icon(Icons.share_rounded, size: 20, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                 onPressed: _handleSharePdf,
               ),
@@ -521,7 +522,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               OutlinedButton.icon(
                 onPressed: _handleExportCsv,
                 icon: const Icon(Icons.table_chart_outlined, size: 18),
-                label: const Text('Export Tabular CSV (Grading Sheet)'),
+                label: Text(context.l10n.exportTabularCsv),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   side: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),

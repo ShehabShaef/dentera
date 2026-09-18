@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/services/database_backup_service.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
 import '../inputs/inputs.dart';
@@ -83,7 +84,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
       });
       DenteraSnackBar.showError(
         context,
-        message: 'Failed to reset database',
+        message: context.l10n.failedToResetDatabase,
         error: e,
         stackTrace: st,
       );
@@ -144,7 +145,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Danger Zone',
+                      context.l10n.dangerZone,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.error,
                         fontWeight: FontWeight.w700,
@@ -153,7 +154,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Reset All Clinical Data',
+                      context.l10n.resetAllClinicalData,
                       style: AppTextStyles.h2.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w700,
@@ -175,7 +176,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
               border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
             ),
             child: Text(
-              'This action is completely destructive and irreversible. All patients, clinical requirements, logged case sheets, appointments, and user preferences will be permanently wiped from your device.',
+              context.l10n.destructiveResetWarning,
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
                 height: 1.5,
@@ -186,7 +187,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
 
           // Verification prompt
           Text(
-            'Type "RESET" in all caps below to confirm:',
+            context.l10n.typeResetToConfirm,
             style: AppTextStyles.caption.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.onSurface,
@@ -197,7 +198,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
           // Text Field for "RESET" confirmation
           DenteraTextField(
             controller: _confirmationController,
-            hintText: 'Type RESET to confirm',
+            hintText: context.l10n.typeResetPlaceholder,
             textCapitalization: TextCapitalization.characters,
             autofocus: true,
           ),
@@ -208,7 +209,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
             children: <Widget>[
               Expanded(
                 child: SecondaryButton(
-                  text: 'Cancel',
+                  text: context.l10n.cancel,
                   onPressed: _isResetting ? null : () => Navigator.of(context).pop(false),
                 ),
               ),
@@ -238,7 +239,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                                 ),
                               )
                             : Text(
-                                'Wipe All Data',
+                                context.l10n.wipeAllData,
                                 style: AppTextStyles.h2.copyWith(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,

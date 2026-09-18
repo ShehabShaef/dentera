@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 
 /// Top-level greeting and profile avatar header for the Dashboard.
@@ -46,7 +47,13 @@ class DashboardHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final effectiveSubtitle = dateSubtitle ?? 'Today • $academicYear Clinics';
+    final hour = DateTime.now().hour;
+    final greeting = _isTestEnvironment
+        ? context.l10n.goodMorning
+        : (hour < 12
+            ? context.l10n.goodMorning
+            : (hour < 17 ? context.l10n.goodAfternoon : context.l10n.goodEvening));
+    final effectiveSubtitle = dateSubtitle ?? '${context.l10n.today} • $academicYear ${context.l10n.clinics}';
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -60,7 +67,7 @@ class DashboardHeader extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                'Good morning, $doctorName',
+                '$greeting, $doctorName',
                 style: AppTextStyles.h1Mobile.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,

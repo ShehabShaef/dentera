@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -324,7 +325,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'Schedule Appointment',
+                    context.l10n.scheduleAppointment,
                     style: AppTextStyles.h1Mobile.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
@@ -362,8 +363,8 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                         data: (patients) {
                           return DenteraDropdown<Patient>(
                             key: const Key('patient_dropdown'),
-                            label: 'Patient *',
-                            hintText: patients.isEmpty ? 'No patients available' : 'Select patient...',
+                            label: context.l10n.patientRequired,
+                            hintText: patients.isEmpty ? context.l10n.noPatientsAvailable : context.l10n.selectPatientHint,
                             value: patients.contains(_selectedPatient) ? _selectedPatient : null,
                             items: patients
                                 .map(
@@ -378,7 +379,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                 .toList(),
                             validator: (val) {
                               if (val == null) {
-                                return 'Please select a patient';
+                                return context.l10n.pleaseSelectPatient;
                               }
                               return null;
                             },
@@ -391,15 +392,15 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                         },
                         loading: () => DenteraDropdown<Patient>(
                           key: const Key('patient_dropdown_loading'),
-                          label: 'Patient *',
-                          hintText: 'Loading patients...',
+                          label: context.l10n.patientRequired,
+                          hintText: context.l10n.loadingPatients,
                           items: const <DropdownMenuItem<Patient>>[],
                           onChanged: null,
                         ),
                         error: (_, _) => DenteraDropdown<Patient>(
                           key: const Key('patient_dropdown_error'),
-                          label: 'Patient *',
-                          hintText: 'Failed to load patients',
+                          label: context.l10n.patientRequired,
+                          hintText: context.l10n.failedToLoadPatients,
                           items: const <DropdownMenuItem<Patient>>[],
                           onChanged: null,
                         ),
@@ -411,8 +412,8 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                         data: (clinics) {
                           return DenteraDropdown<Clinic>(
                             key: const Key('clinic_dropdown'),
-                            label: 'Clinic / Department *',
-                            hintText: clinics.isEmpty ? 'No clinics available' : 'Select clinic...',
+                            label: context.l10n.clinicDepartmentRequired,
+                            hintText: clinics.isEmpty ? context.l10n.noClinicsAvailable : context.l10n.selectClinicHint,
                             value: clinics.contains(_selectedClinic) ? _selectedClinic : null,
                             items: clinics
                                 .map(
@@ -442,7 +443,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                 .toList(),
                             validator: (val) {
                               if (val == null) {
-                                return 'Please select a clinic';
+                                return context.l10n.pleaseSelectClinic;
                               }
                               return null;
                             },
@@ -455,15 +456,15 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                         },
                         loading: () => DenteraDropdown<Clinic>(
                           key: const Key('clinic_dropdown_loading'),
-                          label: 'Clinic / Department *',
-                          hintText: 'Loading clinics...',
+                          label: context.l10n.clinicDepartmentRequired,
+                          hintText: context.l10n.loadingClinics,
                           items: const <DropdownMenuItem<Clinic>>[],
                           onChanged: null,
                         ),
                         error: (_, _) => DenteraDropdown<Clinic>(
                           key: const Key('clinic_dropdown_error'),
-                          label: 'Clinic / Department *',
-                          hintText: 'Failed to load clinics',
+                          label: context.l10n.clinicDepartmentRequired,
+                          hintText: context.l10n.failedToLoadClinics,
                           items: const <DropdownMenuItem<Clinic>>[],
                           onChanged: null,
                         ),
@@ -480,7 +481,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'Date *',
+                                  '${context.l10n.date} *',
                                   style: AppTextStyles.caption.copyWith(
                                     color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
@@ -533,7 +534,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'Time *',
+                                  '${context.l10n.time} *',
                                   style: AppTextStyles.caption.copyWith(
                                     color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
@@ -592,7 +593,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
 
                       // 4. Clinical Notes / Tooth Number
                       DenteraTextField(
-                        label: 'Clinical Notes / Tooth Number (Optional)',
+                        label: context.l10n.clinicalNotesOptional,
                         hintText: 'e.g. Tooth 46, Secondary impression',
                         controller: _notesController,
                         maxLines: 2,
@@ -613,7 +614,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                   Expanded(
                     flex: 1,
                     child: SecondaryButton(
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -622,7 +623,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                     flex: 2,
                     child: PrimaryButton(
                       key: const Key('save_appointment_button'),
-                      text: 'Save Appointment',
+                      text: context.l10n.saveAppointment,
                       icon: Icon(
                         Icons.calendar_month_rounded,
                         size: 18,

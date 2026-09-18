@@ -6,6 +6,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -150,7 +151,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Edit Requirement',
+                            context.l10n.editRequirement,
                             style: AppTextStyles.h2.copyWith(
                               color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -158,7 +159,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Adjust procedure title and target quota',
+                            context.l10n.adjustProcedureTitleSubtitle,
                             style: AppTextStyles.caption.copyWith(
                               color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                             ),
@@ -176,7 +177,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
 
                 // 3. Title Input
                 Text(
-                  'Procedure Title',
+                  context.l10n.procedureTitle,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -201,7 +202,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
 
                 // 4. Target Quota Input
                 Text(
-                  'Target Quota Count',
+                  context.l10n.targetCountLabel,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -226,7 +227,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
                     Expanded(
                       child: SecondaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        text: 'Cancel',
+                        text: context.l10n.cancel,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
@@ -234,7 +235,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
                     Expanded(
                       child: PrimaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                        text: _isSubmitting ? 'Saving...' : 'Save Changes',
+                        text: _isSubmitting ? context.l10n.saving : context.l10n.saveChanges,
                         icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                         onPressed: _isSubmitting ? null : _submit,
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../widgets/cards/base_card.dart';
 import '../../../widgets/progress/requirement_progress_bar.dart';
 
@@ -96,7 +97,7 @@ class RequirementDetailCard extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                      tooltip: 'Edit Requirement',
+                      tooltip: context.l10n.editRequirement,
                       onPressed: onEdit,
                     ),
                   ],
@@ -112,7 +113,7 @@ class RequirementDetailCard extends StatelessWidget {
 
           // Progress Bar
           RequirementProgressBar.fromQuota(
-            label: '${((requirement.completedCount / (requirement.targetCount > 0 ? requirement.targetCount : 1)) * 100).toInt()}% Done',
+            label: context.l10n.percentDone(((requirement.completedCount / (requirement.targetCount > 0 ? requirement.targetCount : 1)) * 100).toInt()),
             completed: requirement.completedCount,
             total: requirement.targetCount,
             progressColor: accentColor,
@@ -137,6 +138,14 @@ class RequirementDetailCard extends StatelessWidget {
                       final statusColor = isDone
                           ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
                           : (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.8) : AppColors.primary);
+                      final displayStatus = patientCase.status.toLowerCase() == 'completed'
+                          ? context.l10n.completed
+                          : (patientCase.status.toLowerCase() == 'in progress'
+                              ? context.l10n.inProgress
+                              : (patientCase.status.toLowerCase() == 'evaluated'
+                                  ? context.l10n.evaluated
+                                  : patientCase.status));
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -167,7 +176,7 @@ class RequirementDetailCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  patientCase.status,
+                                  displayStatus,
                                   style: AppTextStyles.labelCaps.copyWith(
                                     color: statusColor,
                                   ),
@@ -184,7 +193,7 @@ class RequirementDetailCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     alignment: Alignment.center,
                     child: Text(
-                      'No patients assigned yet.',
+                      context.l10n.noPatientsAssignedYet,
                       style: AppTextStyles.caption.copyWith(
                         fontStyle: FontStyle.italic,
                         color: isDark ? AppDarkColors.textMuted : AppColors.outline,
