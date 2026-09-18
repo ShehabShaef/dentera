@@ -143,11 +143,12 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
   Widget build(BuildContext context) {
     final clinicsAsync = ref.watch(clinicListProvider);
     final isEditing = widget.treatmentPlan != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -171,7 +172,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -183,7 +184,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 isEditing ? 'Edit Treatment Plan Item' : 'Stage Proposed Treatment',
                 style: AppTextStyles.h1Mobile.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                 ),
               ),
               if (widget.patientName != null) ...[
@@ -191,7 +192,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 Text(
                   'Patient: ${widget.patientName}',
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -202,26 +203,27 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 'Academic Treatment Phase',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<int>(
                 initialValue: _selectedPhase,
+                dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.tealAccent : AppColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
@@ -230,7 +232,10 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                     value: phase.value,
                     child: Text(
                       phase.label,
-                      style: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w500),
+                      style: AppTextStyles.bodyMd.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? AppDarkColors.textPrimary : null,
+                      ),
                     ),
                   );
                 }).toList(),
@@ -247,7 +252,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 'Proposed Procedure / Treatment Title',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -256,18 +261,18 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 decoration: InputDecoration(
                   hintText: 'e.g., Scaling & Root Planing, Anterior RCT, Class II Composite',
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.tealAccent : AppColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
@@ -285,7 +290,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 'Target Clinical Department (Optional)',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -293,33 +298,40 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 data: (clinics) {
                   return DropdownButtonFormField<String?>(
                     initialValue: _selectedClinicId,
+                    dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
                     decoration: InputDecoration(
                       hintText: 'General / Interdisciplinary',
                       filled: true,
-                      fillColor: AppColors.surfaceContainerLow,
+                      fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.outlineVariant),
+                        borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.outlineVariant),
+                        borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        borderSide: BorderSide(color: isDark ? AppDarkColors.tealAccent : AppColors.primary, width: 2),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                     items: [
-                      const DropdownMenuItem<String?>(
+                      DropdownMenuItem<String?>(
                         value: null,
-                        child: Text('General / Interdisciplinary'),
+                        child: Text(
+                          'General / Interdisciplinary',
+                          style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null),
+                        ),
                       ),
                       ...clinics.map((clinic) {
                         return DropdownMenuItem<String?>(
                           value: clinic.id,
-                          child: Text(clinic.name),
+                          child: Text(
+                            clinic.name,
+                            style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null),
+                          ),
                         );
                       }),
                     ],
@@ -336,33 +348,37 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 'Treatment Status',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _selectedStatus,
+                dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.tealAccent : AppColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
                 items: _statuses.map((status) {
                   return DropdownMenuItem<String>(
                     value: status,
-                    child: Text(status),
+                    child: Text(
+                      status,
+                      style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null),
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -378,7 +394,7 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 'Clinical Notes / Faculty Instructions',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -388,18 +404,18 @@ class _AddTreatmentPlanModalState extends ConsumerState<AddTreatmentPlanModal> {
                 decoration: InputDecoration(
                   hintText: 'Add clinical justification, tooth numbers, or supervisor notes...',
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                    borderSide: BorderSide(color: isDark ? AppDarkColors.tealAccent : AppColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(16),
                 ),

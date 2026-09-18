@@ -153,10 +153,12 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -175,7 +177,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -193,7 +195,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                         Text(
                           'Add Dental Clinic',
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -201,19 +203,19 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                         Text(
                           'Create a new clinical department to track quotas',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+              Divider(height: 24, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
               // 3. Department Dropdown (Standard 10 departments + Other...)
               DenteraDropdown<String>(
@@ -292,7 +294,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                 'Department Theme Color',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
@@ -313,7 +315,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                         color: color,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected ? AppColors.onSurface : Colors.transparent,
+                          color: isSelected ? (isDark ? AppDarkColors.tealAccent : AppColors.onSurface) : Colors.transparent,
                           width: 2.5,
                         ),
                         boxShadow: isSelected
@@ -354,7 +356,7 @@ class _AddClinicModalState extends ConsumerState<AddClinicModal> {
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                       text: _isSubmitting ? 'Saving...' : 'Save Clinic',
-                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.onPrimary),
+                      icon: Icon(Icons.add_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
                   ),

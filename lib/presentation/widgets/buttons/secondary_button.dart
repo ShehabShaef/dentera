@@ -32,15 +32,25 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final effectiveBgColor = isDark
+        ? AppDarkColors.surfaceContainerElevated
+        : Colors.transparent;
     final effectiveBorderColor = _isEnabled
-        ? (borderColor ?? AppColors.primary)
-        : AppColors.outlineVariant;
+        ? (borderColor ?? (isDark ? const Color(0xFF2E435F) : AppColors.primary))
+        : (isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant);
+
+    final effectiveTextColor = _isEnabled
+        ? (isDark ? AppDarkColors.textSecondary : (borderColor ?? AppColors.primary))
+        : (isDark ? AppDarkColors.textMuted : AppColors.outline);
 
     final effectiveTextStyle = textStyle ??
         AppTextStyles.h2.copyWith(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: _isEnabled ? (borderColor ?? AppColors.primary) : AppColors.outline,
+          color: effectiveTextColor,
         );
 
     Widget content = Row(
@@ -53,9 +63,7 @@ class SecondaryButton extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                _isEnabled ? AppColors.primary : AppColors.outline,
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(effectiveTextColor),
             ),
           ),
           const SizedBox(width: 8),
@@ -75,7 +83,7 @@ class SecondaryButton extends StatelessWidget {
       height: height,
       width: isFullWidth ? double.infinity : null,
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: effectiveBgColor,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: effectiveBorderColor,

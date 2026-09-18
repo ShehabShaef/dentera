@@ -40,19 +40,21 @@ class TimelineAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // 1. Time Column
+          // 1. Time Indicator Column
           SizedBox(
-            width: 64,
+            width: 72,
             child: Padding(
               padding: const EdgeInsets.only(top: 14.0),
               child: Text(
                 timeFormatted,
                 style: AppTextStyles.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.right,
@@ -72,7 +74,7 @@ class TimelineAppointmentCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: clinicColor,
                   border: Border.all(
-                    color: AppColors.surfaceContainerLowest,
+                    color: isDark ? AppDarkColors.canvasBackground : AppColors.surfaceContainerLowest,
                     width: 2.0,
                   ),
                   boxShadow: [
@@ -88,7 +90,7 @@ class TimelineAppointmentCard extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                    color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
             ],
@@ -100,7 +102,7 @@ class TimelineAppointmentCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Material(
-                color: AppColors.surfaceContainerLowest,
+                color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   onTap: () {
@@ -123,10 +125,10 @@ class TimelineAppointmentCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                        color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
                         width: 1.0,
                       ),
-                      boxShadow: AppColors.cardShadow,
+                      boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +141,7 @@ class TimelineAppointmentCard extends StatelessWidget {
                                 patientName,
                                 style: AppTextStyles.h2.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
+                                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -151,16 +153,16 @@ class TimelineAppointmentCard extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: appointment.status.toLowerCase() == 'completed'
-                                      ? AppColors.secondaryContainer.withValues(alpha: 0.3)
-                                      : AppColors.primaryContainer.withValues(alpha: 0.12),
+                                      ? (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.2) : AppColors.secondaryContainer.withValues(alpha: 0.3))
+                                      : (isDark ? AppDarkColors.surfaceContainerHighest : AppColors.primaryContainer.withValues(alpha: 0.12)),
                                   borderRadius: BorderRadius.circular(9999),
                                 ),
                                 child: Text(
                                   appointment.status,
                                   style: AppTextStyles.labelCaps.copyWith(
                                     color: appointment.status.toLowerCase() == 'completed'
-                                        ? AppColors.secondary
-                                        : AppColors.primary,
+                                        ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                                        : (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
                                   ),
                                 ),
                               ),
@@ -168,10 +170,10 @@ class TimelineAppointmentCard extends StatelessWidget {
                             if (onEdit != null) ...<Widget>[
                               const SizedBox(width: 4),
                               IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.edit_outlined,
                                   size: 18,
-                                  color: AppColors.onSurfaceVariant,
+                                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
                                 tooltip: 'Edit Appointment',
                                 padding: EdgeInsets.zero,
@@ -181,10 +183,10 @@ class TimelineAppointmentCard extends StatelessWidget {
                             ],
                             if (onDelete != null || onEdit != null) ...<Widget>[
                               PopupMenuButton<String>(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.more_vert,
                                   size: 18,
-                                  color: AppColors.onSurfaceVariant,
+                                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -198,13 +200,13 @@ class TimelineAppointmentCard extends StatelessWidget {
                                 },
                                 itemBuilder: (context) => <PopupMenuEntry<String>>[
                                   if (onEdit != null)
-                                    const PopupMenuItem<String>(
+                                    PopupMenuItem<String>(
                                       value: 'edit',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
-                                          SizedBox(width: 8),
-                                          Text('Edit Appointment'),
+                                          Icon(Icons.edit_outlined, size: 18, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
+                                          const SizedBox(width: 8),
+                                          const Text('Edit Appointment'),
                                         ],
                                       ),
                                     ),
@@ -232,17 +234,17 @@ class TimelineAppointmentCard extends StatelessWidget {
                         // Clinic & Procedure info
                         Row(
                           children: <Widget>[
-                            const Icon(
+                            Icon(
                               Icons.medical_services_outlined,
                               size: 16,
-                              color: AppColors.onSurfaceVariant,
+                              color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                             ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 '$clinicName${appointment.procedureDescription != null && appointment.procedureDescription!.isNotEmpty ? ' • ${appointment.procedureDescription}' : ''}',
                                 style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.onSurfaceVariant,
+                                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

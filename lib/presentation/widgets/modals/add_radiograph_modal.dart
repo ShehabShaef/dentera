@@ -105,6 +105,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
   }
 
   Future<void> _selectDate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -113,12 +114,19 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.onPrimary,
-              surface: AppColors.surface,
-              onSurface: AppColors.onSurface,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppDarkColors.tealAccent,
+                    onPrimary: AppDarkColors.onTeal,
+                    surface: AppDarkColors.surfaceContainer,
+                    onSurface: AppDarkColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.onPrimary,
+                    surface: AppColors.surface,
+                    onSurface: AppColors.onSurface,
+                  ),
           ),
           child: child!,
         );
@@ -173,28 +181,29 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
     }
   }
 
-  Color _typeColor(String type) {
+  Color _typeColor(String type, bool isDark) {
     switch (type) {
       case PatientRadiograph.typePeriapical:
-        return AppColors.primary;
+        return isDark ? AppDarkColors.tealAccent : AppColors.primary;
       case PatientRadiograph.typeBitewing:
-        return AppColors.secondary;
+        return isDark ? const Color(0xFF67E8F9) : AppColors.secondary;
       case PatientRadiograph.typePanoramic:
-        return const Color(0xFFD97706);
+        return const Color(0xFFFBBF24);
       default:
-        return AppColors.outline;
+        return isDark ? AppDarkColors.textSecondary : AppColors.outline;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final formattedDate = DateFormat('MMMM d, yyyy').format(_selectedDate);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -216,7 +225,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -232,7 +241,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                       Text(
                         'Attach Radiograph (X-Ray)',
                         style: AppTextStyles.h1Mobile.copyWith(
-                          color: AppColors.primary,
+                          color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -240,13 +249,16 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                         Text(
                           'Patient: ${widget.patientName}',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.onSurfaceVariant),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
+                    ),
                     tooltip: 'Cancel',
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -259,7 +271,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                 'Radiograph Image',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -272,7 +284,9 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.outlineVariant),
+                    border: Border.all(
+                      color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant,
+                    ),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
@@ -320,33 +334,35 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
+                    color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _imageError != null ? AppColors.error : AppColors.outlineVariant,
+                      color: _imageError != null
+                          ? AppColors.error
+                          : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                       width: 1.5,
                     ),
                   ),
                   child: Column(
                     children: <Widget>[
-                      const Icon(
+                      Icon(
                         Icons.add_photo_alternate_outlined,
                         size: 40,
-                        color: AppColors.primary,
+                        color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         'Import radiographic X-ray',
                         style: AppTextStyles.bodyMd.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.onSurface,
+                          color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Supports Camera capture or Photo Gallery import',
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
+                          color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -395,7 +411,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                 'Projection Type',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -409,18 +425,24 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   PatientRadiograph.typeOther,
                 ].map((type) {
                   final isSelected = _selectedType == type;
-                  final color = _typeColor(type);
+                  final color = _typeColor(type, isDark);
                   return ChoiceChip(
                     label: Text(type),
                     selected: isSelected,
-                    selectedColor: color.withValues(alpha: 0.15),
-                    backgroundColor: AppColors.surfaceContainerLowest,
+                    selectedColor: color.withValues(alpha: isDark ? 0.25 : 0.15),
+                    backgroundColor: isDark
+                        ? AppDarkColors.surfaceContainerHigh
+                        : AppColors.surfaceContainerLowest,
                     labelStyle: AppTextStyles.caption.copyWith(
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? color : AppColors.onSurfaceVariant,
+                      color: isSelected
+                          ? color
+                          : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                     ),
                     side: BorderSide(
-                      color: isSelected ? color : AppColors.outlineVariant,
+                      color: isSelected
+                          ? color
+                          : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                       width: isSelected ? 1.5 : 1,
                     ),
                     onSelected: (selected) {
@@ -436,7 +458,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                 'Capture Date',
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -446,27 +468,38 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
+                    color: isDark
+                        ? AppDarkColors.surfaceContainerHigh
+                        : AppColors.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.outlineVariant),
+                    border: Border.all(
+                      color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          const Icon(Icons.calendar_month_outlined, size: 20, color: AppColors.primary),
+                          Icon(
+                            Icons.calendar_month_outlined,
+                            size: 20,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
+                          ),
                           const SizedBox(width: 10),
                           Text(
                             formattedDate,
                             style: AppTextStyles.bodyMd.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
+                              color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                             ),
                           ),
                         ],
                       ),
-                      const Icon(Icons.arrow_drop_down, color: AppColors.onSurfaceVariant),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ),
@@ -499,7 +532,11 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       text: _isSubmitting ? 'Saving...' : 'Attach Radiograph',
-                      icon: const Icon(Icons.check_rounded, size: 18, color: AppColors.onPrimary),
+                      icon: Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary,
+                      ),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
                   ),

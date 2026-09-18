@@ -218,18 +218,20 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
         ? _selectedMainRequirement
         : null;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(18),
           topRight: Radius.circular(18),
         ),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
       ),
       child: SafeArea(
         top: false,
@@ -243,7 +245,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(9999),
                 ),
               ),
@@ -258,14 +260,14 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                   Text(
                     'New Patient',
                     style: AppTextStyles.h1Mobile.copyWith(
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close_rounded,
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                       size: 22,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
@@ -372,18 +374,22 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? AppColors.secondaryContainer.withValues(alpha: 0.25)
-                                    : AppColors.surfaceContainerLowest,
+                                    ? (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.18) : AppColors.secondaryContainer.withValues(alpha: 0.25))
+                                    : (isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLowest),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.secondary : AppColors.outlineVariant,
+                                  color: isSelected
+                                      ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                                      : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                                   width: isSelected ? 1.5 : 1.0,
                                 ),
                               ),
                               child: Text(
                                 clinicItem.name,
                                 style: AppTextStyles.labelCaps.copyWith(
-                                  color: isSelected ? AppColors.secondary : AppColors.onSurface,
+                                  color: isSelected
+                                      ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                                      : (isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                 ),
                               ),

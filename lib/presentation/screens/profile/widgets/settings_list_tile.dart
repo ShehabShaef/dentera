@@ -22,6 +22,8 @@ class SettingsListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -38,7 +40,7 @@ class SettingsListTile extends StatelessWidget {
                   Icon(
                     icon,
                     size: 22,
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.primaryTeal : AppColors.onSurfaceVariant,
                   ),
                   const SizedBox(width: 14),
 
@@ -50,7 +52,7 @@ class SettingsListTile extends StatelessWidget {
                         Text(
                           title,
                           style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.onSurface,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -59,7 +61,7 @@ class SettingsListTile extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -78,10 +80,10 @@ class SettingsListTile extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(
+          Divider(
             height: 1,
             thickness: 0.8,
-            color: AppColors.surfaceVariant,
+            color: isDark ? AppDarkColors.borderSubtle : AppColors.surfaceVariant,
             indent: 16,
             endIndent: 16,
           ),

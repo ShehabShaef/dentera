@@ -166,8 +166,9 @@ class ClinicDetailsScreen extends ConsumerWidget {
         break;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: isSelectionMode
           ? AppBar(
               leading: IconButton(
@@ -180,7 +181,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
               title: Text(
                 '${selectedIds.length} Selected',
                 style: AppTextStyles.h1Mobile.copyWith(
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -214,7 +215,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
               title: Text(
                 currentClinic.name,
                 style: AppTextStyles.h1Mobile.copyWith(
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -245,13 +246,13 @@ class ClinicDetailsScreen extends ConsumerWidget {
                     }
                   },
                   itemBuilder: (context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'generate_report',
                       child: Row(
                         children: [
-                          Icon(Icons.picture_as_pdf_outlined, size: 20, color: AppColors.onSurface),
-                          SizedBox(width: 12),
-                          Expanded(
+                          Icon(Icons.picture_as_pdf_outlined, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
+                          const SizedBox(width: 12),
+                          const Expanded(
                             child: Text(
                               'Generate Quota Report',
                               overflow: TextOverflow.ellipsis,
@@ -260,23 +261,23 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'edit_clinic',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 20, color: AppColors.onSurface),
-                          SizedBox(width: 12),
-                          Text('Edit Clinic'),
+                          Icon(Icons.edit_outlined, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
+                          const SizedBox(width: 12),
+                          const Text('Edit Clinic'),
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'sort_cases',
                       child: Row(
                         children: [
-                          Icon(Icons.sort_rounded, size: 20, color: AppColors.onSurface),
-                          SizedBox(width: 12),
-                          Text('Sort Cases'),
+                          Icon(Icons.sort_rounded, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
+                          const SizedBox(width: 12),
+                          const Text('Sort Cases'),
                         ],
                       ),
                     ),
@@ -343,8 +344,8 @@ class ClinicDetailsScreen extends ConsumerWidget {
                   clinicName: currentClinic.name,
                 );
               },
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
+              backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+              foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -366,6 +367,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
     bool isSelectionMode,
     Set<String> selectedIds,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (requirements.isEmpty) {
       AppLogger.debug('Clinic details screen rendering zero state - SQLite returned 0 records for clinic ${currentClinic.id}');
     }
@@ -399,7 +401,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                       size: 80,
                       strokeWidth: 8,
                       progressColor: clinicColor,
-                      trackColor: AppColors.surfaceContainerHigh,
+                      trackColor: isDark ? AppDarkColors.progressTrack : AppColors.surfaceContainerHigh,
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -409,7 +411,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                           Text(
                             'Overall Progress',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.outline,
+                              color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -417,29 +419,29 @@ class ClinicDetailsScreen extends ConsumerWidget {
                             '$totalCompleted of $totalTarget Requirements Met',
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: AppColors.onSurface,
+                              color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.secondaryContainer.withValues(alpha: 0.3),
+                              color: isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.15) : AppColors.secondaryContainer.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(9999),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                const Icon(
+                                Icon(
                                   Icons.check_circle_rounded,
                                   size: 13,
-                                  color: AppColors.onSecondaryContainer,
+                                  color: isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   overallProgress >= 0.5 ? 'On Track' : 'Needs Focus',
                                   style: AppTextStyles.labelCaps.copyWith(
-                                    color: AppColors.onSecondaryContainer,
+                                    color: isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -459,7 +461,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                 'Procedural Requirements',
                 style: AppTextStyles.h2.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -471,23 +473,24 @@ class ClinicDetailsScreen extends ConsumerWidget {
                   child: Center(
                     child: Column(
                       children: <Widget>[
-                        const Icon(
+                        Icon(
                           Icons.checklist_rounded,
                           size: 40,
-                          color: AppColors.outline,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'No requirements added yet',
                           style: AppTextStyles.h2.copyWith(
                             fontWeight: FontWeight.w600,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Define clinical quotas and procedural targets for ${currentClinic.name}.',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
                         ),

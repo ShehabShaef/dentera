@@ -34,7 +34,26 @@ class DenteraDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveFillColor = fillColor ?? AppColors.surfaceContainerLowest;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final effectiveFillColor = fillColor ??
+        (isDark
+            ? AppDarkColors.surfaceBase
+            : AppColors.surfaceContainerLowest);
+    final effectiveDropdownColor = isDark
+        ? AppDarkColors.surfaceContainerElevated
+        : AppColors.surfaceContainerLowest;
+    final effectiveTextColor =
+        isDark ? AppDarkColors.textPrimary : AppColors.onSurface;
+    final effectiveHintColor =
+        isDark ? AppDarkColors.textPlaceholder : AppColors.outline;
+    final effectiveBorderColor =
+        isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant;
+    final effectiveFocusBorderColor =
+        isDark ? AppDarkColors.primary : AppColors.primary;
+    final effectiveErrorColor =
+        isDark ? AppDarkColors.statusError : AppColors.error;
 
     final dropdownField = DropdownButtonFormField<T>(
       initialValue: value,
@@ -42,56 +61,58 @@ class DenteraDropdown<T> extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       isExpanded: isExpanded,
-      icon: const Icon(
+      icon: Icon(
         Icons.keyboard_arrow_down_rounded,
-        color: AppColors.outline,
+        color: isDark ? AppDarkColors.textMuted : AppColors.outline,
         size: 24,
       ),
-      style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
-      dropdownColor: AppColors.surfaceContainerLowest,
+      style: AppTextStyles.bodyMd.copyWith(color: effectiveTextColor),
+      dropdownColor: effectiveDropdownColor,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.outline),
+        hintStyle: AppTextStyles.bodyMd.copyWith(color: effectiveHintColor),
         helperText: helperText,
-        helperStyle: AppTextStyles.caption,
+        helperStyle: AppTextStyles.caption.copyWith(
+          color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
+        ),
         errorText: errorText,
-        errorStyle: AppTextStyles.caption.copyWith(color: AppColors.error),
+        errorStyle: AppTextStyles.caption.copyWith(color: effectiveErrorColor),
         filled: true,
         fillColor: effectiveFillColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         prefixIcon: prefixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.outlineVariant,
+          borderSide: BorderSide(
+            color: effectiveBorderColor,
             width: 1.0,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.outlineVariant,
+          borderSide: BorderSide(
+            color: effectiveBorderColor,
             width: 1.0,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
+          borderSide: BorderSide(
+            color: effectiveFocusBorderColor,
             width: 2.0,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.error,
+          borderSide: BorderSide(
+            color: effectiveErrorColor,
             width: 1.0,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.error,
+          borderSide: BorderSide(
+            color: effectiveErrorColor,
             width: 2.0,
           ),
         ),
@@ -109,7 +130,7 @@ class DenteraDropdown<T> extends StatelessWidget {
         Text(
           label!,
           style: AppTextStyles.caption.copyWith(
-            color: AppColors.onSurfaceVariant,
+            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),

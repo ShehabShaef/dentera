@@ -230,15 +230,16 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             ],
           );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: appBar,
       body: SafeArea(
         child: Column(
           children: <Widget>[
             // 1. Search Bar & Category Filter Strip
             Container(
-              color: AppColors.background,
+              color: Colors.transparent,
               padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 12.0),
               child: Center(
                 child: ConstrainedBox(
@@ -281,22 +282,24 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 14),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppColors.secondaryContainer.withValues(alpha: 0.35)
-                                      : AppColors.surfaceContainerLowest,
+                                      ? (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.18) : AppColors.secondaryContainer.withValues(alpha: 0.35))
+                                      : (isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest),
                                   borderRadius: BorderRadius.circular(9999),
                                   border: Border.all(
                                     color: isSelected
-                                        ? AppColors.secondary
-                                        : AppColors.outlineVariant.withValues(alpha: 0.5),
+                                        ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                                        : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5)),
                                     width: isSelected ? 1.5 : 1.0,
                                   ),
-                                  boxShadow: AppColors.cardShadow,
+                                  boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   filter,
                                   style: AppTextStyles.caption.copyWith(
-                                    color: isSelected ? AppColors.secondary : AppColors.onSurfaceVariant,
+                                    color: isSelected
+                                        ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                                        : (isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant),
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                   ),
                                 ),
@@ -368,8 +371,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   },
                 );
               },
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
+              backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+              foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),

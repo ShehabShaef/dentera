@@ -56,22 +56,33 @@ class DashboardUpcomingSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final itemBg = isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest;
+    final borderColor = isDark
+        ? AppDarkColors.outlineVariant
+        : AppColors.outlineVariant.withValues(alpha: 0.3);
+    final mutedTextColor = isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant;
+    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
+    final shadow = isDark ? AppDarkColors.cardShadow : AppColors.cardShadow;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         // Section Header
         Row(
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.calendar_today_outlined,
               size: 20,
-              color: AppColors.primary,
+              color: primaryColor,
             ),
             const SizedBox(width: 8),
             Text(
               "Tomorrow's Patients",
               style: AppTextStyles.h2.copyWith(
                 fontWeight: FontWeight.w600,
+                color: isDark ? AppDarkColors.textPrimary : null,
               ),
             ),
           ],
@@ -86,19 +97,19 @@ class DashboardUpcomingSection extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
+                color: itemBg,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  color: borderColor,
                   width: 1.0,
                 ),
-                boxShadow: AppColors.cardShadow,
+                boxShadow: shadow,
               ),
               alignment: Alignment.center,
               child: Text(
                 'No upcoming patients scheduled for tomorrow.',
                 style: AppTextStyles.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: mutedTextColor,
                 ),
               ),
             ),
@@ -109,7 +120,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Material(
-                color: AppColors.surfaceContainerLowest,
+                color: itemBg,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () {
@@ -133,10 +144,10 @@ class DashboardUpcomingSection extends ConsumerWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                        color: borderColor,
                         width: 1.0,
                       ),
-                      boxShadow: AppColors.cardShadow,
+                      boxShadow: shadow,
                     ),
                     child: Row(
                       children: <Widget>[
@@ -146,7 +157,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: item.accentColor.withValues(alpha: 0.12),
+                            color: item.accentColor.withValues(alpha: isDark ? 0.2 : 0.12),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -168,6 +179,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
                                 item.name,
                                 style: AppTextStyles.bodyMd.copyWith(
                                   fontWeight: FontWeight.w600,
+                                  color: isDark ? AppDarkColors.textPrimary : null,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -176,7 +188,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
                               Text(
                                 item.timeAndClinic,
                                 style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.onSurfaceVariant,
+                                  color: mutedTextColor,
                                 ),
                               ),
                             ],
@@ -184,10 +196,10 @@ class DashboardUpcomingSection extends ConsumerWidget {
                         ),
 
                         // Trailing Chevron
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: AppColors.outlineVariant,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                         ),
                       ],
                     ),
@@ -214,7 +226,7 @@ class DashboardUpcomingSection extends ConsumerWidget {
             child: Text(
               'View Full Schedule',
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.primary,
+                color: primaryColor,
                 fontWeight: FontWeight.w600,
               ),
             ),

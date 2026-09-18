@@ -37,6 +37,7 @@ class ClinicSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topRequirements = requirements.take(3).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -56,7 +57,7 @@ class ClinicSummaryCard extends StatelessWidget {
                 child: Text(
                   clinic.name,
                   style: AppTextStyles.h2.copyWith(
-                    color: AppColors.primary,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -88,7 +89,9 @@ class ClinicSummaryCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
                 'No requirements assigned yet.',
-                style: AppTextStyles.caption.copyWith(color: AppColors.outline),
+                style: AppTextStyles.caption.copyWith(
+                  color: isDark ? AppDarkColors.textMuted : AppColors.outline,
+                ),
               ),
             )
           else
@@ -100,14 +103,14 @@ class ClinicSummaryCard extends StatelessWidget {
                   completed: req.completedCount,
                   total: req.targetCount,
                   height: 8.0,
-                  trackColor: AppColors.surfaceVariant,
+                  trackColor: isDark ? AppDarkColors.progressTrack : AppColors.surfaceVariant,
                   progressColor: _clinicColor,
                 ),
               );
             }),
 
-          const Divider(
-            color: AppColors.outlineVariant,
+          Divider(
+            color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant,
             height: 24,
             thickness: 0.8,
           ),
@@ -121,7 +124,7 @@ class ClinicSummaryCard extends StatelessWidget {
                 child: Text(
                   '$_remainingCount requirements left',
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -133,7 +136,7 @@ class ClinicSummaryCard extends StatelessWidget {
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 text: 'View Cases',
-                borderColor: AppColors.primary,
+                borderColor: isDark ? AppDarkColors.borderMuted : AppColors.primary,
                 onPressed: onTap ?? () {
                   // TODO: Phase 6.3 - Navigate to clinic_details_prosthodontics
                 },

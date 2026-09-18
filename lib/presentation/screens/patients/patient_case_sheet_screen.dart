@@ -67,7 +67,6 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
       loading: () => widget.patient != null
           ? _buildScaffold(context, widget.patient!)
           : const Scaffold(
-              backgroundColor: AppColors.background,
               body: Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
@@ -79,7 +78,6 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
           return _buildScaffold(context, widget.patient!);
         }
         return Scaffold(
-          backgroundColor: AppColors.background,
           appBar: AppBar(
             title: const Text('Patient Case Sheet'),
           ),
@@ -96,6 +94,7 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
   }
 
   Widget _buildScaffold(BuildContext context, Patient patient) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final patientCasesAsync = ref.watch(casesByPatientProvider(patient.id));
     final reqsAsync = ref.watch(allRequirementsProvider);
     final clinicsAsync = ref.watch(allClinicsProvider);
@@ -132,12 +131,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: AppColors.background,
         appBar: AppBar(
           title: Text(
             patient.name,
             style: AppTextStyles.h1Mobile.copyWith(
-              color: AppColors.primary,
+              color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -159,13 +157,17 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                decoration: const BoxDecoration(
-                  color: AppColors.surfaceContainerLowest,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(18),
                     bottomRight: Radius.circular(18),
                   ),
-                  boxShadow: AppColors.cardShadow,
+                  border: Border.all(
+                    color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
+                    width: 1.0,
+                  ),
+                  boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,14 +179,16 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryContainer.withValues(alpha: 0.15),
+                            color: isDark
+                                ? AppDarkColors.primaryTeal.withValues(alpha: 0.15)
+                                : AppColors.primaryContainer.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             _initials(patient.name),
                             style: AppTextStyles.h1.copyWith(
-                              color: AppColors.primary,
+                              color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -200,14 +204,14 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
                                 patient.name,
                                 style: AppTextStyles.h2.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
+                                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${patient.gender}, ${patient.age} yrs • ${patient.phoneNumber ?? 'No Phone'}',
                                 style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.onSurfaceVariant,
+                                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -238,11 +242,11 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
 
               // 2. Tab Bar Header
               Container(
-                color: AppColors.background,
+                color: Colors.transparent,
                 child: TabBar(
-                  labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.onSurfaceVariant,
-                  indicatorColor: AppColors.secondary,
+                  labelColor: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
+                  unselectedLabelColor: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
+                  indicatorColor: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                   indicatorWeight: 3.0,
                   labelStyle: AppTextStyles.caption.copyWith(
                     fontWeight: FontWeight.w700,
@@ -284,8 +288,8 @@ class _PatientCaseSheetScreenState extends ConsumerState<PatientCaseSheetScreen>
             patientId: patient.id,
             patientName: patient.name,
           ),
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.onPrimary,
+          backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+          foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
           elevation: 3,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -693,6 +697,7 @@ class _AnamnesisSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasContent = content != null && content!.trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BaseCard(
       padding: const EdgeInsets.all(18.0),
@@ -701,19 +706,19 @@ class _AnamnesisSectionCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, size: 20, color: iconColor),
+              Icon(icon, size: 20, color: isDark ? (iconColor == AppColors.error ? AppDarkColors.error : AppDarkColors.primaryTeal) : iconColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: AppTextStyles.h2.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                   ),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.outline),
+                icon: Icon(Icons.edit_outlined, size: 18, color: isDark ? AppDarkColors.textMuted : AppColors.outline),
                 tooltip: 'Edit $title',
                 splashRadius: 18,
                 visualDensity: VisualDensity.compact,
@@ -728,23 +733,23 @@ class _AnamnesisSectionCard extends StatelessWidget {
             Text(
               content!.trim(),
               style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurface,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
               ),
             )
           else
             Row(
               children: <Widget>[
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     emptyPlaceholder,
                     style: AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
                     ),
                   ),

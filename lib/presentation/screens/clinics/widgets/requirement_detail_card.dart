@@ -46,6 +46,8 @@ class RequirementDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(18),
@@ -66,7 +68,7 @@ class RequirementDetailCard extends StatelessWidget {
                       requirement.title,
                       style: AppTextStyles.h2.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -76,21 +78,21 @@ class RequirementDetailCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
+                      color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '${requirement.completedCount} / ${requirement.targetCount}',
                       style: AppTextStyles.caption.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.onSurfaceVariant,
+                        color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                       ),
                     ),
                   ),
                   if (onEdit != null) ...[
                     const SizedBox(width: 4),
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.outline),
+                      icon: Icon(Icons.edit_outlined, size: 18, color: isDark ? AppDarkColors.textMuted : AppColors.outline),
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -99,10 +101,10 @@ class RequirementDetailCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(width: 6),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
                     size: 18,
-                    color: AppColors.outline,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                   ),
                 ],
               ),
@@ -122,24 +124,27 @@ class RequirementDetailCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
+              color: isDark ? AppDarkColors.surfaceContainerLowest : AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.outlineVariant.withValues(alpha: 0.2),
+                color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.2),
               ),
             ),
             child: linkedCases.isNotEmpty
                 ? Column(
                     children: linkedCases.map((patientCase) {
                       final isDone = patientCase.isCompleted;
+                      final statusColor = isDone
+                          ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                          : (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.8) : AppColors.primary);
                       return Container(
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLowest,
+                          color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+                            color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -149,7 +154,7 @@ class RequirementDetailCard extends StatelessWidget {
                               patientCase.patientName,
                               style: AppTextStyles.bodyMd.copyWith(
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.onSurface,
+                                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                               ),
                             ),
                             Row(
@@ -158,13 +163,13 @@ class RequirementDetailCard extends StatelessWidget {
                                 Icon(
                                   isDone ? Icons.task_alt_rounded : Icons.hourglass_empty_rounded,
                                   size: 14,
-                                  color: isDone ? AppColors.secondary : AppColors.primary,
+                                  color: statusColor,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   patientCase.status,
                                   style: AppTextStyles.labelCaps.copyWith(
-                                    color: isDone ? AppColors.secondary : AppColors.primary,
+                                    color: statusColor,
                                   ),
                                 ),
                               ],
@@ -182,7 +187,7 @@ class RequirementDetailCard extends StatelessWidget {
                       'No patients assigned yet.',
                       style: AppTextStyles.caption.copyWith(
                         fontStyle: FontStyle.italic,
-                        color: AppColors.outline,
+                        color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                       ),
                     ),
                   ),

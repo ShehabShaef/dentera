@@ -30,11 +30,18 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final effectiveTextColor = _isEnabled
+        ? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary)
+        : (isDark ? AppDarkColors.textMuted : AppColors.outline);
+
     final effectiveTextStyle = textStyle ??
         AppTextStyles.h2.copyWith(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: _isEnabled ? AppColors.onPrimary : AppColors.outline,
+          color: effectiveTextColor,
         );
 
     Widget content = Row(
@@ -42,12 +49,12 @@ class PrimaryButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         if (isLoading) ...<Widget>[
-          const SizedBox(
+          SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+              valueColor: AlwaysStoppedAnimation<Color>(effectiveTextColor),
             ),
           ),
           const SizedBox(width: 8),
@@ -67,9 +74,20 @@ class PrimaryButton extends StatelessWidget {
       height: height,
       width: isFullWidth ? double.infinity : null,
       decoration: BoxDecoration(
-        gradient: _isEnabled ? AppColors.brandGradient : null,
-        color: _isEnabled ? null : AppColors.surfaceContainerHigh,
+        color: _isEnabled
+            ? (isDark ? AppDarkColors.primary : null)
+            : (isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerHigh),
+        gradient: _isEnabled && !isDark ? AppColors.brandGradient : null,
         borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: _isEnabled && isDark
+            ? [
+                BoxShadow(
+                  color: AppDarkColors.primary.withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,

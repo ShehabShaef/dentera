@@ -186,11 +186,12 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
     final resolvedClinicName = _resolveClinicName();
     final clinicDisplayName = resolvedClinicName ?? widget.clinicName ?? 'Clinic';
     final isStandardClinic = DentalCatalog.isStandardDepartment(resolvedClinicName);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -209,7 +210,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -227,7 +228,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                         Text(
                           'Add Requirement',
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -235,19 +236,19 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                         Text(
                           'Define procedural quota for $clinicDisplayName',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+              Divider(height: 24, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
               // 3. Procedure / Requirement Selection
               if (isStandardClinic) ...[
@@ -349,7 +350,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                       text: _isSubmitting ? 'Saving...' : 'Save Requirement',
-                      icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.onPrimary),
+                      icon: Icon(Icons.add_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
                   ),

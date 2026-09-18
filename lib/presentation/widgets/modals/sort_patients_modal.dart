@@ -50,10 +50,12 @@ class SortPatientsModal extends ConsumerWidget {
       },
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -71,7 +73,7 @@ class SortPatientsModal extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -89,7 +91,7 @@ class SortPatientsModal extends ConsumerWidget {
                       Text(
                         'Sort Patients',
                         style: AppTextStyles.h2.copyWith(
-                          color: AppColors.primary,
+                          color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -97,19 +99,26 @@ class SortPatientsModal extends ConsumerWidget {
                       Text(
                         'Order patient roster by clinical criteria',
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
+                          color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.outline,
+                  ),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
-            const Divider(height: 20, thickness: 0.8, color: AppColors.outlineVariant),
+            Divider(
+              height: 20,
+              thickness: 0.8,
+              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant,
+            ),
 
             // 3. Sorting Options List
             ...sortOptions.map((item) {
@@ -123,8 +132,12 @@ class SortPatientsModal extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Material(
                   color: isSelected
-                      ? AppColors.secondaryContainer.withValues(alpha: 0.25)
-                      : AppColors.surfaceContainerLow,
+                      ? (isDark
+                          ? AppDarkColors.tealAccent.withValues(alpha: 0.15)
+                          : AppColors.secondaryContainer.withValues(alpha: 0.25))
+                      : (isDark
+                          ? AppDarkColors.surfaceContainerHigh
+                          : AppColors.surfaceContainerLow),
                   borderRadius: BorderRadius.circular(14),
                   child: InkWell(
                     onTap: () {
@@ -139,7 +152,9 @@ class SortPatientsModal extends ConsumerWidget {
                         children: <Widget>[
                           Icon(
                             icon,
-                            color: isSelected ? AppColors.secondary : AppColors.outline,
+                            color: isSelected
+                                ? (isDark ? AppDarkColors.tealAccent : AppColors.secondary)
+                                : (isDark ? AppDarkColors.textSecondary : AppColors.outline),
                             size: 22,
                           ),
                           const SizedBox(width: 14),
@@ -151,23 +166,25 @@ class SortPatientsModal extends ConsumerWidget {
                                   title,
                                   style: AppTextStyles.bodyMd.copyWith(
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                    color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                                    color: isSelected
+                                        ? (isDark ? AppDarkColors.textPrimary : AppColors.onSurface)
+                                        : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   subtitle,
                                   style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.outline,
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.outline,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           if (isSelected)
-                            const Icon(
+                            Icon(
                               Icons.check_circle_rounded,
-                              color: AppColors.secondary,
+                              color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
                               size: 20,
                             ),
                         ],
