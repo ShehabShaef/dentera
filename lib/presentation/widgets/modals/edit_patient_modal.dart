@@ -6,6 +6,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -197,7 +198,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Edit Patient Profile',
+                          context.l10n.editPatientProfile,
                           style: AppTextStyles.h2.copyWith(
                             color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -205,7 +206,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Update demographics and medical history for #${widget.patient.id}',
+                          '${context.l10n.updateDemographicsSubtitle} #${widget.patient.id}',
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),
@@ -224,7 +225,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // 3. Name Field
               DenteraTextField(
                 controller: _nameController,
-                label: 'Full Name',
+                label: context.l10n.fullName,
                 hintText: 'e.g., Ali Nasser',
                 prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                 textCapitalization: TextCapitalization.words,
@@ -249,7 +250,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                     width: 100,
                     child: DenteraTextField(
                       controller: _ageController,
-                      label: 'Age',
+                      label: context.l10n.age,
                       hintText: '25',
                       prefixIcon: const Icon(Icons.cake_outlined, size: 18),
                       keyboardType: TextInputType.number,
@@ -272,7 +273,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                   Expanded(
                     child: DenteraTextField(
                       controller: _phoneController,
-                      label: 'Phone Number',
+                      label: context.l10n.phoneNumberLabel,
                       hintText: 'e.g., +967-771122334',
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
                       keyboardType: TextInputType.phone,
@@ -284,7 +285,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
 
               const SizedBox(height: 20),
               Text(
-                'Clinical Anamnesis / History',
+                context.l10n.clinicalAnamnesisHistory,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w700,
@@ -296,7 +297,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // Chief Complaint (CC)
               DenteraTextField(
                 controller: _chiefComplaintController,
-                label: 'Chief Complaint (CC)',
+                label: context.l10n.chiefComplaint,
                 hintText: 'e.g., Severe throbbing pain in upper right quadrant',
                 prefixIcon: const Icon(Icons.record_voice_over_outlined, size: 20),
                 maxLines: 2,
@@ -307,7 +308,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // History of Chief Complaint (HCC)
               DenteraTextField(
                 controller: _historyOfChiefComplaintController,
-                label: 'History of Chief Complaint (HCC)',
+                label: context.l10n.historyOfChiefComplaint,
                 hintText: 'e.g., Pain started 3 days ago, aggravated by cold stimuli',
                 prefixIcon: const Icon(Icons.history_edu_outlined, size: 20),
                 maxLines: 2,
@@ -318,7 +319,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // Medical History & Allergies
               DenteraTextField(
                 controller: _medicalHistoryController,
-                label: 'Medical History & Allergies',
+                label: context.l10n.medicalHistoryAndAllergies,
                 hintText: 'e.g., Penicillin allergy, Hypertension, Diabetic...',
                 prefixIcon: const Icon(Icons.medical_information_outlined, size: 20),
                 maxLines: 2,
@@ -329,7 +330,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // Dental History
               DenteraTextField(
                 controller: _dentalHistoryController,
-                label: 'Dental History',
+                label: context.l10n.dentalHistory,
                 hintText: 'e.g., Past extractions, regular scaling, RCT 2 years ago',
                 prefixIcon: const Icon(Icons.medical_services_outlined, size: 20),
                 maxLines: 2,
@@ -340,7 +341,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // Current Medications
               DenteraTextField(
                 controller: _medicationsController,
-                label: 'Current Medications',
+                label: context.l10n.currentMedications,
                 hintText: 'e.g., Amoxicillin 500mg, Metformin 500mg',
                 prefixIcon: const Icon(Icons.medication_outlined, size: 20),
                 maxLines: 2,
@@ -351,7 +352,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
               // Diagnostic Aids
               DenteraTextField(
                 controller: _diagnosticAidsController,
-                label: 'Diagnostic Aids',
+                label: context.l10n.diagnosticAids,
                 hintText: 'e.g., Periapical radiograph tooth #16, vitality test positive',
                 prefixIcon: const Icon(Icons.biotech_outlined, size: 20),
                 maxLines: 2,
@@ -365,7 +366,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -373,7 +374,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: _isSubmitting ? 'Saving...' : 'Save Changes',
+                      text: _isSubmitting ? context.l10n.saving : context.l10n.saveChanges,
                       icon: const Icon(Icons.check_rounded, size: 18, color: AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),

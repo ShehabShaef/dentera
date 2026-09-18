@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import '../patients/patient_case_sheet_screen.dart';
@@ -71,7 +72,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Appointments',
+          context.l10n.appointments,
           style: AppTextStyles.h1Mobile.copyWith(
             color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
             fontWeight: FontWeight.w600,
@@ -137,7 +138,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         children: <Widget>[
                           // "Next Up" Highlight Card
                           Text(
-                            'Next Up',
+                            context.l10n.nextUp,
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -155,7 +156,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           // "Later Today" Chronological Timeline
                           if (laterAppointments.isNotEmpty) ...<Widget>[
                             Text(
-                              'Later Today',
+                              context.l10n.laterToday,
                               style: AppTextStyles.h2.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -199,6 +200,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   confirmDismiss: (direction) =>
                                       _confirmDeleteAppointment(context, apt, patientName),
                                   onDismissed: (direction) async {
+                                    final deletedMessage = context.l10n.appointmentDeleted;
                                     await ref
                                         .read(appointmentsNotifierProvider.notifier)
                                         .deleteAppointment(
@@ -208,7 +210,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     if (mounted) {
                                       ref.invalidate(dailyAppointmentsProvider(_selectedDate));
                                       ScaffoldMessenger.of(this.context).showSnackBar(
-                                        const SnackBar(content: Text('Appointment deleted')),
+                                        SnackBar(content: Text(deletedMessage)),
                                       );
                                     }
                                   },
@@ -314,20 +316,20 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Appointment'),
+        title: Text(context.l10n.deleteAppointment),
         content: Text(
           'Are you sure you want to delete this appointment for $patientName? This action cannot be undone.',
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              context.l10n.delete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -350,7 +352,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       if (mounted) {
         ref.invalidate(dailyAppointmentsProvider(_selectedDate));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Appointment deleted')),
+          SnackBar(content: Text(context.l10n.appointmentDeleted)),
         );
       }
     }
@@ -413,7 +415,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       size: 20,
                       color: AppColors.onSurfaceVariant,
                     ),
-                    tooltip: 'Edit Appointment',
+                    tooltip: context.l10n.editAppointment,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () => _editAppointment(appointment),
@@ -426,7 +428,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    tooltip: 'Appointment actions',
+                    tooltip: context.l10n.appointmentActions,
                     onSelected: (value) {
                       if (value == 'edit') {
                         _editAppointment(appointment);
@@ -435,25 +437,25 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       }
                     },
                     itemBuilder: (context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
-                            SizedBox(width: 8),
-                            Text('Edit Appointment'),
+                            const Icon(Icons.edit_outlined, size: 18, color: AppColors.onSurface),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.editAppointment),
                           ],
                         ),
                       ),
-                      const PopupMenuItem<String>(
+                      PopupMenuItem<String>(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                            SizedBox(width: 8),
+                            const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                            const SizedBox(width: 8),
                             Text(
-                              'Delete Appointment',
-                              style: TextStyle(color: AppColors.error),
+                              context.l10n.deleteAppointment,
+                              style: const TextStyle(color: AppColors.error),
                             ),
                           ],
                         ),
@@ -486,7 +488,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           ),
           const SizedBox(height: 16),
           SecondaryButton(
-            text: 'Open Case Sheet',
+            text: context.l10n.openCaseSheet,
             height: 42,
             borderColor: AppColors.outlineVariant,
             onPressed: () {
@@ -515,11 +517,11 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   Widget _buildEmptyState() {
     return DenteraEmptyState(
       icon: Icons.event_available_outlined,
-      title: 'No appointments scheduled',
+      title: context.l10n.noAppointmentsScheduled,
       subtitle: 'Enjoy your day off or schedule a new patient.',
       actionButton: PrimaryButton(
         isFullWidth: false,
-        text: 'Schedule Patient',
+        text: context.l10n.schedulePatient,
         icon: const Icon(
           Icons.add_rounded,
           color: AppColors.onPrimary,

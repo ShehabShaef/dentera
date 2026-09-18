@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../../l10n/l10n.dart';
 import '../../patients/patient_case_sheet_screen.dart';
 
 /// Timeline appointment row widget with chronological node line and detailed patient card.
@@ -175,7 +176,7 @@ class TimelineAppointmentCard extends StatelessWidget {
                                   size: 18,
                                   color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                 ),
-                                tooltip: 'Edit Appointment',
+                                tooltip: context.l10n.editAppointment,
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                 onPressed: onEdit,
@@ -190,7 +191,7 @@ class TimelineAppointmentCard extends StatelessWidget {
                                 ),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                tooltip: 'Appointment actions',
+                                tooltip: context.l10n.appointmentActions,
                                 onSelected: (value) {
                                   if (value == 'edit') {
                                     onEdit?.call();
@@ -206,20 +207,20 @@ class TimelineAppointmentCard extends StatelessWidget {
                                         children: [
                                           Icon(Icons.edit_outlined, size: 18, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                                           const SizedBox(width: 8),
-                                          const Text('Edit Appointment'),
+                                          Text(context.l10n.editAppointment),
                                         ],
                                       ),
                                     ),
                                   if (onDelete != null)
-                                    const PopupMenuItem<String>(
+                                    PopupMenuItem<String>(
                                       value: 'delete',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                                          SizedBox(width: 8),
+                                          const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                          const SizedBox(width: 8),
                                           Text(
-                                            'Delete Appointment',
-                                            style: TextStyle(color: AppColors.error),
+                                            context.l10n.deleteAppointment,
+                                            style: const TextStyle(color: AppColors.error),
                                           ),
                                         ],
                                       ),

@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'widgets/widgets.dart';
@@ -179,7 +180,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                 },
               ),
               title: Text(
-                '${selectedIds.length} Selected',
+                context.l10n.selectedCount(selectedIds.length),
                 style: AppTextStyles.h1Mobile.copyWith(
                   color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -198,13 +199,13 @@ class ClinicDetailsScreen extends ConsumerWidget {
                           }
                         },
                   child: Text(
-                    selectedIds.length == sortedRequirements.length ? 'Deselect All' : 'Select All',
+                    selectedIds.length == sortedRequirements.length ? context.l10n.deselectAll : context.l10n.selectAll,
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
-                  tooltip: 'Delete Selected',
+                  tooltip: context.l10n.deleteSelected,
                   onPressed: selectedIds.isEmpty
                       ? null
                       : () => _confirmBatchDeleteRequirements(context, ref, currentClinic.id, selectedIds),
@@ -222,12 +223,12 @@ class ClinicDetailsScreen extends ConsumerWidget {
               actions: <Widget>[
                 IconButton(
                   icon: const Icon(Icons.picture_as_pdf_outlined),
-                  tooltip: 'Generate Quota Report',
+                  tooltip: context.l10n.generateQuotaReport,
                   onPressed: () => GenerateQuotaReportModal.show(context, clinic: currentClinic),
                 ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded),
-                  tooltip: 'Clinic Options',
+                  tooltip: 'Options',
                   onSelected: (value) async {
                     switch (value) {
                       case 'generate_report':
@@ -252,9 +253,9 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.picture_as_pdf_outlined, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Generate Quota Report',
+                              context.l10n.generateQuotaReport,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -267,7 +268,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.edit_outlined, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                           const SizedBox(width: 12),
-                          const Text('Edit Clinic'),
+                          Text(context.l10n.editClinic),
                         ],
                       ),
                     ),
@@ -277,20 +278,20 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.sort_rounded, size: 20, color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                           const SizedBox(width: 12),
-                          const Text('Sort Cases'),
+                          Text(context.l10n.sortCases),
                         ],
                       ),
                     ),
                     const PopupMenuDivider(),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'delete_cases',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_sweep_outlined, size: 20, color: AppColors.error),
-                          SizedBox(width: 12),
+                          const Icon(Icons.delete_sweep_outlined, size: 20, color: AppColors.error),
+                          const SizedBox(width: 12),
                           Text(
-                            'Delete Cases',
-                            style: TextStyle(color: AppColors.error),
+                            context.l10n.deleteCases,
+                            style: const TextStyle(color: AppColors.error),
                           ),
                         ],
                       ),
@@ -409,14 +410,14 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Overall Progress',
+                            context.l10n.overallProgress,
                             style: AppTextStyles.caption.copyWith(
                               color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$totalCompleted of $totalTarget Requirements Met',
+                            context.l10n.requirementsMet(totalCompleted, totalTarget),
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w700,
                               color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -439,7 +440,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  overallProgress >= 0.5 ? 'On Track' : 'Needs Focus',
+                                  overallProgress >= 0.5 ? context.l10n.onTrack : context.l10n.needsFocus,
                                   style: AppTextStyles.labelCaps.copyWith(
                                     color: isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer,
                                     fontWeight: FontWeight.w700,
@@ -458,7 +459,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
 
               // 2. Section Header: Granular Requirements
               Text(
-                'Procedural Requirements',
+                context.l10n.proceduralRequirements,
                 style: AppTextStyles.h2.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
@@ -480,7 +481,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'No requirements added yet',
+                          context.l10n.noRequirementsAddedYet,
                           style: AppTextStyles.h2.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -488,7 +489,7 @@ class ClinicDetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Define clinical quotas and procedural targets for ${currentClinic.name}.',
+                          context.l10n.defineClinicalQuotasForClinic(currentClinic.name),
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),

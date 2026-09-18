@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../widgets/widgets.dart';
 
 /// Step 3 of Onboarding: Academic Year Selection.
@@ -41,7 +42,7 @@ class AcademicYearPage extends StatelessWidget {
               children: <Widget>[
                 // Title & Subtitle
                 Text(
-                  'Clinical Year',
+                  context.l10n.clinicalYear,
                   style: AppTextStyles.h1,
                 ),
                 const SizedBox(height: 8),
@@ -98,7 +99,7 @@ class AcademicYearPage extends StatelessWidget {
                     TextButton(
                       onPressed: onBack,
                       child: Text(
-                        'Back',
+                        context.l10n.back,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.outline,
                           fontWeight: FontWeight.w600,
@@ -108,7 +109,7 @@ class AcademicYearPage extends StatelessWidget {
                     PrimaryButton(
                       isFullWidth: false,
                       isLoading: isLoading,
-                      text: 'Enter Workspace',
+                      text: context.l10n.enterWorkspace,
                       onPressed: onSubmit,
                     ),
                   ],

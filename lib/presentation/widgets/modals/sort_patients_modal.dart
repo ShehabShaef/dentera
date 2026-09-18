@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 
 /// Modal bottom sheet allowing clinical users to select the sorting order of the patient roster.
@@ -32,20 +33,20 @@ class SortPatientsModal extends ConsumerWidget {
     final sortOptions = <Map<String, dynamic>>[
       {
         'option': PatientSortOption.name,
-        'title': 'Name (A to Z)',
-        'subtitle': 'Alphabetical order by patient name',
+        'title': context.l10n.sortByName,
+        'subtitle': context.l10n.sortByNameSubtitle,
         'icon': Icons.sort_by_alpha_rounded,
       },
       {
         'option': PatientSortOption.dateAdded,
-        'title': 'Date Added (Recent first)',
-        'subtitle': 'Order by newest registered patient',
+        'title': context.l10n.sortByDateAdded,
+        'subtitle': context.l10n.sortByDateAddedSubtitle,
         'icon': Icons.calendar_today_rounded,
       },
       {
         'option': PatientSortOption.activeCaseCount,
-        'title': 'Active Case Count',
-        'subtitle': 'Prioritize patients with in-progress clinical procedures',
+        'title': context.l10n.sortByActiveCases,
+        'subtitle': context.l10n.sortByActiveCasesSubtitle,
         'icon': Icons.folder_shared_outlined,
       },
     ];
@@ -89,7 +90,7 @@ class SortPatientsModal extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sort Patients',
+                        context.l10n.sortPatients,
                         style: AppTextStyles.h2.copyWith(
                           color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -97,7 +98,7 @@ class SortPatientsModal extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Order patient roster by clinical criteria',
+                        context.l10n.orderPatientsSubtitle,
                         style: AppTextStyles.caption.copyWith(
                           color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),

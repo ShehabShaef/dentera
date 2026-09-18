@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -141,7 +142,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
   Future<void> _submit() async {
     if (_pickedImagePath == null || _pickedImagePath!.isEmpty) {
       setState(() {
-        _imageError = 'Please capture or select a radiograph image.';
+        _imageError = context.l10n.pleaseSelectRadiograph;
       });
       return;
     }
@@ -164,7 +165,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
       if (mounted) {
         DenteraSnackBar.showSuccess(
           context,
-          message: '$_selectedType radiograph attached successfully',
+          message: context.l10n.radiographAttachedSuccess(_formatProjectionType(_selectedType, context)),
         );
         widget.onRadiographSaved?.call(savedRadiograph);
         Navigator.of(context).pop(savedRadiograph);
@@ -175,9 +176,22 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
         setState(() => _isSubmitting = false);
         DenteraSnackBar.showError(
           context,
-          message: 'Failed to save radiograph: $e',
+          message: context.l10n.failedToSaveRadiograph(e.toString()),
         );
       }
+    }
+  }
+
+  String _formatProjectionType(String type, BuildContext context) {
+    switch (type) {
+      case PatientRadiograph.typePeriapical:
+        return context.l10n.periapical;
+      case PatientRadiograph.typeBitewing:
+        return context.l10n.bitewing;
+      case PatientRadiograph.typePanoramic:
+        return context.l10n.panoramic;
+      default:
+        return context.l10n.other;
     }
   }
 
@@ -239,7 +253,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Attach Radiograph (X-Ray)',
+                        context.l10n.attachRadiographModalTitle,
                         style: AppTextStyles.h1Mobile.copyWith(
                           color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -247,7 +261,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                       ),
                       if (widget.patientName != null)
                         Text(
-                          'Patient: ${widget.patientName}',
+                          context.l10n.patientLabel(widget.patientName!),
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
@@ -259,7 +273,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                       Icons.close_rounded,
                       color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                     ),
-                    tooltip: 'Cancel',
+                    tooltip: context.l10n.cancel,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -268,7 +282,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
 
               // 1. Image Capture / Picker Area
               Text(
-                'Radiograph Image',
+                context.l10n.radiographImage,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -299,9 +313,9 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                               height: 180,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
-                                  _buildImagePlaceholder(),
+                                  _buildImagePlaceholder(context),
                             )
-                          : _buildImagePlaceholder(),
+                          : _buildImagePlaceholder(context),
                       Positioned(
                         top: 8,
                         right: 8,
@@ -309,7 +323,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                           children: <Widget>[
                             IconButton.filledTonal(
                               icon: const Icon(Icons.refresh_rounded, size: 18),
-                              tooltip: 'Change Image',
+                              tooltip: context.l10n.changeImage,
                               onPressed: () => _pickImage(ImageSource.gallery),
                             ),
                             const SizedBox(width: 4),
@@ -319,7 +333,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                                 foregroundColor: AppColors.onError,
                               ),
                               icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                              tooltip: 'Remove Image',
+                              tooltip: context.l10n.removeImage,
                               onPressed: () => setState(() => _pickedImagePath = null),
                             ),
                           ],
@@ -352,7 +366,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Import radiographic X-ray',
+                        context.l10n.importRadiograph,
                         style: AppTextStyles.bodyMd.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -360,7 +374,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Supports Camera capture or Photo Gallery import',
+                        context.l10n.cameraOrGallery,
                         style: AppTextStyles.caption.copyWith(
                           color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),
@@ -371,7 +385,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                         children: <Widget>[
                           OutlinedButton.icon(
                             icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                            label: const Text('Camera'),
+                            label: Text(context.l10n.camera),
                             style: OutlinedButton.styleFrom(
                               minimumSize: Size.zero,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -381,7 +395,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                           const SizedBox(width: 12),
                           OutlinedButton.icon(
                             icon: const Icon(Icons.photo_library_outlined, size: 18),
-                            label: const Text('Gallery'),
+                            label: Text(context.l10n.gallery),
                             style: OutlinedButton.styleFrom(
                               minimumSize: Size.zero,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -408,7 +422,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
 
               // 2. Radiograph Type Selector
               Text(
-                'Projection Type',
+                context.l10n.projectionType,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -427,14 +441,14 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   final isSelected = _selectedType == type;
                   final color = _typeColor(type, isDark);
                   return ChoiceChip(
-                    label: Text(type),
+                    label: Text(_formatProjectionType(type, context)),
                     selected: isSelected,
                     selectedColor: color.withValues(alpha: isDark ? 0.25 : 0.15),
                     backgroundColor: isDark
                         ? AppDarkColors.surfaceContainerHigh
                         : AppColors.surfaceContainerLowest,
                     labelStyle: AppTextStyles.caption.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected
                           ? color
                           : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
@@ -455,7 +469,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
 
               // 3. Capture Date Selector
               Text(
-                'Capture Date',
+                context.l10n.captureDate,
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -509,8 +523,8 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
               // 4. Clinical Observations / Notes Field
               DenteraTextField(
                 controller: _notesController,
-                label: 'Radiographic Findings / Notes',
-                hintText: 'e.g., Periapical radiolucency on root apex #36, crestal bone level normal...',
+                label: context.l10n.radiographicFindings,
+                hintText: context.l10n.radiographicFindingsHint,
                 prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
@@ -523,7 +537,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -531,7 +545,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: _isSubmitting ? 'Saving...' : 'Attach Radiograph',
+                      text: _isSubmitting ? context.l10n.saving : context.l10n.attachRadiograph,
                       icon: Icon(
                         Icons.check_rounded,
                         size: 18,
@@ -549,7 +563,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -557,7 +571,7 @@ class _AddRadiographModalState extends ConsumerState<AddRadiographModal> {
           const Icon(Icons.image_rounded, size: 40, color: Colors.white70),
           const SizedBox(height: 6),
           Text(
-            'Radiograph Selected',
+            context.l10n.radiographSelected,
             style: AppTextStyles.caption.copyWith(color: Colors.white70),
           ),
         ],

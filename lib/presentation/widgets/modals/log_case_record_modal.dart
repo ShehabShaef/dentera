@@ -6,6 +6,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -180,7 +181,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
     if (_selectedRequirementId == null || _selectedRequirementId!.isEmpty) {
       DenteraSnackBar.showError(
         context,
-        message: 'Please select a procedural requirement',
+        message: context.l10n.pleaseSelectRequirement,
       );
       return;
     }
@@ -260,7 +261,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
         setState(() => _isSubmitting = false);
         DenteraSnackBar.showError(
           context,
-          message: isEditing ? 'Failed to update clinical case' : 'Failed to log clinical case',
+          message: isEditing ? context.l10n.failedToUpdateCase : context.l10n.failedToLogCase,
           error: e,
           stackTrace: st,
         );
@@ -312,7 +313,9 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.caseRecord != null ? 'Edit Clinical Case' : 'Log Clinical Case',
+                          widget.caseRecord != null
+                              ? context.l10n.editClinicalCase
+                              : context.l10n.logClinicalCase,
                           style: AppTextStyles.h2.copyWith(
                             color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -321,8 +324,8 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                         const SizedBox(height: 2),
                         Text(
                           widget.patientName != null
-                              ? 'Record clinical procedure for ${widget.patientName}'
-                              : 'Record clinical procedure for patient #${widget.patientId}',
+                              ? context.l10n.recordProcedureForPatient(widget.patientName!)
+                              : context.l10n.recordProcedureForPatientId(widget.patientId),
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
@@ -345,7 +348,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
-                        'No clinics available. Please create a clinic first.',
+                        context.l10n.noClinicsAvailable,
                         style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
                       ),
                     );
@@ -360,7 +363,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       DenteraDropdown<String>(
-                        label: 'Department / Clinic',
+                        label: context.l10n.department,
                         value: _selectedClinicId,
                         prefixIcon: const Icon(Icons.medical_services_outlined, size: 20),
                         items: clinics.map((clinic) {
@@ -396,7 +399,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                 error: (err, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Text(
-                    'Failed to load clinics: $err',
+                    context.l10n.failedToLoadClinicsWithError(err.toString()),
                     style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
                   ),
                 ),
@@ -405,13 +408,13 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
 
               // 5. Initial Status Dropdown
               DenteraDropdown<String>(
-                label: 'Procedure Status',
+                label: context.l10n.procedureStatus,
                 value: _selectedStatus,
                 prefixIcon: const Icon(Icons.flag_outlined, size: 20),
                 items: _statuses.map((st) {
                   return DropdownMenuItem<String>(
                     value: st,
-                    child: Text(st),
+                    child: Text(_formatStatus(st, context)),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -424,13 +427,13 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
 
               // 5.5 Planned Number of Visits (1-10) & Labels
               DenteraDropdown<int>(
-                label: 'Planned Number of Visits (1-10)',
+                label: context.l10n.plannedVisits,
                 value: _plannedVisitsCount,
                 prefixIcon: const Icon(Icons.repeat_rounded, size: 20),
                 items: List.generate(10, (i) => i + 1).map((count) {
                   return DropdownMenuItem<int>(
                     value: count,
-                    child: Text('$count ${count == 1 ? 'Visit' : 'Visits'}'),
+                    child: Text('$count ${count == 1 ? context.l10n.visitSingular : context.l10n.visitsPlural}'),
                   );
                 }).toList(),
                 onChanged: (val) {
@@ -440,7 +443,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
               const SizedBox(height: 12),
 
               Text(
-                'Visit Milestone Labels',
+                context.l10n.visitMilestones,
                 style: AppTextStyles.bodyMd.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -452,8 +455,8 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: DenteraTextField(
                     controller: _visitLabelControllers[index],
-                    label: 'Visit ${index + 1} Label',
-                    hintText: 'e.g., Visit ${index + 1}, Primary Impressions...',
+                    label: context.l10n.visitLabel(index + 1),
+                    hintText: context.l10n.visitNumberHint(index + 1),
                     prefixIcon: Icon(Icons.flag_outlined, size: 18, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   ),
                 );
@@ -463,8 +466,8 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
               // 6. Clinical Procedure Notes Field
               DenteraTextField(
                 controller: _notesController,
-                label: 'Clinical Notes / Findings',
-                hintText: 'e.g., Primary impression completed, cavity prepared Class II...',
+                label: context.l10n.clinicalFindingsNotes,
+                hintText: context.l10n.clinicalNotesHint,
                 prefixIcon: Icon(Icons.edit_note_rounded, size: 20, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
@@ -477,7 +480,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -486,8 +489,10 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       text: _isSubmitting
-                          ? 'Saving...'
-                          : (widget.caseRecord != null ? 'Update Case Record' : 'Log Case Record'),
+                          ? context.l10n.saving
+                          : (widget.caseRecord != null
+                              ? context.l10n.updateCaseRecord
+                              : context.l10n.logCaseRecord),
                       icon: Icon(
                         widget.caseRecord != null ? Icons.save_outlined : Icons.add_rounded,
                         size: 18,
@@ -503,6 +508,19 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
         ),
       ),
     );
+  }
+
+  String _formatStatus(String status, BuildContext context) {
+    switch (status) {
+      case 'In Progress':
+        return context.l10n.statusInProgress;
+      case 'Evaluated':
+        return context.l10n.statusEvaluated;
+      case 'Completed':
+        return context.l10n.statusCompleted;
+      default:
+        return status;
+    }
   }
 
   Widget _buildRequirementSelector(String clinicId) {
@@ -521,7 +539,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
               border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Text(
-              'No procedural requirements defined for this clinic yet.',
+              context.l10n.noRequirementsDefined,
               style: AppTextStyles.caption.copyWith(color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
             ),
           );
@@ -534,7 +552,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
         }
 
         return DenteraDropdown<String>(
-          label: 'Procedural Requirement',
+          label: context.l10n.procedureRequirement,
           value: _selectedRequirementId,
           prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
           items: requirements.map((req) {
@@ -562,7 +580,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
         ),
       ),
       error: (err, _) => Text(
-        'Failed to load requirements: $err',
+        context.l10n.failedToLoadRequirementsWithError(err.toString()),
         style: AppTextStyles.caption.copyWith(color: AppColors.error),
       ),
     );

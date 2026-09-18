@@ -6,6 +6,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -258,7 +259,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'New Patient',
+                    context.l10n.newPatient,
                     style: AppTextStyles.h1Mobile.copyWith(
                       color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -293,13 +294,13 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                     children: <Widget>[
                       // Patient Name
                       DenteraTextField(
-                        label: 'Patient Name *',
+                        label: '${context.l10n.patientName} *',
                         hintText: 'e.g. John Doe',
                         controller: _nameController,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter the patient name';
+                            return context.l10n.pleaseEnterPatientName;
                           }
                           return null;
                         },
@@ -314,7 +315,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                           Expanded(
                             flex: 1,
                             child: DenteraTextField(
-                              label: 'Age *',
+                              label: '${context.l10n.age} *',
                               hintText: 'e.g. 45',
                               controller: _ageController,
                               keyboardType: TextInputType.number,
@@ -328,10 +329,13 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                           Expanded(
                             flex: 1,
                             child: DenteraDropdown<String>(
-                              label: 'Gender',
+                              label: context.l10n.gender,
                               value: _selectedGender,
                               items: _genders
-                                  .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                                  .map((g) => DropdownMenuItem(
+                                        value: g,
+                                        child: Text(g == 'Male' ? context.l10n.male : context.l10n.female),
+                                      ))
                                   .toList(),
                               onChanged: (val) {
                                 if (val != null) {
@@ -348,7 +352,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
 
                       // Clinic Assignment Badges
                       Text(
-                        'Assign to Clinic',
+                        context.l10n.assignToClinic,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -401,8 +405,8 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                         const SizedBox(height: 14),
                         DenteraDropdown<String>(
                           key: ValueKey('${activeClinicId}_${activeSelectedReq?.id}'),
-                          label: 'Main Case / Procedure',
-                          hintText: 'Select main case / procedure',
+                          label: context.l10n.mainCaseProcedure,
+                          hintText: context.l10n.selectMainProcedure,
                           value: activeSelectedReq?.id,
                           prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
                           items: availableReqs.map((req) {
@@ -416,7 +420,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                           }).toList(),
                           validator: (val) {
                             if (val == null || val.isEmpty) {
-                              return 'Please select a main case / procedure';
+                              return context.l10n.pleaseSelectMainProcedure;
                             }
                             return null;
                           },
@@ -445,7 +449,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
                               Text(
-                                'Add Contact & Details (Optional)',
+                                context.l10n.addContactAndDetailsOptional,
                                 style: AppTextStyles.bodyMd.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
@@ -467,7 +471,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                         const SizedBox(height: 12),
                         // Phone Number
                         DenteraTextField(
-                          label: 'Phone Number',
+                          label: context.l10n.phoneNumberLabel,
                           hintText: 'e.g. +967 771 234 567',
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
@@ -477,7 +481,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
 
                         // Medical History
                         DenteraTextField(
-                          label: 'Medical History / Allergies',
+                          label: context.l10n.medicalHistoryLabel,
                           hintText: 'e.g. Hypertension, Penicillin allergy',
                           controller: _medicalHistoryController,
                           maxLines: 3,
@@ -499,7 +503,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                   Expanded(
                     flex: 1,
                     child: SecondaryButton(
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -507,7 +511,7 @@ class _AddPatientModalState extends ConsumerState<AddPatientModal> {
                   Expanded(
                     flex: 2,
                     child: PrimaryButton(
-                      text: 'Save Patient',
+                      text: context.l10n.savePatient,
                       icon: const Icon(
                         Icons.save_rounded,
                         size: 18,

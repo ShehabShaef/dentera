@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import 'patient_case_sheet_screen.dart';
@@ -49,6 +50,25 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     }
   }
 
+  String _getFilterLabel(BuildContext context, String filter) {
+    switch (filter) {
+      case 'All':
+        return context.l10n.all;
+      case 'Active Cases':
+        return context.l10n.activeCases;
+      case 'Completed':
+        return context.l10n.completed;
+      case 'Prosthodontics':
+        return context.l10n.prosthodontics;
+      case 'Endodontics':
+        return context.l10n.endodontics;
+      case 'Oral Surgery':
+        return context.l10n.oralSurgery;
+      default:
+        return filter;
+    }
+  }
+
   Future<void> _confirmBatchDeletePatients(Set<String> selectedIds) async {
     if (selectedIds.isEmpty) return;
 
@@ -56,14 +76,14 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Selected Patients?'),
+        title: Text(context.l10n.deleteSelectedPatients),
         content: Text(
-          'Deleting $count patient${count > 1 ? 's' : ''} will permanently remove all associated clinical case records and scheduled appointments due to cascade deletion.\n\nThis action cannot be undone. Are you sure you want to proceed?',
+          context.l10n.deleteSelectedPatientsMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -71,7 +91,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               foregroundColor: AppColors.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -132,16 +152,16 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 ref.read(patientSelectionModeProvider.notifier).state = false;
                 ref.read(selectedPatientIdsProvider.notifier).state = <String>{};
               },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
+              child: Text(
+                context.l10n.cancel,
+                style: const TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             title: Text(
-              '${selectedIds.length} Selected',
+              context.l10n.selectedCount(selectedIds.length),
               style: AppTextStyles.h2.copyWith(
                 color: AppColors.onSurface,
                 fontWeight: FontWeight.w700,
@@ -160,7 +180,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   }
                 },
                 child: Text(
-                  isAllSelected ? 'Deselect All' : 'Select All',
+                  isAllSelected ? context.l10n.deselectAll : context.l10n.selectAll,
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -179,14 +199,14 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                       ? null
                       : () => _confirmBatchDeletePatients(selectedIds),
                   icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  label: Text('Delete (${selectedIds.length})'),
+                  label: Text(context.l10n.deleteCount(selectedIds.length)),
                 ),
               ),
             ],
           )
         : AppBar(
             title: Text(
-              'Patients',
+              context.l10n.patients,
               style: AppTextStyles.h1Mobile.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -195,7 +215,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             actions: <Widget>[
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert_rounded),
-                tooltip: 'More options',
+                tooltip: context.l10n.moreOptions,
                 onSelected: (value) {
                   if (value == 'sort') {
                     SortPatientsModal.show(context);
@@ -205,23 +225,23 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                   }
                 },
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'sort',
                     child: Row(
                       children: [
-                        Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
-                        SizedBox(width: 12),
-                        Text('Sort Patients'),
+                        const Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.sortPatients),
                       ],
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
-                        SizedBox(width: 12),
-                        Text('Delete Patients'),
+                        const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        const SizedBox(width: 12),
+                        Text(context.l10n.deletePatients),
                       ],
                     ),
                   ),
@@ -248,7 +268,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                     children: <Widget>[
                       // Search Input Field
                       DenteraSearchBar(
-                        hintText: 'Search by name or phone...',
+                        hintText: context.l10n.searchPatientsHint,
                         controller: _searchController,
                         onChanged: (query) {
                           ref.read(patientSearchQueryProvider.notifier).state = query;
@@ -295,7 +315,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  filter,
+                                  _getFilterLabel(context, filter),
                                   style: AppTextStyles.caption.copyWith(
                                     color: isSelected
                                         ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
@@ -416,10 +436,10 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 Expanded(
                   child: PatientListCard(
                     patient: patient,
-                    subtitle: patient.phoneNumber ?? 'No Phone',
+                    subtitle: patient.phoneNumber ?? context.l10n.noPhone,
                     tags: <String>[
-                      if (patient.medicalHistory != null) 'Medical Alert',
-                      'Active',
+                      if (patient.medicalHistory != null) context.l10n.medicalAlert,
+                      context.l10n.active,
                     ],
                     onTap: () {
                       if (isSelectionMode) {
@@ -459,7 +479,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
       subtitle = 'No patients found under "$filter".';
       icon = Icons.people_outline_rounded;
     } else {
-      subtitle = 'Add your first patient to start tracking clinical requirements.';
+      subtitle = context.l10n.addFirstPatientDescription;
       icon = Icons.people_outline_rounded;
     }
 
@@ -467,12 +487,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
 
     return DenteraEmptyState(
       icon: icon,
-      title: 'No patients found',
+      title: context.l10n.noPatientsFound,
       subtitle: subtitle,
       actionButton: isRosterEmpty
           ? PrimaryButton(
               isFullWidth: false,
-              text: 'Add First Patient',
+              text: context.l10n.addFirstPatient,
               icon: const Icon(
                 Icons.add_rounded,
                 color: AppColors.onPrimary,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../widgets/widgets.dart';
 
 /// Card widget visualizing departmental clinical progress and top quota requirements.
@@ -72,7 +73,7 @@ class ClinicSummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
-                  '$_completionPercentage% Complete',
+                  context.l10n.percentComplete(_completionPercentage),
                   style: AppTextStyles.caption.copyWith(
                     color: _clinicColor,
                     fontWeight: FontWeight.w600,
@@ -88,7 +89,7 @@ class ClinicSummaryCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
-                'No requirements assigned yet.',
+                context.l10n.noRequirementsAddedYet,
                 style: AppTextStyles.caption.copyWith(
                   color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                 ),
@@ -122,7 +123,7 @@ class ClinicSummaryCard extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '$_remainingCount requirements left',
+                  context.l10n.requirementsLeft(_remainingCount),
                   style: AppTextStyles.caption.copyWith(
                     color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   ),
@@ -135,7 +136,7 @@ class ClinicSummaryCard extends StatelessWidget {
                 isFullWidth: false,
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                text: 'View Cases',
+                text: context.l10n.viewCases,
                 borderColor: isDark ? AppDarkColors.borderMuted : AppColors.primary,
                 onPressed: onTap ?? () {
                   // TODO: Phase 6.3 - Navigate to clinic_details_prosthodontics

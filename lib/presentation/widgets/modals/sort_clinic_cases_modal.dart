@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 
 /// Modal bottom sheet allowing users to sort clinical cases/requirements within a clinic.
@@ -35,20 +36,20 @@ class SortClinicCasesModal extends ConsumerWidget {
     final sortOptions = <Map<String, dynamic>>[
       {
         'option': ClinicRequirementSortOption.title,
-        'title': 'Name (A to Z)',
-        'subtitle': 'Alphabetical order by requirement title',
+        'title': context.l10n.sortByTitle,
+        'subtitle': context.l10n.sortByTitleSubtitle,
         'icon': Icons.sort_by_alpha_rounded,
       },
       {
         'option': ClinicRequirementSortOption.progress,
-        'title': 'Quota Progress',
-        'subtitle': 'Highest percentage of completed cases first',
+        'title': context.l10n.sortByProgress,
+        'subtitle': context.l10n.sortByProgressSubtitle,
         'icon': Icons.donut_large_rounded,
       },
       {
         'option': ClinicRequirementSortOption.targetCount,
-        'title': 'Target Quota',
-        'subtitle': 'Highest target case requirements first',
+        'title': context.l10n.sortByTargetCount,
+        'subtitle': context.l10n.sortByTargetCountSubtitle,
         'icon': Icons.flag_outlined,
       },
     ];
@@ -92,7 +93,7 @@ class SortClinicCasesModal extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sort Cases & Requirements',
+                        context.l10n.sortCasesAndRequirements,
                         style: AppTextStyles.h2.copyWith(
                           color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
@@ -100,7 +101,7 @@ class SortClinicCasesModal extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Order clinical requirements by progression or criteria',
+                        context.l10n.orderRequirementsSubtitle,
                         style: AppTextStyles.caption.copyWith(
                           color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                         ),

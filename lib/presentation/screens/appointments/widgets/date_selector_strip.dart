@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/theme.dart';
 
 /// Horizontal scrolling calendar strip widget for day selection.
@@ -14,19 +15,10 @@ class DateSelectorStrip extends StatelessWidget {
   final ValueChanged<DateTime> onDateSelected;
   final int daysCount;
 
-  static const List<String> _weekDays = <String>[
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final locale = Localizations.localeOf(context).toString();
     // Generate dates starting from 2 days before today/selectedDate
     final startDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day).subtract(const Duration(days: 2));
 
@@ -42,7 +34,7 @@ class DateSelectorStrip extends StatelessWidget {
               date.month == selectedDate.month &&
               date.day == selectedDate.day;
 
-          final weekdayName = _weekDays[date.weekday - 1];
+          final weekdayName = DateFormat.E(locale).format(date);
 
           return InkWell(
             onTap: () => onDateSelected(date),

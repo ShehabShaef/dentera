@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/widgets.dart';
 import '../patients/patient_case_sheet_screen.dart';
@@ -107,7 +108,7 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Up Next',
+                            context.l10n.upNext,
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w600,
                               color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -142,20 +143,20 @@ class DashboardScreen extends ConsumerWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: <Widget>[
-                                        Text(
-                                          'No appointments scheduled today',
-                                          style: AppTextStyles.bodyMd.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Scheduled clinical procedures will appear here.',
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
-                                          ),
-                                        ),
+                                         Text(
+                                           context.l10n.noAppointmentsToday,
+                                           style: AppTextStyles.bodyMd.copyWith(
+                                             fontWeight: FontWeight.w600,
+                                             color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
+                                           ),
+                                         ),
+                                         const SizedBox(height: 2),
+                                         Text(
+                                           context.l10n.scheduledProceduresAppearHere,
+                                           style: AppTextStyles.caption.copyWith(
+                                             color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
+                                           ),
+                                         ),
                                       ],
                                     ),
                                   ),

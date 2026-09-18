@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../core/theme/theme.dart';
+import '../../l10n/l10n.dart';
 import '../state/state.dart';
 import 'appointments/appointments_screen.dart';
 import 'clinics/clinics_screen.dart';
@@ -136,31 +137,31 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
               color: unselectedColor,
             ),
             elevation: 0,
-            items: const <BottomNavigationBarItem>[
+            items: <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard_outlined),
-                activeIcon: Icon(Icons.dashboard_rounded),
-                label: 'Dashboard',
+                icon: const Icon(Icons.dashboard_outlined),
+                activeIcon: const Icon(Icons.dashboard_rounded),
+                label: context.l10n.dashboard,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.medical_services_outlined),
-                activeIcon: Icon(Icons.medical_services_rounded),
-                label: 'Clinics',
+                icon: const Icon(Icons.medical_services_outlined),
+                activeIcon: const Icon(Icons.medical_services_rounded),
+                label: context.l10n.clinics,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.people_outline_rounded),
-                activeIcon: Icon(Icons.people_rounded),
-                label: 'Patients',
+                icon: const Icon(Icons.people_outline_rounded),
+                activeIcon: const Icon(Icons.people_rounded),
+                label: context.l10n.patients,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today_outlined),
-                activeIcon: Icon(Icons.calendar_month_rounded),
-                label: 'Schedule',
+                icon: const Icon(Icons.calendar_today_outlined),
+                activeIcon: const Icon(Icons.calendar_month_rounded),
+                label: context.l10n.schedule,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline_rounded),
-                activeIcon: Icon(Icons.person_rounded),
-                label: 'Profile',
+                icon: const Icon(Icons.person_outline_rounded),
+                activeIcon: const Icon(Icons.person_rounded),
+                label: context.l10n.profile,
               ),
             ],
           ),

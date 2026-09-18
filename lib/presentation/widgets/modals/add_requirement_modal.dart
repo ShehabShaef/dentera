@@ -8,6 +8,7 @@ import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/constants/dental_catalog.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -226,7 +227,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Add Requirement',
+                          context.l10n.addRequirement,
                           style: AppTextStyles.h2.copyWith(
                             color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -234,7 +235,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Define procedural quota for $clinicDisplayName',
+                          '${context.l10n.defineProceduralQuota} ($clinicDisplayName)',
                           style: AppTextStyles.caption.copyWith(
                             color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
@@ -254,7 +255,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
               if (isStandardClinic) ...[
                 // Predefined procedure dropdown with "Other..." option
                 DenteraDropdown<String>(
-                  label: 'Procedure / Requirement',
+                  label: context.l10n.procedureRequirement,
                   value: _selectedProcedure,
                   prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
                   items: DentalCatalog.getProcedureOptionsForDepartment(resolvedClinicName!)
@@ -284,7 +285,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                 if (_selectedProcedure == DentalCatalog.otherOption) ...[
                   DenteraTextField(
                     controller: _titleController,
-                    label: 'Custom Procedure Title',
+                    label: context.l10n.customProcedureTitle,
                     hintText: 'e.g., Custom Implant Guide',
                     prefixIcon: const Icon(Icons.edit_outlined, size: 20),
                     textCapitalization: TextCapitalization.sentences,
@@ -304,7 +305,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                 // Free-text input for clinics created under "Other..."
                 DenteraTextField(
                   controller: _titleController,
-                  label: 'Requirement Title',
+                  label: context.l10n.requirementTitle,
                   hintText: 'e.g., Complete Denture or Class II Amalgam',
                   prefixIcon: const Icon(Icons.assignment_outlined, size: 20),
                   textCapitalization: TextCapitalization.sentences,
@@ -324,7 +325,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
               // 4. Target Quota Count Field
               DenteraTextField(
                 controller: _quotaController,
-                label: 'Target Quota Count',
+                label: context.l10n.targetCountLabel,
                 hintText: 'e.g., 5',
                 prefixIcon: const Icon(Icons.track_changes_rounded, size: 20),
                 keyboardType: TextInputType.number,
@@ -341,7 +342,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                   Expanded(
                     child: SecondaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      text: 'Cancel',
+                      text: context.l10n.cancel,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -349,7 +350,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                   Expanded(
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                      text: _isSubmitting ? 'Saving...' : 'Save Requirement',
+                      text: _isSubmitting ? context.l10n.saving : context.l10n.saveRequirement,
                       icon: Icon(Icons.add_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),

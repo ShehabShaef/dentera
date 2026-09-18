@@ -5,6 +5,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database_providers.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../buttons/buttons.dart';
 import '../dentera_snackbar.dart';
@@ -179,7 +180,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Edit Clinic',
+                            context.l10n.editClinic,
                             style: AppTextStyles.h2.copyWith(
                               color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -187,7 +188,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Update clinic name, curriculum, and color theme',
+                            context.l10n.editClinicSubtitle,
                             style: AppTextStyles.caption.copyWith(
                               color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                             ),
@@ -205,7 +206,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
 
                 // 3. Clinic Name Input
                 Text(
-                  'Clinic Name',
+                  context.l10n.clinicName,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -230,7 +231,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
 
                 // 4. Academic Year Selection
                 Text(
-                  'Academic Year',
+                  context.l10n.academicYear,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -264,7 +265,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
 
                 // 5. Department Color
                 Text(
-                  'Department Color',
+                  context.l10n.departmentThemeColor,
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -320,7 +321,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
                     Expanded(
                       child: SecondaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        text: 'Cancel',
+                        text: context.l10n.cancel,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
@@ -328,7 +329,7 @@ class _EditClinicModalState extends ConsumerState<EditClinicModal> {
                     Expanded(
                       child: PrimaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                        text: _isSubmitting ? 'Saving...' : 'Save Changes',
+                        text: _isSubmitting ? context.l10n.saving : context.l10n.saveChanges,
                         icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                         onPressed: _isSubmitting ? null : _submit,
                       ),
