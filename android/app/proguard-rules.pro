@@ -6,6 +6,9 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# Flutter Play Store Split Install (Deferred Components not used)
+-dontwarn com.google.android.play.core.**
+
 # SQLite & Sqflite JNI / Native Reflection
 -keep class com.tekartik.sqflite.** { *; }
 -keep public class * extends com.tekartik.sqflite.**
