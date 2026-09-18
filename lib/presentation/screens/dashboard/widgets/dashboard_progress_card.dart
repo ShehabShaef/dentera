@@ -17,6 +17,12 @@ class DashboardProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final metricColor = isDark ? AppDarkColors.primary : AppColors.secondary;
+    final mutedTextColor = isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant;
+    final trackColor = isDark ? const Color(0xFF1E293B) : AppColors.surfaceContainerHighest;
+
     return BaseCard(
       padding: const EdgeInsets.all(20.0),
       child: Row(
@@ -33,14 +39,14 @@ class DashboardProgressCard extends StatelessWidget {
                 Text(
                   overallPercentageText,
                   style: AppTextStyles.h2.copyWith(
-                    color: AppColors.secondary,
+                    color: metricColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   'Reqs',
                   style: AppTextStyles.labelCaps.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: mutedTextColor,
                   ),
                 ),
               ],
@@ -54,7 +60,7 @@ class DashboardProgressCard extends StatelessWidget {
                 ? Text(
                     'No active requirements',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: mutedTextColor,
                     ),
                   )
                 : Column(
@@ -67,8 +73,8 @@ class DashboardProgressCard extends StatelessWidget {
                           completed: quota.completed,
                           total: quota.total,
                           height: 8.0,
-                          trackColor: AppColors.surfaceContainerHighest,
-                          progressColor: AppColors.secondary,
+                          trackColor: trackColor,
+                          progressColor: metricColor,
                         ),
                       );
                     }).toList(),

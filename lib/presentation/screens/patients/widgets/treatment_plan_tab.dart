@@ -238,6 +238,7 @@ class TreatmentPlanTab extends ConsumerWidget {
     List<TreatmentPlan> plans,
     Map<String, Clinic> clinicsMap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalCount = plans.length;
     final approvedCount = plans.where((p) => p.status == TreatmentPlan.statusApproved).length;
     final convertedCount = plans.where((p) => p.status == TreatmentPlan.statusConverted).length;
@@ -249,11 +250,11 @@ class TreatmentPlanTab extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
+            color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: AppColors.cardShadow,
+            boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
             border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -266,7 +267,7 @@ class TreatmentPlanTab extends ConsumerWidget {
                     'Phased Treatment Plan',
                     style: AppTextStyles.h2.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                     ),
                   ),
                   TextButton.icon(
@@ -278,7 +279,7 @@ class TreatmentPlanTab extends ConsumerWidget {
                     icon: const Icon(Icons.add_rounded, size: 18),
                     label: const Text('Add Item'),
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
+                      foregroundColor: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                       visualDensity: VisualDensity.compact,
                     ),
                   ),
@@ -338,13 +339,15 @@ class TreatmentPlanTab extends ConsumerWidget {
     List<TreatmentPlan> phasePlans,
     Map<String, Clinic> clinicsMap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
         border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.3),
+          color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -359,7 +362,7 @@ class TreatmentPlanTab extends ConsumerWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.center,
@@ -367,7 +370,7 @@ class TreatmentPlanTab extends ConsumerWidget {
                     '${phase.value}',
                     style: AppTextStyles.caption.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                     ),
                   ),
                 ),
@@ -378,15 +381,15 @@ class TreatmentPlanTab extends ConsumerWidget {
                     children: <Widget>[
                       Text(
                         phase.label,
-                        style: AppTextStyles.bodyMd.copyWith(
+                        style: AppTextStyles.h2.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
+                          color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                         ),
                       ),
                       Text(
                         phase.description,
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           fontSize: 11,
                         ),
                         maxLines: 1,
@@ -398,7 +401,7 @@ class TreatmentPlanTab extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline, size: 20),
                   tooltip: 'Add to ${phase.label}',
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                   visualDensity: VisualDensity.compact,
                   onPressed: () => AddTreatmentPlanModal.show(
                     context,

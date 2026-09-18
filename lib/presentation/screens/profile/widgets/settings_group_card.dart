@@ -14,6 +14,8 @@ class SettingsGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -22,7 +24,7 @@ class SettingsGroupCard extends StatelessWidget {
           child: Text(
             title.toUpperCase(),
             style: AppTextStyles.labelCaps.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
               letterSpacing: 0.8,
             ),
           ),
@@ -30,13 +32,13 @@ class SettingsGroupCard extends StatelessWidget {
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
+            color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
               width: 1.0,
             ),
-            boxShadow: AppColors.cardShadow,
+            boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),

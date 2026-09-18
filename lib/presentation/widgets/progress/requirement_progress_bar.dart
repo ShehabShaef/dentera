@@ -58,8 +58,16 @@ class RequirementProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveTrackColor = trackColor ?? AppColors.surfaceVariant;
-    final effectiveGradient = progressColor == null ? (progressGradient ?? AppColors.brandGradient) : null;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final effectiveTrackColor = trackColor ??
+        (isDark ? const Color(0xFF1E293B) : AppColors.surfaceVariant);
+    final effectiveProgressColor = progressColor ??
+        (isDark ? AppDarkColors.primary : null);
+    final effectiveGradient = effectiveProgressColor == null
+        ? (progressGradient ?? AppColors.brandGradient)
+        : null;
     final clampedProgress = progress.clamp(0.0, 1.0);
 
     return Column(
@@ -74,7 +82,7 @@ class RequirementProgressBar extends StatelessWidget {
                 Text(
                   label!,
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   ),
                 )
               else
@@ -83,8 +91,8 @@ class RequirementProgressBar extends StatelessWidget {
                 Text(
                   valueLabel!,
                   style: AppTextStyles.caption.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppDarkColors.primary : AppColors.primary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
             ],
@@ -102,6 +110,7 @@ class RequirementProgressBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: effectiveTrackColor,
                 borderRadius: BorderRadius.circular(borderRadius),
+                border: isDark ? Border.all(color: const Color(0xFF2A3C53), width: 1) : null,
               ),
               child: Stack(
                 children: <Widget>[
@@ -111,7 +120,7 @@ class RequirementProgressBar extends StatelessWidget {
                     width: progressWidth,
                     height: height,
                     decoration: BoxDecoration(
-                      color: effectiveGradient == null ? (progressColor ?? AppColors.primary) : null,
+                      color: effectiveGradient == null ? (effectiveProgressColor ?? AppColors.primary) : null,
                       gradient: effectiveGradient,
                       borderRadius: BorderRadius.circular(borderRadius),
                     ),

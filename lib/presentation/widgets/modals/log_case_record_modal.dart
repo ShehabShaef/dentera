@@ -272,11 +272,12 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final clinicsAsync = ref.watch(clinicListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -295,7 +296,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -313,7 +314,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                         Text(
                           widget.caseRecord != null ? 'Edit Clinical Case' : 'Log Clinical Case',
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -323,19 +324,19 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                               ? 'Record clinical procedure for ${widget.patientName}'
                               : 'Record clinical procedure for patient #${widget.patientId}',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+              Divider(height: 24, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
               // 3. Clinic Department Selector
               clinicsAsync.when(
@@ -442,7 +443,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                 'Visit Milestone Labels',
                 style: AppTextStyles.bodyMd.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -453,7 +454,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                     controller: _visitLabelControllers[index],
                     label: 'Visit ${index + 1} Label',
                     hintText: 'e.g., Visit ${index + 1}, Primary Impressions...',
-                    prefixIcon: const Icon(Icons.flag_outlined, size: 18),
+                    prefixIcon: Icon(Icons.flag_outlined, size: 18, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   ),
                 );
               }),
@@ -464,7 +465,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                 controller: _notesController,
                 label: 'Clinical Notes / Findings',
                 hintText: 'e.g., Primary impression completed, cavity prepared Class II...',
-                prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
+                prefixIcon: Icon(Icons.edit_note_rounded, size: 20, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
@@ -490,7 +491,7 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
                       icon: Icon(
                         widget.caseRecord != null ? Icons.save_outlined : Icons.add_rounded,
                         size: 18,
-                        color: AppColors.onPrimary,
+                        color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary,
                       ),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
@@ -510,17 +511,18 @@ class _LogCaseRecordModalState extends ConsumerState<LogCaseRecordModal> {
     return reqsAsync.when(
       data: (requirements) {
         if (requirements.isEmpty) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
+              color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+              border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Text(
               'No procedural requirements defined for this clinic yet.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.outline),
+              style: AppTextStyles.caption.copyWith(color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
             ),
           );
         }

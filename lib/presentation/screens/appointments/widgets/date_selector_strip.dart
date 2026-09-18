@@ -26,6 +26,7 @@ class DateSelectorStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // Generate dates starting from 2 days before today/selectedDate
     final startDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day).subtract(const Duration(days: 2));
 
@@ -51,15 +52,17 @@ class DateSelectorStrip extends StatelessWidget {
               width: 56,
               height: 72,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surfaceContainerLowest,
+                color: isSelected
+                    ? (isDark ? AppDarkColors.primaryTeal : AppColors.primary)
+                    : (isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.primary
-                      : AppColors.outlineVariant.withValues(alpha: 0.4),
+                      ? (isDark ? AppDarkColors.primaryTeal : AppColors.primary)
+                      : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.4)),
                   width: 1.0,
                 ),
-                boxShadow: AppColors.cardShadow,
+                boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -67,7 +70,9 @@ class DateSelectorStrip extends StatelessWidget {
                   Text(
                     weekdayName,
                     style: AppTextStyles.caption.copyWith(
-                      color: isSelected ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+                      color: isSelected
+                          ? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary)
+                          : (isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant),
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
@@ -75,7 +80,9 @@ class DateSelectorStrip extends StatelessWidget {
                   Text(
                     '${date.day}',
                     style: AppTextStyles.h2.copyWith(
-                      color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
+                      color: isSelected
+                          ? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary)
+                          : (isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                       fontWeight: FontWeight.w700,
                     ),
                   ),

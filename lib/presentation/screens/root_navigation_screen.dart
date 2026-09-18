@@ -70,6 +70,18 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(rootNavigationIndexProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final navBg = isDark
+        ? AppDarkColors.surfaceContainer
+        : AppColors.surfaceContainerLowest;
+    final selectedColor = isDark
+        ? AppDarkColors.primary
+        : AppColors.secondary;
+    final unselectedColor = isDark
+        ? AppDarkColors.textMuted
+        : AppColors.onSurfaceVariant;
+
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
@@ -77,18 +89,31 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: navBg,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2A3B4C).withValues(alpha: 0.04),
-              blurRadius: 24,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          border: isDark
+              ? const Border(
+                  top: BorderSide(color: AppDarkColors.outlineVariant, width: 1),
+                )
+              : null,
+          boxShadow: isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: const Color(0xFF2A3B4C).withValues(alpha: 0.04),
+                    blurRadius: 24,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
         ),
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
@@ -99,14 +124,16 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
             currentIndex: currentIndex,
             onTap: _onTabSelected,
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.surfaceContainerLowest,
-            selectedItemColor: AppColors.secondary,
-            unselectedItemColor: AppColors.onSurfaceVariant,
+            backgroundColor: navBg,
+            selectedItemColor: selectedColor,
+            unselectedItemColor: unselectedColor,
             selectedLabelStyle: AppTextStyles.labelCaps.copyWith(
               fontWeight: FontWeight.w700,
+              color: selectedColor,
             ),
             unselectedLabelStyle: AppTextStyles.labelCaps.copyWith(
               fontWeight: FontWeight.w500,
+              color: unselectedColor,
             ),
             elevation: 0,
             items: const <BottomNavigationBarItem>[

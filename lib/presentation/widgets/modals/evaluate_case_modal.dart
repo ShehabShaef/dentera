@@ -188,10 +188,12 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
     final procedureName = widget.procedureTitle ??
         (req != null && req.title.isNotEmpty ? req.title : 'Clinical Procedure');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -210,7 +212,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -228,7 +230,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                         Text(
                           'Evaluate Case Record',
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -238,19 +240,19 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                               ? '${widget.patientName} • $procedureName'
                               : procedureName,
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+              Divider(height: 24, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
               // 2.5 Multi-Visit Timeline & Staging
               CaseVisitTimelineWidget(caseRecordId: widget.caseRecord.id),
@@ -262,7 +264,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                   Text(
                     'Procedure Status',
                     style: AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.onSurface,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -275,22 +277,22 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                       final isEvaluatedOrDone =
                           status == 'Evaluated' || status == 'Completed';
                       final activeColor = isEvaluatedOrDone
-                          ? AppColors.secondary
-                          : AppColors.primary;
+                          ? (isDark ? AppDarkColors.tealAccent : AppColors.secondary)
+                          : (isDark ? AppDarkColors.tealAccent : AppColors.primary);
 
                       return ChoiceChip(
                         label: Text(
                           status,
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+                            color: isSelected ? (isDark ? AppDarkColors.onTeal : Colors.white) : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                           ),
                         ),
                         selected: isSelected,
                         selectedColor: activeColor,
-                        backgroundColor: AppColors.surfaceContainerLow,
+                        backgroundColor: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
                         side: BorderSide(
-                          color: isSelected ? activeColor : AppColors.outlineVariant,
+                          color: isSelected ? activeColor : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                           width: 1,
                         ),
                         shape: RoundedRectangleBorder(
@@ -344,7 +346,7 @@ class _EvaluateCaseModalState extends ConsumerState<EvaluateCaseModal> {
                     child: PrimaryButton(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       text: _isSubmitting ? 'Saving...' : 'Save Evaluation',
-                      icon: const Icon(Icons.check_rounded, size: 18, color: AppColors.onPrimary),
+                      icon: Icon(Icons.check_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                       onPressed: _isSubmitting ? null : _submit,
                     ),
                   ),

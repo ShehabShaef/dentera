@@ -28,9 +28,10 @@ class PatientListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveSubtitle = subtitle ?? '${patient.gender}, ${patient.age} Y • ID: ${patient.id}';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: AppColors.surfaceContainerLowest,
+      color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap ?? () {
@@ -42,10 +43,10 @@ class PatientListCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
               width: 1.0,
             ),
-            boxShadow: AppColors.cardShadow,
+            boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,13 +61,15 @@ class PatientListCard extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primaryContainer.withValues(alpha: 0.15),
+                      color: isDark
+                          ? AppDarkColors.primaryTeal.withValues(alpha: 0.15)
+                          : AppColors.primaryContainer.withValues(alpha: 0.15),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       _initials,
                       style: AppTextStyles.h2.copyWith(
-                        color: AppColors.primary,
+                        color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -82,7 +85,7 @@ class PatientListCard extends StatelessWidget {
                           patient.name,
                           style: AppTextStyles.h2.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -91,7 +94,7 @@ class PatientListCard extends StatelessWidget {
                         Text(
                           effectiveSubtitle,
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -101,9 +104,9 @@ class PatientListCard extends StatelessWidget {
                   ),
 
                   // Trailing Chevron
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                     size: 22,
                   ),
                 ],
@@ -121,18 +124,30 @@ class PatientListCard extends StatelessWidget {
                     final isCompleted = tag.toLowerCase().contains('completed') ||
                         tag.toLowerCase().contains('sign-off');
 
-                    Color tagBg = AppColors.primaryContainer.withValues(alpha: 0.1);
-                    Color tagText = AppColors.primary;
-                    Color tagBorder = AppColors.primary.withValues(alpha: 0.2);
+                    Color tagBg = isDark
+                        ? AppDarkColors.surfaceContainerHighest
+                        : AppColors.primaryContainer.withValues(alpha: 0.1);
+                    Color tagText = isDark ? AppDarkColors.textSecondary : AppColors.primary;
+                    Color tagBorder = isDark
+                        ? AppDarkColors.borderSubtle
+                        : AppColors.primary.withValues(alpha: 0.2);
 
                     if (isPending) {
-                      tagBg = AppColors.secondaryContainer.withValues(alpha: 0.2);
-                      tagText = AppColors.secondary;
-                      tagBorder = AppColors.secondary.withValues(alpha: 0.3);
+                      tagBg = isDark
+                          ? AppDarkColors.primaryTeal.withValues(alpha: 0.15)
+                          : AppColors.secondaryContainer.withValues(alpha: 0.2);
+                      tagText = isDark ? AppDarkColors.primaryTeal : AppColors.secondary;
+                      tagBorder = isDark
+                          ? AppDarkColors.primaryTeal.withValues(alpha: 0.3)
+                          : AppColors.secondary.withValues(alpha: 0.3);
                     } else if (isCompleted) {
-                      tagBg = AppColors.secondaryContainer.withValues(alpha: 0.3);
-                      tagText = AppColors.onSecondaryContainer;
-                      tagBorder = AppColors.secondaryContainer;
+                      tagBg = isDark
+                          ? AppDarkColors.primaryTeal.withValues(alpha: 0.25)
+                          : AppColors.secondaryContainer.withValues(alpha: 0.3);
+                      tagText = isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer;
+                      tagBorder = isDark
+                          ? AppDarkColors.primaryTeal.withValues(alpha: 0.5)
+                          : AppColors.secondaryContainer;
                     }
 
                     return Container(

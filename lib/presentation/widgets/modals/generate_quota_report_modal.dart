@@ -247,10 +247,12 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
         ? '${dateFormat.format(_selectedStartDate!)} – ${dateFormat.format(_selectedEndDate!)}'
         : 'All Time (Complete Record)';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -269,7 +271,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -283,12 +285,12 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                    color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.primaryContainer.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.assignment_turned_in_outlined,
-                    color: AppColors.primary,
+                    color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                     size: 26,
                   ),
                 ),
@@ -300,7 +302,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                       Text(
                         'Academic Supervisory Portfolio',
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
+                          color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
                         ),
@@ -309,7 +311,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                       Text(
                         'Generate Quota Report',
                         style: AppTextStyles.h2.copyWith(
-                          color: AppColors.onSurface,
+                          color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -324,16 +326,16 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
+                color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.outlineVariant),
+                border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
               ),
               child: Row(
                 children: <Widget>[
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                    child: const Icon(Icons.person_rounded, size: 20, color: AppColors.primary),
+                    backgroundColor: isDark ? AppDarkColors.tealAccent.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.12),
+                    child: Icon(Icons.person_rounded, size: 20, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -344,13 +346,13 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                           userProfile.name,
                           style: AppTextStyles.bodyMd.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                           ),
                         ),
                         Text(
                           '${userProfile.academicYear} • ${userProfile.university}',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -366,31 +368,32 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               'Department Scope',
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
               ),
             ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
+                color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.outlineVariant),
+                border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String?>(
                   value: effectiveClinicValue,
                   isExpanded: true,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.outline),
+                  dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
+                  icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   items: [
-                    const DropdownMenuItem<String?>(
+                    DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('All Departments & Clinics'),
+                      child: Text('All Departments & Clinics', style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null)),
                     ),
                     ...dropdownClinics.map(
                       (c) => DropdownMenuItem<String?>(
                         value: c.id,
-                        child: Text(c.name),
+                        child: Text(c.name, style: TextStyle(color: isDark ? AppDarkColors.textPrimary : null)),
                       ),
                     ),
                   ],
@@ -409,7 +412,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               'Case Date Range',
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -419,16 +422,16 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLowest,
+                  color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.outlineVariant),
+                  border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                 ),
                 child: Row(
                   children: <Widget>[
-                    const Icon(
+                    Icon(
                       Icons.date_range_rounded,
                       size: 20,
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -436,8 +439,8 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                         dateRangeDisplay,
                         style: AppTextStyles.bodyMd.copyWith(
                           color: _selectedStartDate != null
-                              ? AppColors.onSurface
-                              : AppColors.onSurfaceVariant,
+                              ? (isDark ? AppDarkColors.textPrimary : AppColors.onSurface)
+                              : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                           fontWeight: _selectedStartDate != null
                               ? FontWeight.w500
                               : FontWeight.normal,
@@ -446,14 +449,14 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                     ),
                     if (_selectedStartDate != null)
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
+                        icon: Icon(Icons.close_rounded, size: 18, color: isDark ? AppDarkColors.textSecondary : null),
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         tooltip: 'Clear Date Filter',
                         onPressed: _clearDateRange,
                       )
                     else
-                      const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.outline),
+                      Icon(Icons.chevron_right_rounded, size: 20, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   ],
                 ),
               ),
@@ -464,7 +467,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.secondaryContainer.withValues(alpha: 0.25),
+                color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.secondaryContainer.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -474,12 +477,12 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                     count: visibleClinics.length,
                     label: visibleClinics.length == 1 ? 'Clinic' : 'Clinics',
                   ),
-                  Container(width: 1, height: 24, color: AppColors.outlineVariant),
+                  Container(width: 1, height: 24, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   _MetricBadge(
                     count: visibleReqs.length,
                     label: visibleReqs.length == 1 ? 'Requirement' : 'Requirements',
                   ),
-                  Container(width: 1, height: 24, color: AppColors.outlineVariant),
+                  Container(width: 1, height: 24, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   _MetricBadge(
                     count: visibleCases.length,
                     label: visibleCases.length == 1 ? 'Case Log' : 'Case Logs',
@@ -501,7 +504,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               // Preview & Print PDF Button
               PrimaryButton(
                 text: 'Preview & Print PDF',
-                icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.onPrimary),
+                icon: Icon(Icons.print_rounded, size: 20, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                 onPressed: _handlePreviewAndPrint,
               ),
               const SizedBox(height: 10),
@@ -509,7 +512,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               // Share PDF Button
               SecondaryButton(
                 text: 'Share PDF Report',
-                icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
+                icon: Icon(Icons.share_rounded, size: 20, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                 onPressed: _handleSharePdf,
               ),
               const SizedBox(height: 10),
@@ -520,8 +523,8 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                 icon: const Icon(Icons.table_chart_outlined, size: 18),
                 label: const Text('Export Tabular CSV (Grading Sheet)'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.onSurface,
-                  side: const BorderSide(color: AppColors.outlineVariant),
+                  foregroundColor: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
+                  side: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -547,6 +550,7 @@ class _MetricBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -555,14 +559,14 @@ class _MetricBadge extends StatelessWidget {
           style: AppTextStyles.h2.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.primary,
+            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
           ),
         ),
         Text(
           label,
           style: AppTextStyles.caption.copyWith(
             fontSize: 11,
-            color: AppColors.onSurfaceVariant,
+            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
           ),
         ),
       ],

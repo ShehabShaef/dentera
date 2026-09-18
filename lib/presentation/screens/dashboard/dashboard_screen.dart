@@ -23,8 +23,9 @@ class DashboardScreen extends ConsumerWidget {
     final todayAppointmentsAsync = ref.watch(dailyAppointmentsProvider(today));
     final upcomingAppointmentsAsync = ref.watch(upcomingAppointmentsProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: FutureBuilder<Map<String, String?>>(
           future: Future.wait([
@@ -99,16 +100,17 @@ class DashboardScreen extends ConsumerWidget {
                       // 3. Up Next Appointment Section
                       Row(
                         children: <Widget>[
-                          const Icon(
+                          Icon(
                             Icons.schedule_rounded,
                             size: 20,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'Up Next',
                             style: AppTextStyles.h2.copyWith(
                               fontWeight: FontWeight.w600,
+                              color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                             ),
                           ),
                         ],
@@ -125,14 +127,14 @@ class DashboardScreen extends ConsumerWidget {
                                   Container(
                                     width: 44,
                                     height: 44,
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.surfaceContainerHigh,
+                                      color: isDark ? AppDarkColors.surfaceContainerHighest : AppColors.surfaceContainerHigh,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.event_available_outlined,
                                       size: 22,
-                                      color: AppColors.outline,
+                                      color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -144,14 +146,14 @@ class DashboardScreen extends ConsumerWidget {
                                           'No appointments scheduled today',
                                           style: AppTextStyles.bodyMd.copyWith(
                                             fontWeight: FontWeight.w600,
-                                            color: AppColors.onSurface,
+                                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                           ),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
                                           'Scheduled clinical procedures will appear here.',
                                           style: AppTextStyles.caption.copyWith(
-                                            color: AppColors.onSurfaceVariant,
+                                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                                           ),
                                         ),
                                       ],
@@ -270,8 +272,8 @@ class DashboardScreen extends ConsumerWidget {
             },
           );
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
+        backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+        foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
         elevation: 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),

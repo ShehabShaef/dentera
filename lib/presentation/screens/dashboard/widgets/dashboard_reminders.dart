@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
@@ -95,31 +95,49 @@ class DashboardReminders extends ConsumerWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final item = activeReminders[index];
+          final theme = Theme.of(context);
+          final isDark = theme.brightness == Brightness.dark;
+
           Color bgColor;
           Color textColor;
           Color borderColor;
 
           switch (item.type) {
             case ReminderType.alert:
-              bgColor = AppColors.error.withValues(alpha: 0.12);
-              textColor = AppColors.error;
-              borderColor = AppColors.error.withValues(alpha: 0.4);
+              bgColor = isDark
+                  ? const Color(0xFF93000A).withValues(alpha: 0.25)
+                  : AppColors.error.withValues(alpha: 0.12);
+              textColor = isDark ? const Color(0xFFFFB4AB) : AppColors.error;
+              borderColor = isDark
+                  ? const Color(0xFFBA1A1A).withValues(alpha: 0.5)
+                  : AppColors.error.withValues(alpha: 0.4);
               break;
             case ReminderType.warning:
-              const warningColor = Color(0xFFD97706);
-              bgColor = warningColor.withValues(alpha: 0.12);
-              textColor = const Color(0xFFB45309);
-              borderColor = warningColor.withValues(alpha: 0.4);
+              bgColor = isDark
+                  ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                  : const Color(0xFFD97706).withValues(alpha: 0.12);
+              textColor = isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309);
+              borderColor = isDark
+                  ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+                  : const Color(0xFFD97706).withValues(alpha: 0.4);
               break;
             case ReminderType.info:
-              bgColor = AppColors.secondary.withValues(alpha: 0.1);
-              textColor = AppColors.secondary;
-              borderColor = AppColors.secondary.withValues(alpha: 0.25);
+              bgColor = isDark
+                  ? AppDarkColors.primaryContainer.withValues(alpha: 0.15)
+                  : AppColors.secondary.withValues(alpha: 0.1);
+              textColor = isDark ? AppDarkColors.primary : AppColors.secondary;
+              borderColor = isDark
+                  ? AppDarkColors.primaryContainer.withValues(alpha: 0.4)
+                  : AppColors.secondary.withValues(alpha: 0.25);
               break;
             case ReminderType.neutral:
-              bgColor = AppColors.surfaceContainerHigh;
-              textColor = AppColors.onSurfaceVariant;
-              borderColor = AppColors.outlineVariant.withValues(alpha: 0.3);
+              bgColor = isDark
+                  ? AppDarkColors.surfaceContainerElevated
+                  : AppColors.surfaceContainerHigh;
+              textColor = isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant;
+              borderColor = isDark
+                  ? const Color(0xFF2A3D54)
+                  : AppColors.outlineVariant.withValues(alpha: 0.3);
               break;
           }
 

@@ -36,8 +36,19 @@ class ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? AppColors.surfaceContainerLowest;
-    final effectiveBorderColor = borderColor ?? AppColors.outlineVariant;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final effectiveBgColor = backgroundColor ??
+        (isDark
+            ? AppDarkColors.surfaceContainer
+            : AppColors.surfaceContainerLowest);
+    final effectiveBorderColor = borderColor ??
+        (isDark
+            ? AppDarkColors.outlineVariant
+            : AppColors.outlineVariant);
+    final effectiveShadow = hasShadow
+        ? (isDark ? AppDarkColors.cardShadow : AppColors.cardShadow)
+        : null;
 
     return Container(
       width: width,
@@ -52,7 +63,7 @@ class ActionCard extends StatelessWidget {
                 width: borderWidth,
               )
             : null,
-        boxShadow: hasShadow ? AppColors.cardShadow : null,
+        boxShadow: effectiveShadow,
       ),
       child: Material(
         color: Colors.transparent,

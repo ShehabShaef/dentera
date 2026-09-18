@@ -120,6 +120,7 @@ void main() {
                     ScheduleAppointmentModal.show(
                       context,
                       initialDate: testDate,
+                      referenceDateTime: DateTime(2026, 9, 15, 8, 0),
                       onAppointmentScheduled: (apt) => callbackAppointment = apt,
                     );
                   },

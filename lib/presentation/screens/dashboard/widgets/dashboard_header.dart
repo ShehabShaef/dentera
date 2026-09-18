@@ -47,6 +47,8 @@ class DashboardHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final effectiveSubtitle = dateSubtitle ?? 'Today • $academicYear Clinics';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -61,6 +63,7 @@ class DashboardHeader extends ConsumerWidget {
                 'Good morning, $doctorName',
                 style: AppTextStyles.h1Mobile.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -69,7 +72,7 @@ class DashboardHeader extends ConsumerWidget {
               Text(
                 effectiveSubtitle,
                 style: AppTextStyles.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                 ),
               ),
             ],
@@ -85,23 +88,27 @@ class DashboardHeader extends ConsumerWidget {
               ref.read(rootNavigationIndexProvider.notifier).state = 4;
             }
           },
-          child: _buildAvatar(ref),
+          child: _buildAvatar(context, ref),
         ),
       ],
     );
   }
 
-  Widget _buildAvatar(WidgetRef ref) {
+  Widget _buildAvatar(BuildContext context, WidgetRef ref) {
     final avatarPath = ref.watch(avatarProvider);
     final hasAvatar = avatarPath != null && avatarPath.isNotEmpty;
     final file = hasAvatar ? File(avatarPath) : null;
     final fileExists = file != null && file.existsSync();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? AppDarkColors.primary : AppColors.primary;
+    final borderColor = isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant;
 
     if (hasAvatar && fileExists && !_isTestEnvironment) {
       return CircleAvatar(
         radius: 22,
         backgroundImage: FileImage(file),
-        backgroundColor: AppColors.surfaceContainerLowest,
+        backgroundColor: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
       );
     } else if (hasAvatar && _isTestEnvironment) {
       return Container(
@@ -109,16 +116,16 @@ class DashboardHeader extends ConsumerWidget {
         height: 44,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.primaryContainer.withValues(alpha: 0.2),
+          color: primaryColor.withValues(alpha: 0.2),
           border: Border.all(
-            color: AppColors.primary,
+            color: primaryColor,
             width: 1.5,
           ),
         ),
         alignment: Alignment.center,
-        child: const Icon(
+        child: Icon(
           Icons.person_rounded,
-          color: AppColors.primary,
+          color: primaryColor,
           size: 24,
         ),
       );
@@ -129,9 +136,9 @@ class DashboardHeader extends ConsumerWidget {
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.primaryContainer.withValues(alpha: 0.2),
+        color: primaryColor.withValues(alpha: 0.15),
         border: Border.all(
-          color: AppColors.outlineVariant,
+          color: borderColor,
           width: 1.0,
         ),
       ),
@@ -139,7 +146,7 @@ class DashboardHeader extends ConsumerWidget {
       child: Text(
         _initials,
         style: AppTextStyles.caption.copyWith(
-          color: AppColors.primary,
+          color: primaryColor,
           fontWeight: FontWeight.w700,
         ),
       ),

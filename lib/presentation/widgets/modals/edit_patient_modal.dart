@@ -156,12 +156,13 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -180,7 +181,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -198,7 +199,7 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                         Text(
                           'Edit Patient Profile',
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -206,19 +207,19 @@ class _EditPatientModalState extends ConsumerState<EditPatientModal> {
                         Text(
                           'Update demographics and medical history for #${widget.patient.id}',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textMuted : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
-              const Divider(height: 24, thickness: 0.8, color: AppColors.outlineVariant),
+              Divider(height: 24, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
               // 3. Name Field
               DenteraTextField(

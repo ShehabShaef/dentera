@@ -49,6 +49,7 @@ class RadiographsGallerySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final radiographsAsync = ref.watch(radiographsByPatientProvider(patient.id));
 
     return BaseCard(
@@ -59,54 +60,64 @@ class RadiographsGallerySection extends ConsumerWidget {
           // Header Row
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 Icons.camera_alt_outlined,
                 size: 20,
-                color: AppColors.primary,
+                color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(
-                      'Radiographs',
-                      style: AppTextStyles.h2.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            'Radiographs',
+                            style: AppTextStyles.h2.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          radiographsAsync.when(
+                            data: (items) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppDarkColors.primaryTeal.withValues(alpha: 0.15)
+                                    : AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${items.length}',
+                                style: AppTextStyles.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
+                                ),
+                              ),
+                            ),
+                            loading: () => const SizedBox.shrink(),
+                            error: (err, stack) => const SizedBox.shrink(),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    radiographsAsync.when(
-                      data: (items) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${items.length}',
-                          style: AppTextStyles.caption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          ),
-                        ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
+                      label: const Text('Attach X-Ray'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: BorderSide(color: isDark ? AppDarkColors.borderMuted : AppColors.primary),
                       ),
-                      loading: () => const SizedBox.shrink(),
-                      error: (err, stack) => const SizedBox.shrink(),
+                      onPressed: () => _openAddRadiograph(context),
                     ),
                   ],
                 ),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
-                label: const Text('Attach X-Ray'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  side: const BorderSide(color: AppColors.primary),
-                ),
-                onPressed: () => _openAddRadiograph(context),
               ),
             ],
           ),
@@ -142,27 +153,28 @@ class RadiographsGallerySection extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.outlineVariant),
+        border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
       ),
       child: Row(
         children: <Widget>[
-          const Icon(
+          Icon(
             Icons.image_search_outlined,
             size: 24,
-            color: AppColors.outlineVariant,
+            color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'No radiographs attached. Attach periapical, bitewing, or panoramic X-rays for offline diagnostic review.',
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.onSurfaceVariant,
+                color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -186,6 +198,7 @@ class RadiographsGallerySection extends ConsumerWidget {
     WidgetRef ref,
     List<PatientRadiograph> radiographs,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 170,
       child: ListView.separated(
@@ -211,7 +224,7 @@ class RadiographsGallerySection extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF0F172A), // Dark slate radiograph backdrop
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.outlineVariant),
+                border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -259,7 +272,7 @@ class RadiographsGallerySection extends ConsumerWidget {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    color: AppColors.surface,
+                    color: isDark ? AppDarkColors.surfaceContainer : AppColors.surface,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -267,7 +280,7 @@ class RadiographsGallerySection extends ConsumerWidget {
                           formattedDate,
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                             fontSize: 11,
                           ),
                           maxLines: 1,
@@ -278,7 +291,7 @@ class RadiographsGallerySection extends ConsumerWidget {
                           Text(
                             item.notes!.trim(),
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                               fontSize: 10,
                             ),
                             maxLines: 1,

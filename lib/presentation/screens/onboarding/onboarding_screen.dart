@@ -120,8 +120,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: <Widget>[
@@ -133,7 +134,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   Text(
                     'DENTERA',
                     style: AppTextStyles.displayWordmark.copyWith(
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.primaryTeal : AppColors.primary,
                       letterSpacing: 2.0,
                     ),
                   ),
@@ -150,7 +151,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isActive ? AppColors.secondary : AppColors.outlineVariant,
+                          color: isActive
+                              ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondary)
+                              : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                         ),
                       );
                     }),

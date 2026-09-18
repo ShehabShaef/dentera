@@ -235,8 +235,9 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
             ],
           );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: appBar,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -271,23 +272,23 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.secondaryContainer
-                                  : AppColors.surfaceContainerLowest,
+                                  ? (isDark ? AppDarkColors.primaryTeal.withValues(alpha: 0.18) : AppColors.secondaryContainer)
+                                  : (isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.secondaryContainer
-                                    : AppColors.outlineVariant.withValues(alpha: 0.5),
+                                    ? (isDark ? AppDarkColors.primaryTeal : AppColors.secondaryContainer)
+                                    : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5)),
                                 width: isSelected ? 1.5 : 1.0,
                               ),
-                              boxShadow: AppColors.cardShadow,
+                              boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
                             ),
                             child: Text(
                               category,
                               style: AppTextStyles.caption.copyWith(
                                 color: isSelected
-                                    ? AppColors.onSecondaryContainer
-                                    : AppColors.onSurfaceVariant,
+                                    ? (isDark ? AppDarkColors.primaryTeal : AppColors.onSecondaryContainer)
+                                    : (isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant),
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               ),
                             ),
@@ -401,8 +402,8 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                 AppLogger.info('Opened AddClinicModal from ClinicsScreen');
                 AddClinicModal.show(context);
               },
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
+              backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+              foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),

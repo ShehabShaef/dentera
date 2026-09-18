@@ -114,14 +114,22 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
       firstDate: today,
       lastDate: today.add(const Duration(days: 365)),
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.onPrimary,
-              surface: AppColors.surfaceContainerLowest,
-              onSurface: AppColors.onSurface,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppDarkColors.tealAccent,
+                    onPrimary: AppDarkColors.onTeal,
+                    surface: AppDarkColors.surfaceContainer,
+                    onSurface: AppDarkColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.onPrimary,
+                    surface: AppColors.surfaceContainerLowest,
+                    onSurface: AppColors.onSurface,
+                  ),
           ),
           child: child!,
         );
@@ -141,14 +149,22 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.onPrimary,
-              surface: AppColors.surfaceContainerLowest,
-              onSurface: AppColors.onSurface,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppDarkColors.tealAccent,
+                    onPrimary: AppDarkColors.onTeal,
+                    surface: AppDarkColors.surfaceContainer,
+                    onSurface: AppDarkColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.onPrimary,
+                    surface: AppColors.surfaceContainerLowest,
+                    onSurface: AppColors.onSurface,
+                  ),
           ),
           child: child!,
         );
@@ -268,19 +284,20 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final patientsAsync = ref.watch(patientListProvider);
     final clinicsAsync = ref.watch(clinicListProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.90,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(18),
           topRight: Radius.circular(18),
         ),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: isDark ? AppDarkColors.cardShadow : AppColors.cardShadow,
       ),
       child: SafeArea(
         top: false,
@@ -294,7 +311,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(9999),
                 ),
               ),
@@ -310,13 +327,13 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                     'Schedule Appointment',
                     style: AppTextStyles.h1Mobile.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close_rounded,
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                       size: 22,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
@@ -324,10 +341,10 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                 ],
               ),
             ),
-            const Divider(
+            Divider(
               height: 1,
               thickness: 0.8,
-              color: AppColors.surfaceVariant,
+              color: isDark ? AppDarkColors.borderSubtle : AppColors.surfaceVariant,
             ),
 
             // 3. Scrollable Form Content
@@ -465,7 +482,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                 Text(
                                   'Date *',
                                   style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.onSurfaceVariant,
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -477,23 +494,23 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                     height: 48,
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.surface,
+                                      color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surface,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.outlineVariant),
+                                      border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                                     ),
                                     child: Row(
                                       children: <Widget>[
-                                        const Icon(
+                                        Icon(
                                           Icons.calendar_today_outlined,
                                           size: 18,
-                                          color: AppColors.primary,
+                                          color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             _formatDate(_selectedDate),
                                             style: AppTextStyles.bodyMd.copyWith(
-                                              color: AppColors.onSurface,
+                                              color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -518,7 +535,7 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                 Text(
                                   'Time *',
                                   style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.onSurfaceVariant,
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -530,22 +547,22 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                                     height: 48,
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.surface,
+                                      color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surface,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.outlineVariant),
+                                      border: Border.all(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                                     ),
                                     child: Row(
                                       children: <Widget>[
-                                        const Icon(
+                                        Icon(
                                           Icons.schedule_rounded,
                                           size: 18,
-                                          color: AppColors.secondary,
+                                          color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
                                           _selectedTime.format(context),
                                           style: AppTextStyles.bodyMd.copyWith(
-                                            color: AppColors.onSurface,
+                                            color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -606,10 +623,10 @@ class _ScheduleAppointmentModalState extends ConsumerState<ScheduleAppointmentMo
                     child: PrimaryButton(
                       key: const Key('save_appointment_button'),
                       text: 'Save Appointment',
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.calendar_month_rounded,
                         size: 18,
-                        color: AppColors.onPrimary,
+                        color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary,
                       ),
                       onPressed: _saveAppointment,
                     ),

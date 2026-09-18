@@ -10,7 +10,6 @@ abstract final class AppTextStyles {
         fontWeight: FontWeight.w600,
         height: 24 / 20,
         letterSpacing: 20 * 0.05,
-        color: AppColors.onSurface,
       );
 
   /// H1: Plus Jakarta Sans, 24px, w600, line-height 32px
@@ -18,7 +17,6 @@ abstract final class AppTextStyles {
         fontSize: 24,
         fontWeight: FontWeight.w600,
         height: 32 / 24,
-        color: AppColors.onSurface,
       );
 
   /// H1 Mobile: Plus Jakarta Sans, 20px, w600, line-height 28px
@@ -26,7 +24,6 @@ abstract final class AppTextStyles {
         fontSize: 20,
         fontWeight: FontWeight.w600,
         height: 28 / 20,
-        color: AppColors.onSurface,
       );
 
   /// H2: Plus Jakarta Sans, 18px, w500, line-height 26px
@@ -34,7 +31,6 @@ abstract final class AppTextStyles {
         fontSize: 18,
         fontWeight: FontWeight.w500,
         height: 26 / 18,
-        color: AppColors.onSurface,
       );
 
   /// Body MD: Hanken Grotesk, 14px, w400, line-height 22px
@@ -42,7 +38,6 @@ abstract final class AppTextStyles {
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 22 / 14,
-        color: AppColors.onSurface,
       );
 
   /// Caption: Hanken Grotesk, 12px, w500, line-height 16px
@@ -50,7 +45,6 @@ abstract final class AppTextStyles {
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 16 / 12,
-        color: AppColors.onSurfaceVariant,
       );
 
   /// Label Caps: Hanken Grotesk, 11px, w700, line-height 14px, letter-spacing 0.02em
@@ -59,7 +53,6 @@ abstract final class AppTextStyles {
         fontWeight: FontWeight.w700,
         height: 14 / 11,
         letterSpacing: 11 * 0.02,
-        color: AppColors.onSurfaceVariant,
       );
 
   /// Returns the appropriate font family for the given locale.
@@ -76,42 +69,36 @@ abstract final class AppTextStyles {
         fontWeight: FontWeight.w600,
         height: 24 / 20,
         letterSpacing: 20 * 0.05,
-        color: AppColors.onSurface,
       );
 
   static TextStyle get arabicH1 => GoogleFonts.cairo(
         fontSize: 24,
         fontWeight: FontWeight.w600,
         height: 32 / 24,
-        color: AppColors.onSurface,
       );
 
   static TextStyle get arabicH1Mobile => GoogleFonts.cairo(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         height: 28 / 20,
-        color: AppColors.onSurface,
       );
 
   static TextStyle get arabicH2 => GoogleFonts.cairo(
         fontSize: 18,
         fontWeight: FontWeight.w500,
         height: 26 / 18,
-        color: AppColors.onSurface,
       );
 
   static TextStyle get arabicBodyMd => GoogleFonts.cairo(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 22 / 14,
-        color: AppColors.onSurface,
       );
 
   static TextStyle get arabicCaption => GoogleFonts.cairo(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 16 / 12,
-        color: AppColors.onSurfaceVariant,
       );
 
   static TextStyle get arabicLabelCaps => GoogleFonts.cairo(
@@ -119,6 +106,23 @@ abstract final class AppTextStyles {
         fontWeight: FontWeight.w700,
         height: 14 / 11,
         letterSpacing: 11 * 0.02,
-        color: AppColors.onSurfaceVariant,
       );
+}
+
+/// Clinical Linearity Dark typography tokens.
+abstract final class AppDarkTextStyles {
+  static TextStyle get displayWordmark =>
+      AppTextStyles.displayWordmark.copyWith(color: AppDarkColors.textPrimary);
+  static TextStyle get h1 =>
+      AppTextStyles.h1.copyWith(color: AppDarkColors.textPrimary);
+  static TextStyle get h1Mobile =>
+      AppTextStyles.h1Mobile.copyWith(color: AppDarkColors.textPrimary);
+  static TextStyle get h2 =>
+      AppTextStyles.h2.copyWith(color: AppDarkColors.textPrimary);
+  static TextStyle get bodyMd =>
+      AppTextStyles.bodyMd.copyWith(color: AppDarkColors.textPrimary);
+  static TextStyle get caption =>
+      AppTextStyles.caption.copyWith(color: AppDarkColors.textMuted);
+  static TextStyle get labelCaps =>
+      AppTextStyles.labelCaps.copyWith(color: AppDarkColors.textMuted);
 }

@@ -281,14 +281,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final agendaRemindersEnabled = ref.watch(agendaRemindersProvider);
     final followUpAlertsEnabled = ref.watch(followUpAlertsProvider);
     final appVersion = ref.watch(appVersionProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Settings',
           style: AppTextStyles.h1Mobile.copyWith(
-            color: AppColors.primary,
+            color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -325,14 +325,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             Text(
                               themeLabel,
                               style: AppTextStyles.bodyMd.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                                color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right_rounded,
                               size: 20,
-                              color: AppColors.outlineVariant,
+                              color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                             ),
                           ],
                         ),
@@ -347,14 +347,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             Text(
                               languageLabel,
                               style: AppTextStyles.bodyMd.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                                color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right_rounded,
                               size: 20,
-                              color: AppColors.outlineVariant,
+                              color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                             ),
                           ],
                         ),
@@ -374,7 +374,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         showDivider: true,
                         trailing: Switch.adaptive(
                           value: agendaRemindersEnabled,
-                          activeTrackColor: AppColors.secondary,
+                          activeTrackColor: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                           onChanged: _onToggleAgendaReminders,
                         ),
                       ),
@@ -383,7 +383,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: 'Patient Follow-up Alerts',
                         trailing: Switch.adaptive(
                           value: followUpAlertsEnabled,
-                          activeTrackColor: AppColors.secondary,
+                          activeTrackColor: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                           onChanged: (val) {
                             ref.read(followUpAlertsProvider.notifier).setAlertsEnabled(val);
                           },
@@ -402,10 +402,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: 'Generate Quota Report',
                         subtitle: 'Supervisory academic PDF & CSV export',
                         showDivider: true,
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: AppColors.outlineVariant,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                         ),
                         onTap: () => GenerateQuotaReportModal.show(context),
                       ),
@@ -414,10 +414,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         title: 'Export Local Backup',
                         subtitle: 'Save an encrypted SQLite copy to your device',
                         showDivider: true,
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: AppColors.outlineVariant,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                         ),
                         onTap: _onExportDatabase,
                       ),
@@ -425,10 +425,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.upload_rounded,
                         title: 'Restore from Backup',
                         subtitle: 'Import data from a local backup file',
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: AppColors.outlineVariant,
+                          color: isDark ? AppDarkColors.textMuted : AppColors.outlineVariant,
                         ),
                         onTap: _onRestoreDatabase,
                       ),
@@ -447,7 +447,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         trailing: Text(
                           appVersion,
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -457,7 +457,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         trailing: Text(
                           '100% On-Device',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.secondary,
+                            color: isDark ? AppDarkColors.primaryTeal : AppColors.secondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

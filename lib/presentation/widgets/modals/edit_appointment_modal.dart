@@ -117,13 +117,21 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
       firstDate: first,
       lastDate: last,
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.onPrimary,
-              onSurface: AppColors.onSurface,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppDarkColors.tealAccent,
+                    onPrimary: AppDarkColors.onTeal,
+                    surface: AppDarkColors.surfaceContainer,
+                    onSurface: AppDarkColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.onPrimary,
+                    onSurface: AppColors.onSurface,
+                  ),
           ),
           child: child!,
         );
@@ -140,13 +148,21 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.onPrimary,
-              onSurface: AppColors.onSurface,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppDarkColors.tealAccent,
+                    onPrimary: AppDarkColors.onTeal,
+                    surface: AppDarkColors.surfaceContainer,
+                    onSurface: AppDarkColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: AppColors.onPrimary,
+                    onSurface: AppColors.onSurface,
+                  ),
           ),
           child: child!,
         );
@@ -237,14 +253,16 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
             ?.name ??
         'Patient #${widget.appointment.patientId}';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.90,
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -265,7 +283,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.outlineVariant,
+                      color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -283,7 +301,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                           Text(
                             'Edit Appointment',
                             style: AppTextStyles.h2.copyWith(
-                              color: AppColors.primary,
+                              color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -291,40 +309,40 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                           Text(
                             'Update schedule, clinic department, and notes',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                      icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-                const Divider(height: 20, thickness: 0.8, color: AppColors.outlineVariant),
+                Divider(height: 20, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
                 // 3. Patient Info Banner
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
+                    color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                      color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded, size: 20, color: AppColors.primary),
+                      Icon(Icons.person_outline_rounded, size: 20, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                       const SizedBox(width: 10),
                       Text(
                         resolvedPatientName,
                         style: AppTextStyles.bodyMd.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.onSurface,
+                          color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                         ),
                       ),
                     ],
@@ -337,7 +355,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                   'Clinical Department',
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -349,28 +367,29 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                           : (clinics.isNotEmpty ? clinics.first.id : null),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: AppColors.surfaceContainerLow,
+                        fillColor: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                            color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                            color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5),
                           ),
                         ),
-                        prefixIcon: const Icon(Icons.business_rounded, color: AppColors.outline),
+                        prefixIcon: Icon(Icons.business_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
+                      dropdownColor: isDark ? AppDarkColors.surfaceContainer : null,
                       items: clinics.map((c) {
                         return DropdownMenuItem<String>(
                           value: c.id,
                           child: Text(
                             c.name,
-                            style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
+                            style: AppTextStyles.bodyMd.copyWith(color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface),
                           ),
                         );
                       }).toList(),
@@ -395,7 +414,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                   'Schedule Date & Time',
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -410,21 +429,21 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
+                            color: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
+                              Icon(Icons.calendar_today_rounded, size: 18, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _formatDate(_selectedDate),
                                   style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.onSurface,
+                                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -446,21 +465,21 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
+                            color: isDark ? AppDarkColors.inputFill : AppColors.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                              color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.5),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.access_time_rounded, size: 18, color: AppColors.secondary),
+                              Icon(Icons.access_time_rounded, size: 18, color: isDark ? AppDarkColors.tealAccent : AppColors.secondary),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _formatTime(_selectedTime),
                                   style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.onSurface,
+                                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -479,7 +498,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                   'Appointment Status',
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -494,13 +513,13 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                         if (selected) setState(() => _selectedStatus = status);
                       },
                       labelStyle: AppTextStyles.caption.copyWith(
-                        color: isSelected ? AppColors.onSecondary : AppColors.onSurfaceVariant,
+                        color: isSelected ? (isDark ? AppDarkColors.onTeal : AppColors.onSecondary) : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
-                      selectedColor: AppColors.secondary,
-                      backgroundColor: AppColors.surfaceContainerLow,
+                      selectedColor: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
+                      backgroundColor: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
                       side: BorderSide(
-                        color: isSelected ? AppColors.secondary : AppColors.outlineVariant,
+                        color: isSelected ? (isDark ? AppDarkColors.tealAccent : AppColors.secondary) : (isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
                       ),
                     );
                   }).toList(),
@@ -512,14 +531,14 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                   'Procedure & Clinical Notes',
                   style: AppTextStyles.bodyMd.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
                 DenteraTextField(
                   controller: _notesController,
                   hintText: 'e.g. Tooth #36 Root Canal Obturation',
-                  prefixIcon: const Icon(Icons.medical_services_outlined, color: AppColors.outline),
+                  prefixIcon: Icon(Icons.medical_services_outlined, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 24),
@@ -539,7 +558,7 @@ class _EditAppointmentModalState extends ConsumerState<EditAppointmentModal> {
                       child: PrimaryButton(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                         text: _isSubmitting ? 'Saving...' : 'Save Changes',
-                        icon: const Icon(Icons.check_circle_outline_rounded, size: 18, color: AppColors.onPrimary),
+                        icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                         onPressed: _isSubmitting ? null : _submit,
                       ),
                     ),

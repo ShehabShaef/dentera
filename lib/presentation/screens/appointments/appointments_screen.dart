@@ -66,13 +66,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       for (final c in clinicsAsync.valueOrNull ?? const <Clinic>[]) c.id: c,
     };
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Appointments',
           style: AppTextStyles.h1Mobile.copyWith(
-            color: AppColors.primary,
+            color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -271,8 +272,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_appointments',
         onPressed: _openScheduleAppointmentModal,
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
+        backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor ?? (isDark ? AppDarkColors.primaryTeal : AppColors.primary),
+        foregroundColor: Theme.of(context).floatingActionButtonTheme.foregroundColor ?? (isDark ? AppDarkColors.onPrimary : AppColors.onPrimary),
         elevation: 3,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),

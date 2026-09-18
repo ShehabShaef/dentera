@@ -75,14 +75,15 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
     };
 
     final screenHeight = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.85,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -100,7 +101,7 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -120,7 +121,7 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                         Text(
                           requirement.title,
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.tealAccent : AppColors.primary,
                             fontWeight: FontWeight.w700,
                           ),
                           maxLines: 1,
@@ -130,7 +131,7 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                         Text(
                           '${requirement.completedCount} of ${requirement.targetCount} Completed',
                           style: AppTextStyles.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -153,13 +154,13 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.outline),
+                    icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 20, thickness: 0.8, color: AppColors.outlineVariant),
+            Divider(height: 20, thickness: 0.8, color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),
 
             // 3. Reactive Cases List
             Flexible(
@@ -185,10 +186,10 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                       return Container(
                         padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
+                          color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                            color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.3),
                             width: 1.0,
                           ),
                         ),
@@ -217,7 +218,7 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                                       patientName,
                                       style: AppTextStyles.bodyMd.copyWith(
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.onSurface,
+                                        color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                                       ),
                                     ),
                                   ],
@@ -226,16 +227,16 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: isCompleted
-                                        ? AppColors.secondaryContainer.withValues(alpha: 0.3)
-                                        : AppColors.primaryContainer.withValues(alpha: 0.12),
+                                        ? (isDark ? AppDarkColors.tealAccent.withValues(alpha: 0.2) : AppColors.secondaryContainer.withValues(alpha: 0.3))
+                                        : (isDark ? AppDarkColors.tealAccent.withValues(alpha: 0.15) : AppColors.primaryContainer.withValues(alpha: 0.12)),
                                     borderRadius: BorderRadius.circular(9999),
                                   ),
                                   child: Text(
                                     caseRecord.status,
                                     style: AppTextStyles.labelCaps.copyWith(
                                       color: isCompleted
-                                          ? AppColors.onSecondaryContainer
-                                          : AppColors.primary,
+                                          ? (isDark ? AppDarkColors.tealAccent : AppColors.onSecondaryContainer)
+                                          : (isDark ? AppDarkColors.tealAccent : AppColors.primary),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -247,30 +248,30 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                             // Dates Row
                             Row(
                               children: <Widget>[
-                                const Icon(
+                                Icon(
                                   Icons.calendar_today_outlined,
                                   size: 14,
-                                  color: AppColors.outline,
+                                  color: isDark ? AppDarkColors.textSecondary : AppColors.outline,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   'Started: ${_formatDate(caseRecord.dateStarted)}',
                                   style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.onSurfaceVariant,
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                   ),
                                 ),
                                 if (caseRecord.dateCompleted != null) ...[
                                   const SizedBox(width: 16),
-                                  const Icon(
+                                  Icon(
                                     Icons.check_circle_outline_rounded,
                                     size: 14,
-                                    color: AppColors.secondary,
+                                    color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Completed: ${_formatDate(caseRecord.dateCompleted!)}',
                                     style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.secondary,
+                                      color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -285,16 +286,16 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLowest,
+                                  color: isDark ? AppDarkColors.surfaceContainer : AppColors.surfaceContainerLowest,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppColors.outlineVariant.withValues(alpha: 0.2),
+                                    color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant.withValues(alpha: 0.2),
                                   ),
                                 ),
                                 child: Text(
                                   caseRecord.notes!,
                                   style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.onSurfaceVariant,
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                                   ),
                                 ),
                               ),
@@ -332,44 +333,49 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
   }
 
   Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceContainerHigh,
-              ),
-              child: const Icon(
-                Icons.assignment_outlined,
-                size: 32,
-                color: AppColors.outline,
-              ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerHigh,
+                  ),
+                  child: Icon(
+                    Icons.assignment_outlined,
+                    size: 32,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.outline,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No Case Records Logged',
+                  style: AppTextStyles.h2.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'No clinical cases have been logged for this requirement yet. Cases logged in Patient Case Sheets will appear here automatically.',
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No Case Records Logged',
-              style: AppTextStyles.h2.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'No clinical cases have been logged for this requirement yet. Cases logged in Patient Case Sheets will appear here automatically.',
-              style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

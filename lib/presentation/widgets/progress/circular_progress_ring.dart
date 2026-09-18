@@ -32,9 +32,15 @@ class CircularProgressRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final clampedProgress = progress.clamp(0.0, 1.0);
-    final effectiveTrackColor = trackColor ?? AppColors.surfaceVariant;
-    final effectiveGradient = progressColor == null
+    final effectiveTrackColor = trackColor ??
+        (isDark ? const Color(0xFF1E293B) : AppColors.surfaceVariant);
+    final effectiveProgressColor = progressColor ??
+        (isDark ? AppDarkColors.primary : null);
+    final effectiveGradient = effectiveProgressColor == null
         ? (gradient ??
             const SweepGradient(
               startAngle: -math.pi / 2,
@@ -46,7 +52,7 @@ class CircularProgressRing extends StatelessWidget {
     final String displayText = centerText ?? '${(clampedProgress * 100).round()}%';
     final effectiveTextStyle = centerTextStyle ??
         AppTextStyles.h2.copyWith(
-          color: AppColors.primary,
+          color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
           fontWeight: FontWeight.w600,
         );
 
