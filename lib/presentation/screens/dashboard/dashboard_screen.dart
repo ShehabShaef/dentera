@@ -23,6 +23,12 @@ class DashboardScreen extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
     final todayAppointmentsAsync = ref.watch(dailyAppointmentsProvider(today));
     final upcomingAppointmentsAsync = ref.watch(upcomingAppointmentsProvider);
+    final patientListAsync = ref.watch(patientListProvider);
+
+    final Map<String, String> patientsMap = patientListAsync.maybeWhen(
+      data: (patients) => {for (final p in patients) p.id: p.name},
+      orElse: () => const <String, String>{},
+    );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -166,8 +172,14 @@ class DashboardScreen extends ConsumerWidget {
                           }
 
                           final firstApt = appointments.first;
+                          final resolvedPatientName = firstApt.patientName ?? patientsMap[firstApt.patientId];
+                          if (resolvedPatientName == null || resolvedPatientName.isEmpty) {
+                            AppLogger.warning('Relational warning: Orphaned or unresolvable patient ID in today appointment: ${firstApt.patientId}');
+                          }
+                          final patientDisplayName = resolvedPatientName ?? 'Patient #${firstApt.patientId}';
+
                           return DashboardAppointmentCard(
-                            patientName: 'Patient #${firstApt.patientId}',
+                            patientName: patientDisplayName,
                             patientId: firstApt.patientId,
                             patientDetails: firstApt.status,
                             timeWindow: '${firstApt.scheduledDate.hour}:${firstApt.scheduledDate.minute.toString().padLeft(2, '0')}',
@@ -218,13 +230,21 @@ class DashboardScreen extends ConsumerWidget {
                           }
 
                           final List<UpcomingPatientItem> upcomingItems = upcomingList
-                              .map((apt) => UpcomingPatientItem(
-                                    patientId: apt.patientId,
-                                    name: 'Patient #${apt.patientId}',
-                                    timeAndClinic:
-                                        '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
-                                    accentColor: isDark ? AppDarkColors.tertiary : AppColors.primary,
-                                  ))
+                              .map((apt) {
+                                final resolvedName = apt.patientName ?? patientsMap[apt.patientId];
+                                if (resolvedName == null || resolvedName.isEmpty) {
+                                  AppLogger.warning('Relational warning: Orphaned or unresolvable patient ID in upcoming appointments: ${apt.patientId}');
+                                }
+                                final displayName = resolvedName ?? 'Patient #${apt.patientId}';
+
+                                return UpcomingPatientItem(
+                                  patientId: apt.patientId,
+                                  name: displayName,
+                                  timeAndClinic:
+                                      '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
+                                  accentColor: isDark ? AppDarkColors.tertiary : AppColors.primary,
+                                );
+                              })
                               .toList();
 
                           return DashboardUpcomingSection(

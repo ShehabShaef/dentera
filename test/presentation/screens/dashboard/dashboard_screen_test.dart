@@ -223,8 +223,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Find "Patient #PT-1001" in Tomorrow's Patients
-      final patientFinder = find.text('Patient #PT-1001');
+      // Find resolved patient name "Sara Ahmed" in Tomorrow's Patients (resolves PT-1001 from patientListProvider)
+      final patientFinder = find.text('Sara Ahmed');
       expect(patientFinder, findsOneWidget);
       await tester.ensureVisible(patientFinder);
       await tester.tap(patientFinder);

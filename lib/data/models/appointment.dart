@@ -10,6 +10,7 @@ class Appointment {
     required this.scheduledDate,
     this.status = 'Scheduled',
     this.procedureDescription,
+    this.patientName,
   });
 
   final String id;
@@ -19,6 +20,9 @@ class Appointment {
   final String status;
   final String? procedureDescription;
 
+  /// Optional resolved patient name (e.g. populated via SQLite JOIN or relational mapping).
+  final String? patientName;
+
   Appointment copyWith({
     String? id,
     String? patientId,
@@ -26,6 +30,7 @@ class Appointment {
     DateTime? scheduledDate,
     String? status,
     String? procedureDescription,
+    String? patientName,
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -34,6 +39,7 @@ class Appointment {
       scheduledDate: scheduledDate ?? this.scheduledDate,
       status: status ?? this.status,
       procedureDescription: procedureDescription ?? this.procedureDescription,
+      patientName: patientName ?? this.patientName,
     );
   }
 
@@ -56,6 +62,7 @@ class Appointment {
       scheduledDate: DateTime.parse(map['scheduledDate'] as String),
       status: map['status'] as String? ?? 'Scheduled',
       procedureDescription: map['procedureDescription'] as String?,
+      patientName: map['patientName'] as String? ?? map['patient_name'] as String?,
     );
   }
 
@@ -68,7 +75,8 @@ class Appointment {
         other.clinicId == clinicId &&
         other.scheduledDate == scheduledDate &&
         other.status == status &&
-        other.procedureDescription == procedureDescription;
+        other.procedureDescription == procedureDescription &&
+        other.patientName == patientName;
   }
 
   @override
@@ -79,10 +87,11 @@ class Appointment {
         scheduledDate,
         status,
         procedureDescription,
+        patientName,
       );
 
   @override
   String toString() {
-    return 'Appointment(id: $id, patientId: $patientId, clinicId: $clinicId, scheduledDate: $scheduledDate, status: $status, procedureDescription: $procedureDescription)';
+    return 'Appointment(id: $id, patientId: $patientId, clinicId: $clinicId, scheduledDate: $scheduledDate, status: $status, procedureDescription: $procedureDescription, patientName: $patientName)';
   }
 }

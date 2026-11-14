@@ -1,10 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../domain/entities/entities.dart';
 import 'appointments_provider.dart';
 import 'cases_provider.dart';
 import 'clinics_provider.dart';
+import 'patients_provider.dart';
 import 'requirements_provider.dart';
 
 /// Semantic classification of clinical reminder pills.
@@ -66,6 +68,7 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
   final upcomingApts = ref.watch(upcomingAppointmentsProvider).valueOrNull ?? const <Appointment>[];
   final clinics = ref.watch(clinicListProvider).valueOrNull ?? const <Clinic>[];
   final allRequirements = ref.watch(allRequirementsProvider).valueOrNull ?? const <Requirement>[];
+  final patients = ref.watch(patientListProvider).valueOrNull ?? const <Patient>[];
 
   final items = <ClinicalReminderItem>[];
 
@@ -77,11 +80,24 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
     if (isInProgress && !isCompleted) {
       final diffDays = now.difference(c.dateStarted).inDays;
       if (diffDays >= 14) {
-        final shortId = c.id.length > 6 ? c.id.substring(0, 6) : c.id;
+        final req = allRequirements.where((r) => r.id == c.requirementId).firstOrNull;
+        final patient = patients.where((p) => p.id == c.patientId).firstOrNull;
+
+        if (req == null) {
+          AppLogger.warning('Relational warning: Orphaned requirementId "${c.requirementId}" encountered in overdue case "${c.id}".');
+        }
+        if (patient == null) {
+          AppLogger.warning('Relational warning: Orphaned patientId "${c.patientId}" encountered in overdue case "${c.id}".');
+        }
+
+        final title = req?.title ?? 'Case';
+        final patientName = patient?.name;
+        final caseDescriptor = patientName != null ? '$title ($patientName)' : title;
+
         items.add(
           ClinicalReminderItem(
             id: 'overdue-case-${c.id}',
-            message: 'Case #$shortId: overdue ($diffDays days in progress)',
+            message: '$caseDescriptor: overdue ($diffDays days in progress)',
             icon: Icons.warning_amber_rounded,
             type: ReminderType.alert,
             category: ReminderCategory.overdueCase,
@@ -114,10 +130,17 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
               ? 'starting in ${minutes}m'
               : 'starting in ${(minutes / 60).toStringAsFixed(1)}h';
 
+      final aptPatient = patients.where((p) => p.id == apt.patientId).firstOrNull;
+      final resolvedPatientName = apt.patientName ?? aptPatient?.name;
+      if (resolvedPatientName == null) {
+        AppLogger.warning('Relational warning: Orphaned patientId "${apt.patientId}" encountered in imminent appointment "${apt.id}".');
+      }
+      final patientLabel = resolvedPatientName ?? 'Patient #${apt.patientId}';
+
       items.add(
         ClinicalReminderItem(
           id: 'imminent-apt-${apt.id}',
-          message: 'Appointment $timeStr (Patient #${apt.patientId})',
+          message: 'Appointment $timeStr ($patientLabel)',
           icon: Icons.alarm,
           type: ReminderType.warning,
           category: ReminderCategory.imminentAppointment,
