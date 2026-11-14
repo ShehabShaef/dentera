@@ -116,6 +116,57 @@ void main() {
       final repo = container.read(dentalCatalogRepositoryProvider);
       expect(repo, isA<DefaultDentalCatalogRepository>());
     });
+
+    test('verifies v1.0 updated procedural catalog procedures per department', () {
+      // Operative
+      final operative = DentalCatalog.getProceduresForDepartment('Operative');
+      expect(operative, contains('Class I Amalgam'));
+
+      // Pedodontics
+      final pedo = DentalCatalog.getProceduresForDepartment('Pedodontics');
+      expect(pedo, containsAll(['Primary Pulpectomy', 'Composite Restoration']));
+
+      // Periodontics
+      final perio = DentalCatalog.getProceduresForDepartment('Periodontics');
+      expect(perio, containsAll(['Scaling and Polishing', 'Curettage and Root Planing']));
+      expect(perio, isNot(contains('Periodontal Flap Surgery')));
+      expect(perio, isNot(contains('Subgingival Debridement')));
+
+      // Prosthodontics (general)
+      final prosth = DentalCatalog.getProceduresForDepartment('Prosthodontics');
+      expect(prosth, contains('Single Partial Denture'));
+      expect(prosth, isNot(contains('RPI Clasp Assembly')));
+
+      // Removable Prosthodontics
+      final remProsth = DentalCatalog.getProceduresForDepartment('Removable Prosthodontics');
+      expect(remProsth, containsAll(['Single Partial Denture', 'Over Denture', 'Metal Framework']));
+      expect(remProsth, isNot(contains('RPI Clasp Assembly')));
+
+      // Fixed Prosthodontics
+      final fixedProsth = DentalCatalog.getProceduresForDepartment('Fixed Prosthodontics');
+      expect(fixedProsth, isNot(contains('Provisional Restoration')));
+
+      // Oral Medicine
+      final oralMed = DentalCatalog.getProceduresForDepartment('Oral Medicine');
+      expect(oralMed, containsAll([
+        'Comprehensive Oral Examination (Diagnosis)',
+        'Oral Mucosal Lesion Management (Treatment)',
+      ]));
+
+      // Orthodontics
+      final ortho = DentalCatalog.getProceduresForDepartment('Orthodontics');
+      expect(ortho, containsAll([
+        'Removable Appliance',
+        'Habit Breaker',
+        'Fixed Appliance',
+        'Myofunctional Appliance (Functional)',
+      ]));
+      expect(ortho, isNot(contains('Cephalometric & Cast Analysis')));
+      expect(ortho, isNot(contains('Removable Appliance Insertion')));
+      expect(ortho, isNot(contains('Fixed Bracket Bonding')));
+      expect(ortho, isNot(contains('Space Maintainer')));
+      expect(ortho, isNot(contains('Orthodontic Wire Adjustment')));
+    });
   });
 
   group('AddClinicModal Catalog & "Other..." Integration Tests', () {

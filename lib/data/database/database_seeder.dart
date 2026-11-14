@@ -68,12 +68,26 @@ class DatabaseSeeder {
       'targetCount': 3,
       'completedCount': 0,
     },
+    {
+      'id': 'req-prosth-spd',
+      'clinicId': 'clinic-prosth',
+      'title': 'Single Partial Denture',
+      'targetCount': 2,
+      'completedCount': 0,
+    },
     // Operative Dentistry
     {
       'id': 'req-op-class1',
       'clinicId': 'clinic-operative',
       'title': 'Class I Composite',
       'targetCount': 8,
+      'completedCount': 0,
+    },
+    {
+      'id': 'req-op-class1-amalgam',
+      'clinicId': 'clinic-operative',
+      'title': 'Class I Amalgam',
+      'targetCount': 6,
       'completedCount': 0,
     },
     {
@@ -117,7 +131,7 @@ class DatabaseSeeder {
     {
       'id': 'req-perio-srp',
       'clinicId': 'clinic-perio',
-      'title': 'Scaling & Root Planing',
+      'title': 'Scaling and Polishing',
       'targetCount': 10,
       'completedCount': 0,
     },
@@ -137,10 +151,24 @@ class DatabaseSeeder {
       'completedCount': 0,
     },
     {
+      'id': 'req-peds-pulpectomy',
+      'clinicId': 'clinic-pediatric',
+      'title': 'Primary Pulpectomy',
+      'targetCount': 3,
+      'completedCount': 0,
+    },
+    {
       'id': 'req-peds-ssc',
       'clinicId': 'clinic-pediatric',
       'title': 'Stainless Steel Crown',
       'targetCount': 4,
+      'completedCount': 0,
+    },
+    {
+      'id': 'req-peds-composite',
+      'clinicId': 'clinic-pediatric',
+      'title': 'Composite Restoration',
+      'targetCount': 5,
       'completedCount': 0,
     },
   ];
@@ -196,6 +224,202 @@ class DatabaseSeeder {
         stackTrace,
       );
       rethrow;
+    }
+  }
+
+  /// Safely synchronizes curriculum requirement changes (additions, renames, removals)
+  /// into an existing SQLite database without destroying student progress or logged cases.
+  static Future<void> syncCurriculumRequirements(Database db) async {
+    AppLogger.info('[DatabaseSeeder] Starting curriculum requirements synchronization...');
+
+    // 1. In-place renames to preserve foreign key references to case_records
+    final renames = <String, String>{
+      'Scaling & root Planning': 'Scaling and Polishing',
+      'Scaling & Root Planing': 'Scaling and Polishing',
+      'Scaling and Root Planing': 'Scaling and Polishing',
+      'Subgingival Debridement': 'Curettage and Root Planing',
+      'Comprehensive Oral Examination': 'Comprehensive Oral Examination (Diagnosis)',
+      'Oral Mucosal Lesion Management': 'Oral Mucosal Lesion Management (Treatment)',
+    };
+
+    for (final entry in renames.entries) {
+      final updated = await db.rawUpdate(
+        'UPDATE requirements SET title = ? WHERE title = ?;',
+        [entry.value, entry.key],
+      );
+      if (updated > 0) {
+        AppLogger.info('[DatabaseSeeder] Renamed requirement "${entry.key}" -> "${entry.value}" ($updated row(s)).');
+      }
+    }
+
+    // 2. Safe removals: Only delete retired requirements if NO cases have been logged against them
+    final candidateRemovals = <String>[
+      'Periodontal flap surgery',
+      'Periodontal Flap Surgery',
+      'RPI Clasp Assembly',
+      'RPI clasp Assembly',
+      'Provisional Restoration',
+      'Cephalometric & Cast Analysis',
+      'Removable Appliance Insertion',
+      'Fixed Bracket Bonding',
+      'Orthodontic Wire Adjustment',
+    ];
+
+    for (final title in candidateRemovals) {
+      final rows = await db.rawQuery('''
+        SELECT r.id FROM requirements r
+        WHERE r.title = ? AND NOT EXISTS (
+          SELECT 1 FROM case_records c WHERE c.requirementId = r.id
+        );
+      ''', [title]);
+
+      for (final row in rows) {
+        final reqId = row['id'] as String;
+        await db.delete('requirements', where: 'id = ?', whereArgs: [reqId]);
+        AppLogger.info('[DatabaseSeeder] Safely removed unused retired requirement "$title" ($reqId).');
+      }
+    }
+
+    // Handle Orthodontic "Space Maintainer" (only under Orthodontics, not Pediatric)
+    final orthoSpaceMaintainers = await db.rawQuery('''
+      SELECT r.id FROM requirements r
+      JOIN clinics c ON r.clinicId = c.id
+      WHERE r.title = 'Space Maintainer'
+        AND LOWER(c.name) LIKE '%orthodont%'
+        AND NOT EXISTS (
+          SELECT 1 FROM case_records cr WHERE cr.requirementId = r.id
+        );
+    ''');
+    for (final row in orthoSpaceMaintainers) {
+      final reqId = row['id'] as String;
+      await db.delete('requirements', where: 'id = ?', whereArgs: [reqId]);
+      AppLogger.info('[DatabaseSeeder] Safely removed unused Orthodontic Space Maintainer ($reqId).');
+    }
+
+    // 3. Additions: Add new curriculum requirements to existing clinics if not already present
+    final clinics = await db.query('clinics');
+    for (final clinic in clinics) {
+      final clinicId = clinic['id'] as String;
+      final clinicName = (clinic['name'] as String).toLowerCase();
+
+      // Operative Dentistry additions
+      if (clinicName.contains('operative')) {
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-op-class1-amalgam',
+          title: 'Class I Amalgam',
+          targetCount: 6,
+        );
+      }
+
+      // Pediatric Dentistry additions
+      if (clinicName.contains('pediatric') || clinicName.contains('pedodont')) {
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-peds-pulpectomy',
+          title: 'Primary Pulpectomy',
+          targetCount: 3,
+        );
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-peds-composite',
+          title: 'Composite Restoration',
+          targetCount: 5,
+        );
+      }
+
+      // Prosthodontics additions
+      if (clinicName.contains('prosthodont')) {
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-prosth-spd',
+          title: 'Single Partial Denture',
+          targetCount: 2,
+        );
+
+        if (clinicName.contains('removable')) {
+          await _addRequirementIfNotExists(
+            db,
+            clinicId: clinicId,
+            id: 'req-prosth-overdenture',
+            title: 'Over Denture',
+            targetCount: 2,
+          );
+          await _addRequirementIfNotExists(
+            db,
+            clinicId: clinicId,
+            id: 'req-prosth-metal-framework',
+            title: 'Metal Framework',
+            targetCount: 2,
+          );
+        }
+      }
+
+      // Orthodontics additions
+      if (clinicName.contains('orthodont')) {
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-ortho-removable',
+          title: 'Removable Appliance',
+          targetCount: 2,
+        );
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-ortho-habit-breaker',
+          title: 'Habit Breaker',
+          targetCount: 1,
+        );
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-ortho-fixed',
+          title: 'Fixed Appliance',
+          targetCount: 2,
+        );
+        await _addRequirementIfNotExists(
+          db,
+          clinicId: clinicId,
+          id: 'req-ortho-myofunctional',
+          title: 'Myofunctional Appliance (Functional)',
+          targetCount: 1,
+        );
+      }
+    }
+
+    AppLogger.info('[DatabaseSeeder] Curriculum requirements synchronization completed.');
+  }
+
+  static Future<void> _addRequirementIfNotExists(
+    Database db, {
+    required String clinicId,
+    required String id,
+    required String title,
+    required int targetCount,
+  }) async {
+    final existing = await db.query(
+      'requirements',
+      where: 'clinicId = ? AND LOWER(title) = ?',
+      whereArgs: [clinicId, title.toLowerCase()],
+    );
+
+    if (existing.isEmpty) {
+      final existingId = await db.query('requirements', where: 'id = ?', whereArgs: [id]);
+      final effectiveId = existingId.isNotEmpty ? '$id-${DateTime.now().millisecondsSinceEpoch}' : id;
+
+      await db.insert('requirements', {
+        'id': effectiveId,
+        'clinicId': clinicId,
+        'title': title,
+        'targetCount': targetCount,
+        'completedCount': 0,
+      });
+      AppLogger.info('[DatabaseSeeder] Added new requirement "$title" ($effectiveId) to clinic $clinicId.');
     }
   }
 }
