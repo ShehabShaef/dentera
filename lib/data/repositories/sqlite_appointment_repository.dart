@@ -72,11 +72,16 @@ class SqliteAppointmentRepository implements AppointmentRepository {
       final dateIso = date.toIso8601String();
       final dayPrefix = dateIso.substring(0, 10);
 
-      final results = await db.query(
-        _tableName,
-        where: 'scheduledDate LIKE ?',
-        whereArgs: <Object>['$dayPrefix%'],
-        orderBy: 'scheduledDate ASC',
+      // LEFT JOIN with patients table to populate patientName dynamically
+      final results = await db.rawQuery(
+        '''
+        SELECT a.*, p.name AS patientName
+        FROM appointments a
+        LEFT JOIN patients p ON a.patientId = p.id
+        WHERE a.scheduledDate LIKE ?
+        ORDER BY a.scheduledDate ASC
+        ''',
+        <Object>['$dayPrefix%'],
       );
       return results.map((map) => Appointment.fromMap(map)).toList();
     } catch (e) {
@@ -88,11 +93,15 @@ class SqliteAppointmentRepository implements AppointmentRepository {
   Future<List<Appointment>> getAppointmentsByPatientId(String patientId) async {
     try {
       final db = await _dbManager.database;
-      final results = await db.query(
-        _tableName,
-        where: 'patientId = ?',
-        whereArgs: <Object>[patientId],
-        orderBy: 'scheduledDate ASC',
+      final results = await db.rawQuery(
+        '''
+        SELECT a.*, p.name AS patientName
+        FROM appointments a
+        LEFT JOIN patients p ON a.patientId = p.id
+        WHERE a.patientId = ?
+        ORDER BY a.scheduledDate ASC
+        ''',
+        <Object>[patientId],
       );
       return results.map((map) => Appointment.fromMap(map)).toList();
     } catch (e) {
@@ -104,9 +113,13 @@ class SqliteAppointmentRepository implements AppointmentRepository {
   Future<List<Appointment>> getAllAppointments() async {
     try {
       final db = await _dbManager.database;
-      final results = await db.query(
-        _tableName,
-        orderBy: 'scheduledDate ASC',
+      final results = await db.rawQuery(
+        '''
+        SELECT a.*, p.name AS patientName
+        FROM appointments a
+        LEFT JOIN patients p ON a.patientId = p.id
+        ORDER BY a.scheduledDate ASC
+        ''',
       );
       return results.map((map) => Appointment.fromMap(map)).toList();
     } catch (e) {
