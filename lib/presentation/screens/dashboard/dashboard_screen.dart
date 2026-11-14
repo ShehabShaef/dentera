@@ -11,11 +11,21 @@ import '../patients/patient_case_sheet_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Main command center dashboard screen for Dentera wired to Riverpod SQLite state.
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final prefsRepo = ref.watch(preferencesRepositoryProvider);
     final quotaSummaryAsync = ref.watch(globalQuotaSummaryProvider);
     final allReqsAsync = ref.watch(allRequirementsProvider);

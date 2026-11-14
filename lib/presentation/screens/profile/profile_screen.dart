@@ -18,7 +18,10 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   Future<void> _onToggleAgendaReminders(bool value) async {
     await ref.read(agendaRemindersProvider.notifier).setRemindersEnabled(value);
     if (!value) {
@@ -254,6 +257,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final userProfileAsync = ref.watch(userProfileProvider);
     final userProfile = userProfileAsync.valueOrNull ??
         const UserProfile(

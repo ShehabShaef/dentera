@@ -23,7 +23,11 @@ class PatientsScreen extends ConsumerStatefulWidget {
   ConsumerState<PatientsScreen> createState() => _PatientsScreenState();
 }
 
-class _PatientsScreenState extends ConsumerState<PatientsScreen> {
+class _PatientsScreenState extends ConsumerState<PatientsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final TextEditingController _searchController = TextEditingController();
 
   static const List<String> _filters = <String>[
@@ -134,6 +138,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final filteredPatientsAsync = ref.watch(filteredPatientListProvider);
     final searchQuery = ref.watch(patientSearchQueryProvider);
     final selectedFilter = ref.watch(patientFilterCategoryProvider);

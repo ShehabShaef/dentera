@@ -11,15 +11,17 @@ import 'dashboard/dashboard_screen.dart';
 import 'patients/patients_screen.dart';
 import 'profile/profile_screen.dart';
 
-/// Root navigation screen maintaining an [IndexedStack] across the five core tabs.
+/// Root navigation screen maintaining an interactive, swipeable [PageView] across the five core tabs.
 ///
 /// ### Routing Mechanisms in Dentera:
-/// 1. **Tab Switching via Riverpod (`rootNavigationIndexProvider`):**
+/// 1. **Tab Switching via Riverpod (`rootNavigationIndexProvider`) & Gestures:**
 ///    The 5 core tabs (Dashboard, Clinics, Patients, Schedule, Profile) reside inside
-///    an [IndexedStack]. This preserves screen scroll positions, cached form states,
-///    and sub-widget lifecycles across tab changes. Any child widget in the application
-///    tree can declaratively switch the active tab without needing [BuildContext]
-///    route lookups by mutating [rootNavigationIndexProvider].
+///    an interactive [PageView] with [AutomaticKeepAliveClientMixin] state preservation.
+///    This preserves screen scroll positions, cached form states, search filters,
+///    and sub-widget lifecycles across horizontal swipes and bottom navigation taps.
+///    Any child widget in the application tree can declaratively switch the active tab
+///    by mutating [rootNavigationIndexProvider], which smoothly synchronizes with
+///    the underlying [PageController].
 ///
 /// 2. **Deep Link / Detail Routing via [Navigator.push]:**
 ///    Screens requiring drill-down views (e.g. [PatientCaseSheetScreen], modal sheets,
@@ -39,6 +41,8 @@ class RootNavigationScreen extends ConsumerStatefulWidget {
 }
 
 class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
+  late final PageController _pageController;
+
   final List<Widget> _screens = const <Widget>[
     DashboardScreen(),
     ClinicsScreen(),
@@ -50,6 +54,9 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: widget.initialIndex);
+    AppLogger.debug('Initialized PageController with initialPage: ${widget.initialIndex}');
+
     // If an initialIndex other than the default was passed, sync the Riverpod provider.
     if (widget.initialIndex != 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,15 +67,51 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    if (ref.read(rootNavigationIndexProvider) != index) {
+      AppLogger.info('RootNavigationScreen: horizontal swipe gesture navigated to tab index: $index');
+      ref.read(rootNavigationIndexProvider.notifier).state = index;
+    }
+  }
+
   void _onTabSelected(int index) {
     if (ref.read(rootNavigationIndexProvider) != index) {
-      AppLogger.info('Switching root tab to index: $index');
+      AppLogger.info('RootNavigationScreen: bottom navigation tapped tab index: $index');
       ref.read(rootNavigationIndexProvider.notifier).state = index;
+    }
+  }
+
+  void _navigateToPage(int targetIndex) {
+    if (!_pageController.hasClients) return;
+    final currentPage = _pageController.page?.round() ?? 0;
+    if (currentPage == targetIndex) return;
+
+    final isAdjacent = (targetIndex - currentPage).abs() == 1;
+    if (isAdjacent) {
+      _pageController.animateToPage(
+        targetIndex,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+      );
+    } else {
+      _pageController.jumpToPage(targetIndex);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen to Riverpod rootNavigationIndexProvider changes (e.g. from bottom bar taps,
+    // Dashboard shortcuts, or external provider mutations) and sync PageController.
+    ref.listen<int>(rootNavigationIndexProvider, (previous, next) {
+      _navigateToPage(next);
+    });
+
     final currentIndex = ref.watch(rootNavigationIndexProvider);
 
     final theme = Theme.of(context);
@@ -84,8 +127,10 @@ class _RootNavigationScreenState extends ConsumerState<RootNavigationScreen> {
         : AppColors.onSurfaceVariant;
 
     return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        physics: const PageScrollPhysics(),
         children: _screens,
       ),
       bottomNavigationBar: Container(

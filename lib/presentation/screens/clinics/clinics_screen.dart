@@ -28,7 +28,11 @@ class ClinicsScreen extends ConsumerStatefulWidget {
   ConsumerState<ClinicsScreen> createState() => _ClinicsScreenState();
 }
 
-class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
+class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   String _selectedCategory = 'All';
 
   static const List<String> _categories = <String>[
@@ -137,6 +141,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final clinicsAsync = ref.watch(clinicListProvider);
     final allReqsAsync = ref.watch(allRequirementsProvider);
     final isSelectionMode = ref.watch(clinicSelectionModeProvider);
