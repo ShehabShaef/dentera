@@ -44,7 +44,11 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
-class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
+class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   DateTime _selectedDate = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -53,6 +57,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     // Watch daily appointments for the currently selected calendar date
     final appointmentsAsync = ref.watch(dailyAppointmentsProvider(_selectedDate));
 
