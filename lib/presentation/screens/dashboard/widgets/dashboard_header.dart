@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../data/repositories/preferences_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 
@@ -36,7 +37,7 @@ class DashboardHeader extends ConsumerWidget {
       WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
 
   String get _initials {
-    final clean = doctorName.replaceAll(RegExp(r'^Dr\.\s*', caseSensitive: false), '').trim();
+    final clean = PreferencesRepository.stripDoctorPrefix(doctorName).trim();
     if (clean.isEmpty) return 'DR';
     final parts = clean.split(' ');
     if (parts.length > 1) {
@@ -57,6 +58,11 @@ class DashboardHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final clean = PreferencesRepository.stripDoctorPrefix(doctorName).trim();
+    final isArabic = context.l10n.localeName.startsWith('ar');
+    final prefix = isArabic ? 'د.' : 'Dr.';
+    final effectiveDoctorName = clean.isNotEmpty ? '$prefix $clean' : '$prefix Doctor';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -67,7 +73,7 @@ class DashboardHeader extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                '$greeting, $doctorName',
+                '$greeting, $effectiveDoctorName',
                 style: AppTextStyles.h1Mobile.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,

@@ -12,26 +12,69 @@ import '../../core/logging/app_logger.dart';
 /// Representation of the student clinician's saved profile credentials.
 class UserProfile {
   const UserProfile({
-    required this.name,
+    this.firstName = 'Shehab',
+    this.lastName = 'Shaif',
+    String? name,
     required this.university,
     required this.academicYear,
-  });
+  }) : _legacyName = name;
 
-  final String name;
+  final String firstName;
+  final String lastName;
+  final String? _legacyName;
   final String university;
   final String academicYear;
+
+  /// Returns the full formatted doctor name with programmatic prefix: "Dr. [FirstName] [LastName]".
+  String formattedFullDoctorName([String? locale]) {
+    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+    final cleanFirst = PreferencesRepository.stripDoctorPrefix(firstName).trim();
+    final cleanLast = PreferencesRepository.stripDoctorPrefix(lastName).trim();
+    final full = '$cleanFirst $cleanLast'.trim();
+    if (full.isEmpty) {
+      if (_legacyName != null && _legacyName.trim().isNotEmpty) {
+        final cleanLegacy = PreferencesRepository.stripDoctorPrefix(_legacyName).trim();
+        return cleanLegacy.isEmpty ? '$prefix Doctor' : '$prefix $cleanLegacy';
+      }
+      return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+    }
+    return '$prefix $full';
+  }
+
+  /// Returns the short formatted doctor name: "Dr. [FirstName]".
+  String formattedShortDoctorName([String? locale]) {
+    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+    final cleanFirst = PreferencesRepository.stripDoctorPrefix(firstName).trim();
+    if (cleanFirst.isNotEmpty) {
+      return '$prefix $cleanFirst';
+    }
+    if (_legacyName != null && _legacyName.trim().isNotEmpty) {
+      final cleanLegacy = PreferencesRepository.stripDoctorPrefix(_legacyName).trim();
+      final first = cleanLegacy.split(RegExp(r'\s+')).first;
+      return '$prefix $first';
+    }
+    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+  }
+
+  /// Enforces programmatic "Dr." prefix for full clinician name.
+  String get name => formattedFullDoctorName();
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is UserProfile &&
           runtimeType == other.runtimeType &&
-          name == other.name &&
+          firstName == other.firstName &&
+          lastName == other.lastName &&
           university == other.university &&
           academicYear == other.academicYear;
 
   @override
-  int get hashCode => name.hashCode ^ university.hashCode ^ academicYear.hashCode;
+  int get hashCode =>
+      firstName.hashCode ^
+      lastName.hashCode ^
+      university.hashCode ^
+      academicYear.hashCode;
 }
 
 /// Central offline preferences and configuration repository for Dentera.
@@ -52,6 +95,8 @@ class PreferencesRepository {
   SharedPreferences? _prefs;
 
   static const String _keyHasCompletedOnboarding = 'hasCompletedOnboarding';
+  static const String _keyDoctorFirstName = 'doctorFirstName';
+  static const String _keyDoctorLastName = 'doctorLastName';
   static const String _keyDoctorName = 'doctorName';
   static const String _keyUniversity = 'university';
   static const String _keyAcademicYear = 'academicYear';
@@ -60,6 +105,29 @@ class PreferencesRepository {
   static const String _keyLocale = 'locale';
   static const String _keyFollowUpAlertsEnabled = 'followUpAlertsEnabled';
   static const String _keyAvatarPath = 'avatarPath';
+
+  /// Strips any manual "Dr.", "Dr", "Doctor", "د.", "د/", or "د " prefix.
+  static String stripDoctorPrefix(String raw) {
+    var s = raw.trim();
+    final pattern = RegExp(r'^(dr\.|dr|doctor|د\.|د/|د)\s*', caseSensitive: false);
+    while (pattern.hasMatch(s)) {
+      s = s.replaceFirst(pattern, '').trim();
+    }
+    return s;
+  }
+
+  /// Splits a full name string into (firstName, lastName) after stripping manual prefixes.
+  static (String, String) splitFullName(String fullName) {
+    final clean = stripDoctorPrefix(fullName).trim();
+    if (clean.isEmpty) return ('', '');
+    final parts = clean.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return (parts[0], '');
+    }
+    final first = parts[0];
+    final last = parts.sublist(1).join(' ');
+    return (first, last);
+  }
 
   Future<SharedPreferences> get _instance async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -80,25 +148,120 @@ class PreferencesRepository {
   }
 
   /// Persists the user profile details captured during onboarding or profile editing.
+  /// Supports separate [firstName] and [lastName], with backward-compatible fallback for legacy [name].
   Future<void> saveUserProfile({
-    required String name,
+    String? firstName,
+    String? lastName,
+    String? name,
     required String university,
     required String academicYear,
   }) async {
     final prefs = await _instance;
+
+    String effectiveFirst = firstName ?? '';
+    String effectiveLast = lastName ?? '';
+
+    if (effectiveFirst.isEmpty && effectiveLast.isEmpty && name != null) {
+      final split = splitFullName(name);
+      effectiveFirst = split.$1;
+      effectiveLast = split.$2;
+    } else {
+      effectiveFirst = stripDoctorPrefix(effectiveFirst);
+      effectiveLast = stripDoctorPrefix(effectiveLast);
+    }
+
+    final fullName = '$effectiveFirst $effectiveLast'.trim();
+    final legacyDoctorName = fullName.isNotEmpty ? 'Dr. $fullName' : 'Dr. Doctor';
+
     await Future.wait(<Future<bool>>[
-      prefs.setString(_keyDoctorName, name),
+      prefs.setString(_keyDoctorFirstName, effectiveFirst),
+      prefs.setString(_keyDoctorLastName, effectiveLast),
+      prefs.setString(_keyDoctorName, legacyDoctorName),
       prefs.setString(_keyUniversity, university),
       prefs.setString(_keyAcademicYear, academicYear),
       prefs.setBool(_keyHasCompletedOnboarding, true),
     ]);
-    AppLogger.info('Profile details updated successfully');
+    AppLogger.info('Profile details updated successfully: Dr. $effectiveFirst $effectiveLast');
   }
 
-  /// Retrieves the saved student doctor's name.
-  Future<String?> getDoctorName() async {
+  /// Retrieves the doctor's first name, with automatic fallback/migration from legacy doctorName.
+  Future<String?> getDoctorFirstName() async {
     final prefs = await _instance;
-    return prefs.getString(_keyDoctorName);
+    final first = prefs.getString(_keyDoctorFirstName);
+    if (first != null && first.isNotEmpty) {
+      return first;
+    }
+    // Fallback: migrate from legacy _keyDoctorName
+    final legacyName = prefs.getString(_keyDoctorName);
+    if (legacyName != null && legacyName.isNotEmpty) {
+      final split = splitFullName(legacyName);
+      if (split.$1.isNotEmpty) {
+        await prefs.setString(_keyDoctorFirstName, split.$1);
+        if (split.$2.isNotEmpty) {
+          await prefs.setString(_keyDoctorLastName, split.$2);
+        }
+        return split.$1;
+      }
+    }
+    return null;
+  }
+
+  /// Retrieves the doctor's last name, with automatic fallback/migration from legacy doctorName.
+  Future<String?> getDoctorLastName() async {
+    final prefs = await _instance;
+    final last = prefs.getString(_keyDoctorLastName);
+    if (last != null) {
+      return last;
+    }
+    // Fallback: migrate from legacy _keyDoctorName
+    final legacyName = prefs.getString(_keyDoctorName);
+    if (legacyName != null && legacyName.isNotEmpty) {
+      final split = splitFullName(legacyName);
+      if (split.$2.isNotEmpty) {
+        await prefs.setString(_keyDoctorLastName, split.$2);
+        if (split.$1.isNotEmpty && prefs.getString(_keyDoctorFirstName) == null) {
+          await prefs.setString(_keyDoctorFirstName, split.$1);
+        }
+        return split.$2;
+      }
+    }
+    return null;
+  }
+
+  /// Retrieves the saved student doctor's formatted name with "Dr." prefix.
+  Future<String?> getDoctorName([String? locale]) async {
+    final prefs = await _instance;
+    final first = await getDoctorFirstName();
+    final last = await getDoctorLastName();
+    if (first != null && first.isNotEmpty) {
+      final full = '$first ${last ?? ''}'.trim();
+      final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+      return '$prefix $full';
+    }
+    final legacy = prefs.getString(_keyDoctorName);
+    if (legacy != null && legacy.isNotEmpty) {
+      final clean = stripDoctorPrefix(legacy).trim();
+      final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+      return clean.isNotEmpty ? '$prefix $clean' : '$prefix Doctor';
+    }
+    return null;
+  }
+
+  /// Formatted short doctor name (e.g. "Dr. Shehab").
+  Future<String> getFormattedShortDoctorName([String? locale]) async {
+    final first = await getDoctorFirstName();
+    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+    if (first != null && first.isNotEmpty) {
+      return '$prefix $first';
+    }
+    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+  }
+
+  /// Formatted full doctor name (e.g. "Dr. Shehab Shaif").
+  Future<String> getFormattedFullDoctorName([String? locale]) async {
+    final name = await getDoctorName(locale);
+    if (name != null && name.isNotEmpty) return name;
+    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
   }
 
   /// Retrieves the saved academic institution/university.
@@ -332,11 +495,13 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
 
   Future<void> loadProfile() async {
     try {
-      final name = await _repository.getDoctorName() ?? 'Dr. Shehab Shaif';
+      final first = await _repository.getDoctorFirstName() ?? 'Shehab';
+      final last = await _repository.getDoctorLastName() ?? 'Shaif';
       final uni = await _repository.getUniversity() ?? 'Dental School';
       final year = await _repository.getAcademicYear() ?? '5th Year';
       state = AsyncValue.data(UserProfile(
-        name: name,
+        firstName: first,
+        lastName: last,
         university: uni,
         academicYear: year,
       ));
@@ -346,20 +511,20 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
   }
 
   Future<void> updateProfile({
-    required String name,
+    String? firstName,
+    String? lastName,
+    String? name,
     required String university,
     required String academicYear,
   }) async {
     await _repository.saveUserProfile(
+      firstName: firstName,
+      lastName: lastName,
       name: name,
       university: university,
       academicYear: academicYear,
     );
-    state = AsyncValue.data(UserProfile(
-      name: name,
-      university: university,
-      academicYear: academicYear,
-    ));
+    await loadProfile();
   }
 }
 

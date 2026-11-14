@@ -46,14 +46,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       body: SafeArea(
         child: FutureBuilder<Map<String, String?>>(
           future: Future.wait([
-            prefsRepo.getDoctorName(),
+            prefsRepo.getFormattedShortDoctorName(),
             prefsRepo.getAcademicYear(),
           ]).then((results) => {
                 'name': results[0],
                 'year': results[1],
               }),
           builder: (context, snapshot) {
-            final doctorName = snapshot.data?['name'] ?? 'Doctor';
+            final doctorName = snapshot.data?['name'] ?? 'Dr. Doctor';
             final academicYear = snapshot.data?['year'] ?? '5th Year';
 
             return SingleChildScrollView(

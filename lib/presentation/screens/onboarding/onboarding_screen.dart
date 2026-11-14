@@ -18,7 +18,8 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late final PageController _pageController;
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _universityController = TextEditingController();
 
   int _currentPage = 0;
@@ -34,7 +35,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _universityController.dispose();
     super.dispose();
   }
@@ -65,7 +67,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final prefsRepo = ref.read(preferencesRepositoryProvider);
       await prefsRepo.saveUserProfile(
-        name: 'Dr. Guest',
+        firstName: 'Guest',
+        lastName: '',
         university: 'Guest Dental University',
         academicYear: 'guest Year',
       );
@@ -87,7 +90,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    final name = _nameController.text.trim();
+    final firstName = PreferencesRepository.stripDoctorPrefix(_firstNameController.text.trim());
+    final lastName = PreferencesRepository.stripDoctorPrefix(_lastNameController.text.trim());
     final university = _universityController.text.trim();
 
     setState(() {
@@ -97,7 +101,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final prefsRepo = ref.read(preferencesRepositoryProvider);
       await prefsRepo.saveUserProfile(
-        name: name.isNotEmpty ? name : 'Doctor',
+        firstName: firstName.isNotEmpty ? firstName : 'Doctor',
+        lastName: lastName,
         university: university.isNotEmpty ? university : 'Dental School',
         academicYear: _selectedYear,
       );
@@ -174,7 +179,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 },
                 children: <Widget>[
                   WelcomePage(
-                    nameController: _nameController,
+                    firstNameController: _firstNameController,
+                    lastNameController: _lastNameController,
                     onContinue: _nextPage,
                     onContinueAsGuest: _continueAsGuest,
                     isLoading: _isLoading,
