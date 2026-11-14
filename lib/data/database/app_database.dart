@@ -19,7 +19,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String dbName = 'dentera.db';
-  static const int dbVersion = 5;
+  static const int dbVersion = 6;
 
   Database? _database;
 
@@ -149,6 +149,11 @@ class AppDatabase {
           FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE
         );
       ''');
+    }
+    if (oldVersion < 6) {
+      // Synchronize curriculum requirements (renames, safe removals, and additions)
+      // without affecting student case progress or records.
+      await DatabaseSeeder.syncCurriculumRequirements(db);
     }
   }
 

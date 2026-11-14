@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:dentera/core/error/exceptions.dart';
 import 'package:dentera/data/database/app_database.dart';
+import 'package:dentera/data/database/database_seeder.dart';
 import 'package:dentera/data/repositories/sqlite_appointment_repository.dart';
 import 'package:dentera/data/repositories/sqlite_case_record_repository.dart';
 import 'package:dentera/data/repositories/sqlite_case_visit_repository.dart';
@@ -1281,6 +1282,103 @@ void main() {
         final file = File(tempDbPath);
         if (await file.exists()) {
           await file.delete();
+        }
+      }
+    });
+
+    test('migrates database from v5 to v6 synchronizing curriculum requirements', () async {
+      final tempDir = await Directory.systemTemp.createTemp('dentera_v6_test_');
+      final tempDbPath = p.join(tempDir.path, 'dentera_v5_to_v6.db');
+
+      try {
+        final db = await openDatabase(
+          tempDbPath,
+          version: 5,
+          onCreate: (db, version) async {
+            final batch = db.batch();
+            batch.execute('''
+              CREATE TABLE clinics (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                academicYear TEXT NOT NULL,
+                colorHex TEXT NOT NULL
+              );
+            ''');
+            batch.execute('''
+              CREATE TABLE requirements (
+                id TEXT PRIMARY KEY,
+                clinicId TEXT NOT NULL,
+                title TEXT NOT NULL,
+                targetCount INTEGER NOT NULL,
+                completedCount INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (clinicId) REFERENCES clinics (id) ON DELETE CASCADE
+              );
+            ''');
+            batch.execute('''
+              CREATE TABLE patients (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                gender TEXT NOT NULL,
+                createdAt TEXT NOT NULL
+              );
+            ''');
+            batch.execute('''
+              CREATE TABLE case_records (
+                id TEXT PRIMARY KEY,
+                patientId TEXT NOT NULL,
+                requirementId TEXT NOT NULL,
+                status TEXT NOT NULL,
+                notes TEXT,
+                dateStarted TEXT NOT NULL,
+                dateCompleted TEXT,
+                FOREIGN KEY (patientId) REFERENCES patients (id) ON DELETE CASCADE,
+                FOREIGN KEY (requirementId) REFERENCES requirements (id) ON DELETE CASCADE
+              );
+            ''');
+            await batch.commit();
+
+            await db.insert('clinics', {
+              'id': 'c-perio-v5',
+              'name': 'Periodontics',
+              'academicYear': '4th Year',
+              'colorHex': '#10B981',
+            });
+            await db.insert('requirements', {
+              'id': 'req-srp-v5',
+              'clinicId': 'c-perio-v5',
+              'title': 'Scaling & Root Planing',
+              'targetCount': 10,
+              'completedCount': 2,
+            });
+          },
+        );
+
+        await db.close();
+
+        // Upgrade to v6 using onUpgrade logic
+        final upgradedDb = await openDatabase(
+          tempDbPath,
+          version: 6,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            if (oldVersion < 6) {
+              await DatabaseSeeder.syncCurriculumRequirements(db);
+            }
+          },
+        );
+
+        final req = await upgradedDb.query('requirements', where: 'id = ?', whereArgs: ['req-srp-v5']);
+        expect(req.first['title'], equals('Scaling and Polishing'));
+        expect(req.first['completedCount'], equals(2));
+
+        await upgradedDb.close();
+      } finally {
+        final file = File(tempDbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
         }
       }
     });
