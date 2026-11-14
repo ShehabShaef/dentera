@@ -104,8 +104,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           error: error,
                           stackTrace: stackTrace,
                           isCompact: true,
-                          title: 'Quota Statistics Unavailable',
-                          message: 'Could not retrieve departmental progress.',
+                          title: context.l10n.quotaStatsUnavailable,
+                          message: context.l10n.couldNotRetrieveProgress,
                           onRetry: () {
                             ref.invalidate(globalQuotaSummaryProvider);
                             ref.invalidate(allRequirementsProvider);
@@ -186,14 +186,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           if (resolvedPatientName == null || resolvedPatientName.isEmpty) {
                             AppLogger.warning('Relational warning: Orphaned or unresolvable patient ID in today appointment: ${firstApt.patientId}');
                           }
-                          final patientDisplayName = resolvedPatientName ?? 'Patient #${firstApt.patientId}';
+                          final patientDisplayName = resolvedPatientName ?? context.l10n.patientWithNumber(firstApt.patientId);
 
                           return DashboardAppointmentCard(
                             patientName: patientDisplayName,
                             patientId: firstApt.patientId,
                             patientDetails: firstApt.status,
                             timeWindow: '${firstApt.scheduledDate.hour}:${firstApt.scheduledDate.minute.toString().padLeft(2, '0')}',
-                            procedureTitle: firstApt.procedureDescription ?? 'Clinical Procedure',
+                            procedureTitle: firstApt.procedureDescription ?? context.l10n.clinicalProcedure,
                             clinicColor: isDark ? AppDarkColors.secondary : AppColors.secondary,
                             onViewCase: () {
                               AppLogger.info('Navigating to Patient Case Sheet for patient: ${firstApt.patientId}');
@@ -221,8 +221,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           error: error,
                           stackTrace: stackTrace,
                           isCompact: true,
-                          title: 'Appointments Unavailable',
-                          message: 'Could not load today\'s scheduled appointments.',
+                          title: context.l10n.appointmentsUnavailable,
+                          message: context.l10n.couldNotLoadTodayAppointments,
                           onRetry: () => ref.invalidate(dailyAppointmentsProvider(today)),
                         ),
                       ),
@@ -245,13 +245,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 if (resolvedName == null || resolvedName.isEmpty) {
                                   AppLogger.warning('Relational warning: Orphaned or unresolvable patient ID in upcoming appointments: ${apt.patientId}');
                                 }
-                                final displayName = resolvedName ?? 'Patient #${apt.patientId}';
+                                final displayName = resolvedName ?? context.l10n.patientWithNumber(apt.patientId);
 
                                 return UpcomingPatientItem(
                                   patientId: apt.patientId,
                                   name: displayName,
                                   timeAndClinic:
-                                      '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
+                                      '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? context.l10n.clinicSingular}',
                                   accentColor: isDark ? AppDarkColors.tertiary : AppColors.primary,
                                 );
                               })
@@ -281,8 +281,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           error: error,
                           stackTrace: stackTrace,
                           isCompact: true,
-                          title: 'Upcoming Patients Unavailable',
-                          message: 'Could not retrieve tomorrow\'s patient schedule.',
+                          title: context.l10n.upcomingPatientsUnavailable,
+                          message: context.l10n.couldNotRetrieveUpcomingSchedule,
                           onRetry: () => ref.invalidate(upcomingAppointmentsProvider),
                         ),
                       ),

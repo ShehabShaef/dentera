@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
@@ -88,11 +89,60 @@ class QuotaReportData {
 class ReportGeneratorService {
   const ReportGeneratorService();
 
+  static pw.Font? _cachedBaseFont;
+  static pw.Font? _cachedBoldFont;
+
+  /// Loads and caches bundled Unicode Arabic TrueType fonts (Amiri-Regular and Amiri-Bold).
+  /// Falls back gracefully to standard Helvetica if assets cannot be resolved.
+  static Future<(pw.Font base, pw.Font bold)> loadArabicFonts() async {
+    if (_cachedBaseFont != null && _cachedBoldFont != null) {
+      return (_cachedBaseFont!, _cachedBoldFont!);
+    }
+
+    try {
+      final baseData = await _loadFontByteData('assets/fonts/Amiri-Regular.ttf');
+      final boldData = await _loadFontByteData('assets/fonts/Amiri-Bold.ttf');
+      _cachedBaseFont = pw.Font.ttf(baseData);
+      _cachedBoldFont = pw.Font.ttf(boldData);
+      return (_cachedBaseFont!, _cachedBoldFont!);
+    } catch (e) {
+      AppLogger.warning('Failed to load embedded Arabic fonts; falling back to default PDF fonts: $e');
+      return (pw.Font.helvetica(), pw.Font.helveticaBold());
+    }
+  }
+
+  static Future<ByteData> _loadFontByteData(String path) async {
+    try {
+      return await rootBundle.load(path);
+    } catch (_) {
+      final file = File(path);
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+        return ByteData.view(bytes.buffer);
+      }
+      rethrow;
+    }
+  }
+
+  /// Determines whether [text] contains Arabic Unicode characters requiring
+  /// RTL text directionality and Arabic glyph shaping.
+  static bool hasArabicCharacters(String? text) {
+    if (text == null || text.isEmpty) return false;
+    return RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]').hasMatch(text);
+  }
+
   /// Generates a standardized academic PDF report containing clinician identity,
   /// department quota progress bars, evaluated cases, and supervisory sign-off blocks.
   Future<Uint8List> generatePdfReport(QuotaReportData data) async {
     AppLogger.info('Generating PDF supervisory quota report for ${data.doctorName}');
     final doc = pw.Document();
+
+    final (baseFont, boldFont) = await loadArabicFonts();
+    final pdfTheme = pw.ThemeData.withFont(
+      base: baseFont,
+      bold: boldFont,
+      fontFallback: [baseFont],
+    );
 
     final dateFormat = DateFormat('yyyy-MM-dd');
     final formattedDate = dateFormat.format(data.generatedDate);
@@ -114,6 +164,7 @@ class ReportGeneratorService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(36),
+        theme: pdfTheme,
         header: (pw.Context context) => _buildPdfHeader(data, formattedDate),
         footer: (pw.Context context) => _buildPdfFooter(context, data),
         build: (pw.Context context) => <pw.Widget>[
@@ -179,17 +230,20 @@ class ReportGeneratorService {
   static String _formatDoctorName(String raw) {
     final clean = raw.replaceAll(RegExp(r'^(dr\.|dr|doctor|د\.|د/|د)\s*', caseSensitive: false), '').trim();
     if (clean.isEmpty) return 'Dr. Doctor';
-    return 'Dr. $clean';
+    final isArabic = hasArabicCharacters(clean);
+    return isArabic ? 'د. $clean' : 'Dr. $clean';
   }
 
   pw.Widget _buildPdfFooter(pw.Context context, QuotaReportData data) {
+    final formattedDoctor = _formatDoctorName(data.doctorName);
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 12),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: <pw.Widget>[
           pw.Text(
-            _formatDoctorName(data.doctorName),
+            formattedDoctor,
+            textDirection: hasArabicCharacters(formattedDoctor) ? pw.TextDirection.rtl : pw.TextDirection.ltr,
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
           ),
           pw.Text(
@@ -239,6 +293,7 @@ class ReportGeneratorService {
   }
 
   pw.Widget _metadataRow(String label, String value) {
+    final isRtl = hasArabicCharacters(value);
     return pw.Row(
       children: <pw.Widget>[
         pw.Text(
@@ -248,6 +303,8 @@ class ReportGeneratorService {
         pw.Expanded(
           child: pw.Text(
             value,
+            textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+            textAlign: isRtl ? pw.TextAlign.right : pw.TextAlign.left,
             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900),
           ),
         ),
@@ -529,11 +586,13 @@ class ReportGeneratorService {
   }
 
   pw.Widget _tableCell(String text, {pw.TextAlign align = pw.TextAlign.left, bool isBold = false}) {
+    final isRtl = hasArabicCharacters(text);
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
       child: pw.Text(
         text,
-        textAlign: align,
+        textAlign: isRtl && align == pw.TextAlign.left ? pw.TextAlign.right : align,
+        textDirection: isRtl ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         style: pw.TextStyle(
           fontSize: 8,
           fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
@@ -547,6 +606,8 @@ class ReportGeneratorService {
   String generateCsvReport(QuotaReportData data) {
     AppLogger.info('Generating CSV supervisory report for ${data.doctorName}');
     final buffer = StringBuffer();
+    // UTF-8 Byte Order Mark (BOM) so Microsoft Excel and spreadsheet tools display Arabic text properly
+    buffer.write('\uFEFF');
     final dateFormat = DateFormat('yyyy-MM-dd');
     final formattedDate = dateFormat.format(data.generatedDate);
 

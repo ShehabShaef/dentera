@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/entities.dart';
+import '../../l10n/l10n.dart';
 import 'appointments_provider.dart';
 import 'cases_provider.dart';
 import 'clinics_provider.dart';
@@ -37,6 +38,7 @@ class ClinicalReminderItem {
     this.appointment,
     this.clinic,
     this.onTap,
+    this.localizedMessage,
   });
 
   final String id;
@@ -48,6 +50,12 @@ class ClinicalReminderItem {
   final Appointment? appointment;
   final Clinic? clinic;
   final VoidCallback? onTap;
+  final String Function(AppLocalizations l10n)? localizedMessage;
+
+  /// Returns the localized reminder text if [localizedMessage] is provided,
+  /// otherwise falling back to [message].
+  String getMessage(AppLocalizations l10n) =>
+      localizedMessage != null ? localizedMessage!(l10n) : message;
 }
 
 /// Reference clock provider for deterministic time evaluations in tests and live usage.
@@ -102,6 +110,11 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
             type: ReminderType.alert,
             category: ReminderCategory.overdueCase,
             caseRecord: c,
+            localizedMessage: (l10n) {
+              final locTitle = req?.title ?? l10n.caseDescriptorFallback;
+              final locDesc = patientName != null ? '$locTitle ($patientName)' : locTitle;
+              return l10n.overdueCaseReminder(locDesc, diffDays);
+            },
           ),
         );
       }
@@ -145,6 +158,15 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
           type: ReminderType.warning,
           category: ReminderCategory.imminentAppointment,
           appointment: apt,
+          localizedMessage: (l10n) {
+            final locPatient = resolvedPatientName ?? l10n.patientWithNumber(apt.patientId);
+            final locTimeStr = minutes <= 0
+                ? l10n.startingNow
+                : minutes < 60
+                    ? l10n.startingInMinutes(minutes)
+                    : l10n.startingInHours((minutes / 60).toStringAsFixed(1));
+            return l10n.appointmentImminentReminder(locTimeStr, locPatient);
+          },
         ),
       );
     }
@@ -169,6 +191,8 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
               type: ReminderType.warning,
               category: ReminderCategory.laggingQuota,
               clinic: clinic,
+              localizedMessage: (l10n) =>
+                  l10n.quotaLaggingReminder(clinic.name, percent, totalTarget),
             ),
           );
         }
@@ -191,6 +215,8 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
         icon: Icons.schedule,
         type: ReminderType.warning,
         category: ReminderCategory.generalSchedule,
+        localizedMessage: (l10n) =>
+            l10n.todayAppointmentsReminder(pendingOrScheduledToday.length),
       ),
     );
   }
@@ -203,6 +229,8 @@ final clinicalRemindersProvider = Provider<List<ClinicalReminderItem>>((ref) {
         icon: Icons.event_note,
         type: ReminderType.info,
         category: ReminderCategory.generalSchedule,
+        localizedMessage: (l10n) =>
+            l10n.upcomingAppointmentsReminder(upcomingApts.length),
       ),
     );
   }

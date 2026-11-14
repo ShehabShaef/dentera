@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../l10n/l10n.dart';
 import '../../state/case_visits_provider.dart';
 import '../buttons/buttons.dart';
 import '../inputs/inputs.dart';
@@ -118,7 +119,7 @@ class CaseVisitTimelineWidget extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Visit ${visit.visitNumber} marked as completed'),
+                      content: Text(context.l10n.visitMarkedCompleted(visit.visitNumber)),
                       backgroundColor: AppColors.secondary,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -190,7 +191,7 @@ class CaseVisitTimelineWidget extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Visit $completedCount of $totalCount',
+                      context.l10n.visitProgress(completedCount, totalCount),
                       style: AppTextStyles.labelCaps.copyWith(
                         color: completedCount == totalCount
                             ? AppColors.onSecondaryContainer

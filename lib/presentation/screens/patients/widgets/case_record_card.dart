@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../domain/entities/entities.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 
 /// Card widget visualizing an individual clinical case record and its evaluation status.
@@ -189,7 +190,7 @@ class CaseRecordCard extends ConsumerWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Visit $completedVisits of $totalVisits',
+                          context.l10n.visitProgress(completedVisits, totalVisits),
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.onSurface,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../widgets/widgets.dart';
 import '../../patients/patient_case_sheet_screen.dart';
 
@@ -190,7 +191,7 @@ class DashboardAppointmentCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'ID: $patientId • $patientDetails',
+                              '${context.l10n.patientIdBadge(patientId)} • ${context.l10n.localizeStatus(patientDetails)}',
                               style: AppTextStyles.caption.copyWith(
                                 color: subtitleTextColor,
                               ),
@@ -204,7 +205,7 @@ class DashboardAppointmentCard extends StatelessWidget {
 
                   // View Case Button
                   SecondaryButton(
-                    text: 'View Case',
+                    text: context.l10n.viewCase,
                     height: 40,
                     icon: Icon(
                       Icons.arrow_forward_rounded,
