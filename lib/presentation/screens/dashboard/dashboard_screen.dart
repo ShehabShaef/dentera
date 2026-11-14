@@ -172,7 +172,7 @@ class DashboardScreen extends ConsumerWidget {
                             patientDetails: firstApt.status,
                             timeWindow: '${firstApt.scheduledDate.hour}:${firstApt.scheduledDate.minute.toString().padLeft(2, '0')}',
                             procedureTitle: firstApt.procedureDescription ?? 'Clinical Procedure',
-                            clinicColor: AppColors.secondary,
+                            clinicColor: isDark ? AppDarkColors.secondary : AppColors.secondary,
                             onViewCase: () {
                               AppLogger.info('Navigating to Patient Case Sheet for patient: ${firstApt.patientId}');
                               Navigator.of(context).push(
@@ -185,11 +185,13 @@ class DashboardScreen extends ConsumerWidget {
                             },
                           );
                         },
-                        loading: () => const Center(
+                        loading: () => Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24.0),
+                            padding: const EdgeInsets.symmetric(vertical: 24.0),
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDark ? AppDarkColors.primary : AppColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -221,7 +223,7 @@ class DashboardScreen extends ConsumerWidget {
                                     name: 'Patient #${apt.patientId}',
                                     timeAndClinic:
                                         '${apt.scheduledDate.hour}:${apt.scheduledDate.minute.toString().padLeft(2, '0')} • ${apt.procedureDescription ?? 'Clinic'}',
-                                    accentColor: AppColors.primary,
+                                    accentColor: isDark ? AppDarkColors.tertiary : AppColors.primary,
                                   ))
                               .toList();
 

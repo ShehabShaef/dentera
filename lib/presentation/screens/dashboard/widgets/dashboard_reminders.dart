@@ -134,7 +134,7 @@ class DashboardReminders extends ConsumerWidget {
               bgColor = isDark
                   ? AppDarkColors.surfaceContainerElevated
                   : AppColors.surfaceContainerHigh;
-              textColor = isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant;
+              textColor = isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant;
               borderColor = isDark
                   ? const Color(0xFF2A3D54)
                   : AppColors.outlineVariant.withValues(alpha: 0.3);
