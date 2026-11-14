@@ -11,18 +11,22 @@ import '../../../widgets/inputs/inputs.dart';
 import '../../../widgets/modals/modals.dart';
 
 /// Modal bottom sheet allowing dental students to edit their profile credentials
-/// (Doctor Name, University, and Academic Year).
+/// (Doctor First & Last Name, University, and Academic Year).
 ///
 /// Changes are persisted locally via [PreferencesRepository] and reactively broadcast
 /// via [userProfileProvider] to immediately refresh profile headers and identity badges.
 class EditProfileModal extends ConsumerStatefulWidget {
   const EditProfileModal({
     super.key,
+    this.initialFirstName,
+    this.initialLastName,
     this.initialName,
     this.initialUniversity,
     this.initialAcademicYear,
   });
 
+  final String? initialFirstName;
+  final String? initialLastName;
   final String? initialName;
   final String? initialUniversity;
   final String? initialAcademicYear;
@@ -30,6 +34,8 @@ class EditProfileModal extends ConsumerStatefulWidget {
   /// Convenience static method to display the [EditProfileModal] bottom sheet.
   static Future<bool?> show(
     BuildContext context, {
+    String? initialFirstName,
+    String? initialLastName,
     String? initialName,
     String? initialUniversity,
     String? initialAcademicYear,
@@ -40,6 +46,8 @@ class EditProfileModal extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => EditProfileModal(
+        initialFirstName: initialFirstName,
+        initialLastName: initialLastName,
         initialName: initialName,
         initialUniversity: initialUniversity,
         initialAcademicYear: initialAcademicYear,
@@ -53,7 +61,8 @@ class EditProfileModal extends ConsumerStatefulWidget {
 
 class _EditProfileModalState extends ConsumerState<EditProfileModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
   late final TextEditingController _universityController;
   late final TextEditingController _yearController;
 
@@ -73,18 +82,34 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
 
     // Pre-populate controllers from passed parameters or active user profile state
     final profile = ref.read(userProfileProvider).value;
-    final defaultName = widget.initialName ?? profile?.name ?? 'Dr. Shehab Shaif';
+    final String defaultFirst;
+    final String defaultLast;
+
+    if (widget.initialFirstName != null || widget.initialLastName != null) {
+      defaultFirst = widget.initialFirstName ?? '';
+      defaultLast = widget.initialLastName ?? '';
+    } else if (widget.initialName != null) {
+      final split = PreferencesRepository.splitFullName(widget.initialName!);
+      defaultFirst = split.$1;
+      defaultLast = split.$2;
+    } else {
+      defaultFirst = profile?.firstName ?? 'Shehab';
+      defaultLast = profile?.lastName ?? 'Shaif';
+    }
+
     final defaultUni = widget.initialUniversity ?? profile?.university ?? 'Dental School';
     final defaultYear = widget.initialAcademicYear ?? profile?.academicYear ?? '5th Year';
 
-    _nameController = TextEditingController(text: defaultName);
+    _firstNameController = TextEditingController(text: defaultFirst);
+    _lastNameController = TextEditingController(text: defaultLast);
     _universityController = TextEditingController(text: defaultUni);
     _yearController = TextEditingController(text: defaultYear);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _universityController.dispose();
     _yearController.dispose();
     super.dispose();
@@ -97,13 +122,15 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
       _isSaving = true;
     });
 
-    final name = _nameController.text.trim();
+    final firstName = PreferencesRepository.stripDoctorPrefix(_firstNameController.text.trim());
+    final lastName = PreferencesRepository.stripDoctorPrefix(_lastNameController.text.trim());
     final university = _universityController.text.trim();
     final academicYear = _yearController.text.trim();
 
     try {
       await ref.read(userProfileProvider.notifier).updateProfile(
-            name: name,
+            firstName: firstName,
+            lastName: lastName,
             university: university,
             academicYear: academicYear,
           );
@@ -146,10 +173,12 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
       ),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
             // Drag handle
             Center(
               child: Container(
@@ -238,20 +267,86 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Doctor Name field
-            DenteraTextField(
-              controller: _nameController,
-              label: 'Clinician Name',
-              hintText: 'e.g. Dr. Shehab Shaif',
-              textCapitalization: TextCapitalization.words,
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) {
-                  return 'Clinician name is required';
-                }
-                return null;
-              },
+            // Static "Dr." Prefix Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Dr.',
+                      style: AppTextStyles.labelCaps.copyWith(
+                        color: AppColors.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Prefix added automatically. Please enter your first and last name.',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Doctor First & Last Name fields
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: DenteraTextField(
+                    controller: _firstNameController,
+                    label: 'First Name',
+                    hintText: 'e.g. Shehab',
+                    textCapitalization: TextCapitalization.words,
+                    validator: (val) {
+                      final clean = PreferencesRepository.stripDoctorPrefix(val ?? '');
+                      if (clean.trim().isEmpty) {
+                        return 'First name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DenteraTextField(
+                    controller: _lastNameController,
+                    label: 'Last Name',
+                    hintText: 'e.g. Shaif',
+                    textCapitalization: TextCapitalization.words,
+                    validator: (val) {
+                      final clean = PreferencesRepository.stripDoctorPrefix(val ?? '');
+                      if (clean.trim().isEmpty) {
+                        return 'Last name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -314,7 +409,8 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   bool get _isTestEnvironment =>
@@ -328,7 +424,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
     final file = hasAvatar ? File(avatarPath) : null;
     final fileExists = file != null && file.existsSync();
 
-    final clean = _nameController.text.replaceAll(RegExp(r'^Dr\.\s*', caseSensitive: false), '').trim();
+    final clean = PreferencesRepository.stripDoctorPrefix(_firstNameController.text).trim();
     final initial = clean.isNotEmpty ? clean[0].toUpperCase() : 'D';
 
     return Container(

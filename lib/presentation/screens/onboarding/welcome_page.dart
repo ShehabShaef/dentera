@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/repositories/preferences_repository.dart';
 import '../../../l10n/l10n.dart';
 import '../../widgets/widgets.dart';
 
-/// Step 1 of Onboarding: Welcome & Doctor Name.
+/// Step 1 of Onboarding: Welcome & Doctor Name (First & Last Name with programmatic Dr. prefix).
 class WelcomePage extends StatefulWidget {
   const WelcomePage({
     super.key,
-    required this.nameController,
+    this.nameController,
+    this.firstNameController,
+    this.lastNameController,
     required this.onContinue,
     this.onContinueAsGuest,
     this.isLoading = false,
   });
 
-  final TextEditingController nameController;
+  final TextEditingController? nameController;
+  final TextEditingController? firstNameController;
+  final TextEditingController? lastNameController;
   final VoidCallback onContinue;
   final VoidCallback? onContinueAsGuest;
   final bool isLoading;
@@ -24,9 +29,52 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _firstCtrl;
+  late final TextEditingController _lastCtrl;
+  bool _createdInternalFirst = false;
+  bool _createdInternalLast = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.firstNameController != null) {
+      _firstCtrl = widget.firstNameController!;
+    } else if (widget.nameController != null) {
+      final split = PreferencesRepository.splitFullName(widget.nameController!.text);
+      _firstCtrl = TextEditingController(text: split.$1);
+      _createdInternalFirst = true;
+    } else {
+      _firstCtrl = TextEditingController();
+      _createdInternalFirst = true;
+    }
+
+    if (widget.lastNameController != null) {
+      _lastCtrl = widget.lastNameController!;
+    } else if (widget.nameController != null) {
+      final split = PreferencesRepository.splitFullName(widget.nameController!.text);
+      _lastCtrl = TextEditingController(text: split.$2);
+      _createdInternalLast = true;
+    } else {
+      _lastCtrl = TextEditingController();
+      _createdInternalLast = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_createdInternalFirst) _firstCtrl.dispose();
+    if (_createdInternalLast) _lastCtrl.dispose();
+    super.dispose();
+  }
 
   void _handleContinue() {
     if (_formKey.currentState?.validate() ?? false) {
+      // Sync legacy nameController if present
+      if (widget.nameController != null) {
+        final cleanFirst = PreferencesRepository.stripDoctorPrefix(_firstCtrl.text);
+        final cleanLast = PreferencesRepository.stripDoctorPrefix(_lastCtrl.text);
+        widget.nameController!.text = '$cleanFirst $cleanLast'.trim();
+      }
       widget.onContinue();
     }
   }
@@ -73,26 +121,99 @@ class _WelcomePageState extends State<WelcomePage> {
                       color: AppColors.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // Input Field
-                  DenteraTextField(
-                    label: context.l10n.fullName,
-                    hintText: 'Dr. First Name Last Name',
-                    controller: widget.nameController,
-                    textInputAction: TextInputAction.next,
-                    prefixIcon: const Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.outline,
-                      size: 20,
+                  // Static "Dr." Prefix Banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return context.l10n.pleaseEnterYourName;
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _handleContinue(),
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Dr.',
+                            style: AppTextStyles.labelCaps.copyWith(
+                              color: AppColors.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Prefix added automatically. Please enter your first and last name.',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Two Required Fields: First Name & Last Name
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(
+                        child: DenteraTextField(
+                          label: 'First Name',
+                          hintText: 'e.g. Shehab',
+                          controller: _firstCtrl,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.words,
+                          prefixIcon: const Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.outline,
+                            size: 20,
+                          ),
+                          validator: (value) {
+                            final clean = PreferencesRepository.stripDoctorPrefix(value ?? '');
+                            if (clean.trim().isEmpty) {
+                              return 'First name required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DenteraTextField(
+                          label: 'Last Name',
+                          hintText: 'e.g. Shaif',
+                          controller: _lastCtrl,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.words,
+                          prefixIcon: const Icon(
+                            Icons.badge_outlined,
+                            color: AppColors.outline,
+                            size: 20,
+                          ),
+                          validator: (value) {
+                            final clean = PreferencesRepository.stripDoctorPrefix(value ?? '');
+                            if (clean.trim().isEmpty) {
+                              return 'Last name required';
+                            }
+                            return null;
+                          },
+                          onFieldSubmitted: (_) => _handleContinue(),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 

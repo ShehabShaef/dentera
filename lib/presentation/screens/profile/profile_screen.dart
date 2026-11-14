@@ -258,14 +258,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final currentLocale = ref.watch(localeProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
     final userProfile = userProfileAsync.valueOrNull ??
         const UserProfile(
-          name: 'Dr. Shehab Shaif',
+          firstName: 'Shehab',
+          lastName: 'Shaif',
           university: 'Dental School',
           academicYear: '5th Year',
         );
-    final doctorName = userProfile.name;
+    final doctorName = userProfile.formattedFullDoctorName(currentLocale);
     final academicYear = userProfile.academicYear;
     final university = userProfile.university;
     final subtitle = '$academicYear Clinical Student • $university';
@@ -277,7 +279,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       ThemeMode.dark => context.l10n.dark,
     };
 
-    final currentLocale = ref.watch(localeProvider);
     final languageLabel = switch (currentLocale) {
       'ar' => context.l10n.arabic,
       _ => context.l10n.english,

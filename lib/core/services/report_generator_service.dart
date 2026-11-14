@@ -115,7 +115,7 @@ class ReportGeneratorService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(36),
         header: (pw.Context context) => _buildPdfHeader(data, formattedDate),
-        footer: (pw.Context context) => _buildPdfFooter(context),
+        footer: (pw.Context context) => _buildPdfFooter(context, data),
         build: (pw.Context context) => <pw.Widget>[
           pw.SizedBox(height: 12),
 
@@ -176,13 +176,27 @@ class ReportGeneratorService {
     );
   }
 
-  pw.Widget _buildPdfFooter(pw.Context context) {
+  static String _formatDoctorName(String raw) {
+    final clean = raw.replaceAll(RegExp(r'^(dr\.|dr|doctor|د\.|د/|د)\s*', caseSensitive: false), '').trim();
+    if (clean.isEmpty) return 'Dr. Doctor';
+    return 'Dr. $clean';
+  }
+
+  pw.Widget _buildPdfFooter(pw.Context context, QuotaReportData data) {
     return pw.Container(
-      alignment: pw.Alignment.centerRight,
       margin: const pw.EdgeInsets.only(top: 12),
-      child: pw.Text(
-        'Page ${context.pageNumber} of ${context.pagesCount} • Dentera Academic Compliance',
-        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: <pw.Widget>[
+          pw.Text(
+            _formatDoctorName(data.doctorName),
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          ),
+          pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount} • Dentera Academic Compliance',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          ),
+        ],
       ),
     );
   }
@@ -201,7 +215,7 @@ class ReportGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: <pw.Widget>[
-                _metadataRow('Clinician Name:', data.doctorName),
+                _metadataRow('Clinician Name:', _formatDoctorName(data.doctorName)),
                 pw.SizedBox(height: 4),
                 _metadataRow('Institution:', data.university),
               ],
@@ -548,7 +562,7 @@ class ReportGeneratorService {
 
     // Metadata header
     buffer.writeln('"DENTERA CLINICAL SUPERVISORY REPORT"');
-    buffer.writeln('"Clinician Name",${_csvEscape(data.doctorName)}');
+    buffer.writeln('"Clinician Name",${_csvEscape(_formatDoctorName(data.doctorName))}');
     buffer.writeln('"Institution",${_csvEscape(data.university)}');
     buffer.writeln('"Academic Year",${_csvEscape(data.academicYear)}');
     buffer.writeln('"Date Range",${_csvEscape(data.dateRangeLabel)}');

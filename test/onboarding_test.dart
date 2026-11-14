@@ -30,6 +30,8 @@ void main() {
       );
 
       expect(await repo.hasCompletedOnboarding(), isTrue);
+      expect(await repo.getDoctorFirstName(), 'John');
+      expect(await repo.getDoctorLastName(), 'Watson');
       expect(await repo.getDoctorName(), 'Dr. John Watson');
       expect(await repo.getUniversity(), 'London Dental School');
       expect(await repo.getAcademicYear(), '5th Year');
@@ -41,7 +43,8 @@ void main() {
     test('saveUserProfile for guest user initializes default values', () async {
       final repo = PreferencesRepository();
       await repo.saveUserProfile(
-        name: 'Dr. Guest',
+        firstName: 'Guest',
+        lastName: '',
         university: 'Guest Dental University',
         academicYear: 'guest Year',
       );
@@ -54,7 +57,7 @@ void main() {
   });
 
   group('Onboarding Flow Widget Tests', () {
-    testWidgets('Welcome page enforces non-empty name validation', (WidgetTester tester) async {
+    testWidgets('Welcome page enforces non-empty first and last name validation', (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(
@@ -74,34 +77,42 @@ void main() {
         ),
       );
 
-      // Verify Step 1 is displayed
+      // Verify Step 1 is displayed with Dr. badge and separate First/Last Name inputs
       expect(find.text('Welcome, Doctor.'), findsOneWidget);
-      expect(find.text('Please enter your name'), findsNothing);
+      expect(find.text('Dr.'), findsOneWidget);
+      expect(find.text('First Name'), findsOneWidget);
+      expect(find.text('Last Name'), findsOneWidget);
+      expect(find.text('First name required'), findsNothing);
 
-      // Attempt to continue with blank name
+      // Attempt to continue with blank fields
       await tester.tap(find.widgetWithText(PrimaryButton, 'Continue'));
       await tester.pumpAndSettle();
 
       // Verify validation error is shown and page has NOT advanced
-      expect(find.text('Please enter your name'), findsOneWidget);
+      expect(find.text('First name required'), findsOneWidget);
       expect(find.text('Your Institution'), findsNothing);
 
       // Enter only whitespace
-      await tester.enterText(find.byType(DenteraTextField), '   ');
+      final firstField = find.widgetWithText(DenteraTextField, 'First Name');
+      final lastField = find.widgetWithText(DenteraTextField, 'Last Name');
+
+      await tester.enterText(firstField, '   ');
+      await tester.enterText(lastField, '   ');
       await tester.tap(find.widgetWithText(PrimaryButton, 'Continue'));
       await tester.pumpAndSettle();
 
       // Verify validation error remains and still on Step 1
-      expect(find.text('Please enter your name'), findsOneWidget);
+      expect(find.text('First name required'), findsOneWidget);
       expect(find.text('Your Institution'), findsNothing);
 
-      // Enter a valid name
-      await tester.enterText(find.byType(DenteraTextField), 'Dr. Strange');
+      // Enter valid name (with accidental Dr. typed which will be stripped)
+      await tester.enterText(firstField, 'Dr. Stephen');
+      await tester.enterText(lastField, 'Strange');
       await tester.tap(find.widgetWithText(PrimaryButton, 'Continue'));
       await tester.pumpAndSettle();
 
       // Now successfully advanced to Step 2
-      expect(find.text('Please enter your name'), findsNothing);
+      expect(find.text('First name required'), findsNothing);
       expect(find.text('Your Institution'), findsOneWidget);
     });
 
@@ -144,7 +155,7 @@ void main() {
       expect(await repo.getAcademicYear(), 'guest Year');
     });
 
-    testWidgets('Full 3-step onboarding flow navigation and submission', (WidgetTester tester) async {
+    testWidgets('Full 3-step onboarding flow navigation and submission with First and Last Name', (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
 
       await tester.pumpWidget(
@@ -166,10 +177,15 @@ void main() {
 
       // Step 1: Welcome
       expect(find.text('Welcome, Doctor.'), findsOneWidget);
-      expect(find.text('Full Name'), findsOneWidget);
+      expect(find.text('First Name'), findsOneWidget);
+      expect(find.text('Last Name'), findsOneWidget);
 
-      // Fill in Name
-      await tester.enterText(find.byType(DenteraTextField), 'Dr. Alexander Fleming');
+      // Fill in First Name (with accidental Dr. typed) and Last Name
+      final firstField = find.widgetWithText(DenteraTextField, 'First Name');
+      final lastField = find.widgetWithText(DenteraTextField, 'Last Name');
+
+      await tester.enterText(firstField, 'Dr. Alexander');
+      await tester.enterText(lastField, 'Fleming');
       await tester.pumpAndSettle();
 
       // Tap Continue to Step 2
@@ -209,6 +225,8 @@ void main() {
       // Verify SharedPreferences persisted values
       final repo = PreferencesRepository();
       expect(await repo.hasCompletedOnboarding(), isTrue);
+      expect(await repo.getDoctorFirstName(), 'Alexander');
+      expect(await repo.getDoctorLastName(), 'Fleming');
       expect(await repo.getDoctorName(), 'Dr. Alexander Fleming');
       expect(await repo.getUniversity(), "St Mary's Hospital Medical School");
       expect(await repo.getAcademicYear(), '5th Year');
@@ -219,14 +237,16 @@ void main() {
     testWidgets('triggers validator and does not call onContinue when empty', (WidgetTester tester) async {
       bool continueCalled = false;
       bool guestCalled = false;
-      final controller = TextEditingController();
+      final firstController = TextEditingController();
+      final lastController = TextEditingController();
 
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.lightTheme,
           home: Scaffold(
             body: WelcomePage(
-              nameController: controller,
+              firstNameController: firstController,
+              lastNameController: lastController,
               onContinue: () => continueCalled = true,
               onContinueAsGuest: () => guestCalled = true,
             ),
@@ -239,7 +259,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(continueCalled, isFalse);
-      expect(find.text('Please enter your name'), findsOneWidget);
+      expect(find.text('First name required'), findsOneWidget);
 
       // Tap Continue as a guest
       await tester.tap(find.widgetWithText(TextButton, 'Continue as a guest'));
@@ -247,8 +267,9 @@ void main() {
 
       expect(guestCalled, isTrue);
 
-      // Enter name and tap Continue
-      await tester.enterText(find.byType(DenteraTextField), 'Dr. Test');
+      // Enter first and last name and tap Continue
+      await tester.enterText(find.widgetWithText(DenteraTextField, 'First Name'), 'Sarah');
+      await tester.enterText(find.widgetWithText(DenteraTextField, 'Last Name'), 'Connor');
       await tester.tap(find.widgetWithText(PrimaryButton, 'Continue'));
       await tester.pumpAndSettle();
 
