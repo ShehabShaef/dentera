@@ -1454,4 +1454,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreDatabaseBackupTitle => 'Restore Database Backup?';
+
+  @override
+  String get viewCase => 'View Case';
+
+  @override
+  String patientIdBadge(String id) {
+    return 'ID: $id';
+  }
+
+  @override
+  String patientWithNumber(String id) {
+    return 'Patient #$id';
+  }
+
+  @override
+  String get quotaStatsUnavailable => 'Quota Statistics Unavailable';
+
+  @override
+  String get couldNotRetrieveProgress =>
+      'Could not retrieve departmental progress.';
+
+  @override
+  String get appointmentsUnavailable => 'Appointments Unavailable';
+
+  @override
+  String get couldNotLoadTodayAppointments =>
+      'Could not load today\'s scheduled appointments.';
+
+  @override
+  String get upcomingPatientsUnavailable => 'Upcoming Patients Unavailable';
+
+  @override
+  String get couldNotRetrieveUpcomingSchedule =>
+      'Could not retrieve tomorrow\'s patient schedule.';
+
+  @override
+  String overdueCaseReminder(String caseDescriptor, int days) {
+    return '$caseDescriptor: overdue ($days days in progress)';
+  }
+
+  @override
+  String get caseDescriptorFallback => 'Case';
+
+  @override
+  String get startingNow => 'starting now';
+
+  @override
+  String startingInMinutes(int minutes) {
+    return 'starting in ${minutes}m';
+  }
+
+  @override
+  String startingInHours(String hours) {
+    return 'starting in ${hours}h';
+  }
+
+  @override
+  String appointmentImminentReminder(String timeStr, String patientLabel) {
+    return 'Appointment $timeStr ($patientLabel)';
+  }
+
+  @override
+  String quotaLaggingReminder(String clinicName, int percent, int target) {
+    return '$clinicName quota lagging ($percent% / Target: $target)';
+  }
+
+  @override
+  String todayAppointmentsReminder(int count) {
+    return '$count appointment(s) scheduled today';
+  }
+
+  @override
+  String upcomingAppointmentsReminder(int count) {
+    return '$count upcoming appointment(s) scheduled';
+  }
+
+  @override
+  String visitProgress(int current, int total) {
+    return 'Visit $current of $total';
+  }
+
+  @override
+  String visitMarkedCompleted(int number) {
+    return 'Visit $number marked as completed';
+  }
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String dashboardSubtitle(String today, String year, String clinics) {
+    return '$today • $year $clinics';
+  }
 }

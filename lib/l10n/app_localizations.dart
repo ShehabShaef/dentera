@@ -2803,6 +2803,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore Database Backup?'**
   String get restoreDatabaseBackupTitle;
+
+  /// No description provided for @viewCase.
+  ///
+  /// In en, this message translates to:
+  /// **'View Case'**
+  String get viewCase;
+
+  /// No description provided for @patientIdBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'ID: {id}'**
+  String patientIdBadge(String id);
+
+  /// No description provided for @patientWithNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient #{id}'**
+  String patientWithNumber(String id);
+
+  /// No description provided for @quotaStatsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota Statistics Unavailable'**
+  String get quotaStatsUnavailable;
+
+  /// No description provided for @couldNotRetrieveProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not retrieve departmental progress.'**
+  String get couldNotRetrieveProgress;
+
+  /// No description provided for @appointmentsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments Unavailable'**
+  String get appointmentsUnavailable;
+
+  /// No description provided for @couldNotLoadTodayAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load today\'s scheduled appointments.'**
+  String get couldNotLoadTodayAppointments;
+
+  /// No description provided for @upcomingPatientsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Patients Unavailable'**
+  String get upcomingPatientsUnavailable;
+
+  /// No description provided for @couldNotRetrieveUpcomingSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not retrieve tomorrow\'s patient schedule.'**
+  String get couldNotRetrieveUpcomingSchedule;
+
+  /// No description provided for @overdueCaseReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'{caseDescriptor}: overdue ({days} days in progress)'**
+  String overdueCaseReminder(String caseDescriptor, int days);
+
+  /// No description provided for @caseDescriptorFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Case'**
+  String get caseDescriptorFallback;
+
+  /// No description provided for @startingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'starting now'**
+  String get startingNow;
+
+  /// No description provided for @startingInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'starting in {minutes}m'**
+  String startingInMinutes(int minutes);
+
+  /// No description provided for @startingInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'starting in {hours}h'**
+  String startingInHours(String hours);
+
+  /// No description provided for @appointmentImminentReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment {timeStr} ({patientLabel})'**
+  String appointmentImminentReminder(String timeStr, String patientLabel);
+
+  /// No description provided for @quotaLaggingReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'{clinicName} quota lagging ({percent}% / Target: {target})'**
+  String quotaLaggingReminder(String clinicName, int percent, int target);
+
+  /// No description provided for @todayAppointmentsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} appointment(s) scheduled today'**
+  String todayAppointmentsReminder(int count);
+
+  /// No description provided for @upcomingAppointmentsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} upcoming appointment(s) scheduled'**
+  String upcomingAppointmentsReminder(int count);
+
+  /// No description provided for @visitProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit {current} of {total}'**
+  String visitProgress(int current, int total);
+
+  /// No description provided for @visitMarkedCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit {number} marked as completed'**
+  String visitMarkedCompleted(int number);
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @dashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{today} • {year} {clinics}'**
+  String dashboardSubtitle(String today, String year, String clinics);
 }
 
 class _AppLocalizationsDelegate

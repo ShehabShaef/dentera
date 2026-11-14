@@ -179,6 +179,73 @@ void main() {
       expect(pdfBytes.sublist(0, 5), equals(<int>[0x25, 0x50, 0x44, 0x46, 0x2D]));
     });
 
+    test('generatePdfReport successfully renders Arabic characters without glyph errors', () async {
+      final arabicClinics = <Clinic>[
+        const Clinic(
+          id: 'clinic-pedodontics',
+          name: 'طب أسنان الأطفال',
+          academicYear: 'السنة الخامسة',
+          colorHex: '#0D9488',
+        ),
+      ];
+      final arabicRequirements = <Requirement>[
+        const Requirement(
+          id: 'req-pulpotomy',
+          clinicId: 'clinic-pedodontics',
+          title: 'بتر اللب الحيوي (Pulpotomy)',
+          targetCount: 4,
+          completedCount: 2,
+        ),
+      ];
+      final arabicPatients = <Patient>[
+        Patient(
+          id: 'pat-ar-1',
+          name: 'أحمد علي منصور',
+          phoneNumber: '777123456',
+          gender: 'Male',
+          age: 9,
+          createdAt: DateTime(2026, 3, 1),
+        ),
+      ];
+      final arabicCases = <CaseRecord>[
+        CaseRecord(
+          id: 'case-ar-1',
+          patientId: 'pat-ar-1',
+          requirementId: 'req-pulpotomy',
+          status: 'Evaluated',
+          notes: 'تم علاج السن بنجاح',
+          dateStarted: DateTime(2026, 4, 1, 10, 0),
+          dateCompleted: DateTime(2026, 4, 1, 10, 45),
+        ),
+      ];
+
+      final arabicData = QuotaReportData(
+        doctorName: 'د. شهاب شائف',
+        university: 'جامعة صنعاء - كلية طب الأسنان',
+        academicYear: 'السنة الخامسة',
+        generatedDate: DateTime(2026, 9, 1),
+        clinics: arabicClinics,
+        requirements: arabicRequirements,
+        cases: arabicCases,
+        patients: arabicPatients,
+      );
+
+      final pdfBytes = await service.generatePdfReport(arabicData);
+
+      expect(pdfBytes, isNotEmpty);
+      // Valid PDF magic bytes (%PDF-)
+      expect(pdfBytes.sublist(0, 5), equals(<int>[0x25, 0x50, 0x44, 0x46, 0x2D]));
+    });
+
+    test('hasArabicCharacters identifies Arabic text and scripts accurately', () {
+      expect(ReportGeneratorService.hasArabicCharacters('شهاب شائف'), isTrue);
+      expect(ReportGeneratorService.hasArabicCharacters('د. أحمد'), isTrue);
+      expect(ReportGeneratorService.hasArabicCharacters('Dr. Shehab Shaif'), isFalse);
+      expect(ReportGeneratorService.hasArabicCharacters('Pulpotomy (بتر اللب)'), isTrue);
+      expect(ReportGeneratorService.hasArabicCharacters(''), isFalse);
+      expect(ReportGeneratorService.hasArabicCharacters(null), isFalse);
+    });
+
     test('generateCsvReport generates formatted spreadsheet with proper headers and escaping', () {
       final data = QuotaReportData(
         doctorName: 'Dr. Shehab "Pro" Shaif',
@@ -192,6 +259,9 @@ void main() {
       );
 
       final csv = service.generateCsvReport(data);
+
+      // Verify UTF-8 BOM is prepended for Excel compatibility
+      expect(csv.startsWith('\uFEFF'), isTrue);
 
       // Verify metadata header
       expect(csv, contains('"DENTERA CLINICAL SUPERVISORY REPORT"'));
@@ -211,6 +281,43 @@ void main() {
       expect(csv, contains('"Case ID","Patient ID","Patient Name","Department","Requirement","Status","Date Started","Date Completed"'));
       expect(csv, contains('"case-001","pat-1","Jane Doe","Endodontics","Molar Root Canal Treatment","Evaluated"'));
       expect(csv, contains('"case-002","pat-2","John Smith, Jr.","Oral Surgery","Simple Extraction","Evaluated"'));
+    });
+
+    test('generateCsvReport prepends UTF-8 BOM and encodes Arabic content cleanly', () {
+      final arabicData = QuotaReportData(
+        doctorName: 'د. شهاب شائف',
+        university: 'جامعة صنعاء',
+        academicYear: 'السنة الخامسة',
+        generatedDate: DateTime(2026, 9, 1),
+        clinics: const [
+          Clinic(id: 'c-1', name: 'طب الأطفال', academicYear: '5th Year', colorHex: '#000000'),
+        ],
+        requirements: const [
+          Requirement(id: 'r-1', clinicId: 'c-1', title: 'علاج عصب', targetCount: 5, completedCount: 3),
+        ],
+        cases: [
+          CaseRecord(
+            id: 'case-ar',
+            patientId: 'p-ar',
+            requirementId: 'r-1',
+            status: 'Evaluated',
+            dateStarted: DateTime(2026, 5, 1),
+            dateCompleted: DateTime(2026, 5, 1),
+          ),
+        ],
+        patients: [
+          Patient(id: 'p-ar', name: 'علي حسن', phoneNumber: '123', gender: 'Male', age: 10, createdAt: DateTime(2026, 1, 1)),
+        ],
+      );
+
+      final csv = service.generateCsvReport(arabicData);
+
+      expect(csv.startsWith('\uFEFF'), isTrue);
+      expect(csv, contains('"Clinician Name","د. شهاب شائف"'));
+      expect(csv, contains('"Institution","جامعة صنعاء"'));
+      expect(csv, contains('"طب الأطفال"'));
+      expect(csv, contains('"علاج عصب"'));
+      expect(csv, contains('"علي حسن"'));
     });
 
     test('reportGeneratorServiceProvider resolves successfully', () {

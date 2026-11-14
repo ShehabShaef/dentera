@@ -1447,4 +1447,95 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get restoreDatabaseBackupTitle =>
       'استعادة النسخة الاحتياطية لقاعدة البيانات؟';
+
+  @override
+  String get viewCase => 'عرض الحالة';
+
+  @override
+  String patientIdBadge(String id) {
+    return 'المعرف: $id';
+  }
+
+  @override
+  String patientWithNumber(String id) {
+    return 'مريض #$id';
+  }
+
+  @override
+  String get quotaStatsUnavailable => 'إحصائيات النصاب غير متوفرة';
+
+  @override
+  String get couldNotRetrieveProgress => 'تعذر استرداد تقدم الأقسام السريرية.';
+
+  @override
+  String get appointmentsUnavailable => 'المواعيد غير متوفرة';
+
+  @override
+  String get couldNotLoadTodayAppointments =>
+      'تعذر تحميل مواعيد اليوم المجدولة.';
+
+  @override
+  String get upcomingPatientsUnavailable => 'المرضى القادمون غير متوفرين';
+
+  @override
+  String get couldNotRetrieveUpcomingSchedule => 'تعذر استرداد جدول مرضى الغد.';
+
+  @override
+  String overdueCaseReminder(String caseDescriptor, int days) {
+    return '$caseDescriptor: متأخرة ($days يوم قيد التنفيذ)';
+  }
+
+  @override
+  String get caseDescriptorFallback => 'حالة';
+
+  @override
+  String get startingNow => 'يبدأ الآن';
+
+  @override
+  String startingInMinutes(int minutes) {
+    return 'يبدأ خلال $minutes دقيقة';
+  }
+
+  @override
+  String startingInHours(String hours) {
+    return 'يبدأ خلال $hours ساعة';
+  }
+
+  @override
+  String appointmentImminentReminder(String timeStr, String patientLabel) {
+    return 'موعد $timeStr ($patientLabel)';
+  }
+
+  @override
+  String quotaLaggingReminder(String clinicName, int percent, int target) {
+    return 'تأخر نصاب $clinicName ($percent٪ / المستهدف: $target)';
+  }
+
+  @override
+  String todayAppointmentsReminder(int count) {
+    return '$count موعد مجدول اليوم';
+  }
+
+  @override
+  String upcomingAppointmentsReminder(int count) {
+    return '$count موعد قادم مجدول';
+  }
+
+  @override
+  String visitProgress(int current, int total) {
+    return 'الزيارة $current من $total';
+  }
+
+  @override
+  String visitMarkedCompleted(int number) {
+    return 'تم تحديد الزيارة $number كمكتملة';
+  }
+
+  @override
+  String get statusPending => 'قيد الانتظار';
+
+  @override
+  String dashboardSubtitle(String today, String year, String clinics) {
+    return '$today • عيادات $year';
+  }
 }

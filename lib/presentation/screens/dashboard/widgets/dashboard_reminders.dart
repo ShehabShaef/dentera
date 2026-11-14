@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../state/state.dart';
 import '../../clinics/clinic_details_screen.dart';
 import '../../patients/patient_case_sheet_screen.dart';
@@ -163,7 +164,7 @@ class DashboardReminders extends ConsumerWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      item.message,
+                      item.getMessage(context.l10n),
                       style: AppTextStyles.caption.copyWith(
                         color: textColor,
                         fontWeight: FontWeight.w600,

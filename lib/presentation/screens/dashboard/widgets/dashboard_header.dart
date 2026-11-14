@@ -54,7 +54,13 @@ class DashboardHeader extends ConsumerWidget {
         : (hour < 12
             ? context.l10n.goodMorning
             : (hour < 17 ? context.l10n.goodAfternoon : context.l10n.goodEvening));
-    final effectiveSubtitle = dateSubtitle ?? '${context.l10n.today} • $academicYear ${context.l10n.clinics}';
+    final localizedYear = context.l10n.localizeAcademicYear(academicYear);
+    final effectiveSubtitle = dateSubtitle ??
+        context.l10n.dashboardSubtitle(
+          context.l10n.today,
+          localizedYear,
+          context.l10n.clinics,
+        );
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

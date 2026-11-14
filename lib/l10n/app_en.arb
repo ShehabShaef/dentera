@@ -566,5 +566,94 @@
     }
   },
   "deleteSelected": "Delete Selected",
-  "restoreDatabaseBackupTitle": "Restore Database Backup?"
+  "restoreDatabaseBackupTitle": "Restore Database Backup?",
+  "viewCase": "View Case",
+  "patientIdBadge": "ID: {id}",
+  "@patientIdBadge": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "patientWithNumber": "Patient #{id}",
+  "@patientWithNumber": {
+    "placeholders": {
+      "id": { "type": "String" }
+    }
+  },
+  "quotaStatsUnavailable": "Quota Statistics Unavailable",
+  "couldNotRetrieveProgress": "Could not retrieve departmental progress.",
+  "appointmentsUnavailable": "Appointments Unavailable",
+  "couldNotLoadTodayAppointments": "Could not load today's scheduled appointments.",
+  "upcomingPatientsUnavailable": "Upcoming Patients Unavailable",
+  "couldNotRetrieveUpcomingSchedule": "Could not retrieve tomorrow's patient schedule.",
+  "overdueCaseReminder": "{caseDescriptor}: overdue ({days} days in progress)",
+  "@overdueCaseReminder": {
+    "placeholders": {
+      "caseDescriptor": { "type": "String" },
+      "days": { "type": "int" }
+    }
+  },
+  "caseDescriptorFallback": "Case",
+  "startingNow": "starting now",
+  "startingInMinutes": "starting in {minutes}m",
+  "@startingInMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "startingInHours": "starting in {hours}h",
+  "@startingInHours": {
+    "placeholders": {
+      "hours": { "type": "String" }
+    }
+  },
+  "appointmentImminentReminder": "Appointment {timeStr} ({patientLabel})",
+  "@appointmentImminentReminder": {
+    "placeholders": {
+      "timeStr": { "type": "String" },
+      "patientLabel": { "type": "String" }
+    }
+  },
+  "quotaLaggingReminder": "{clinicName} quota lagging ({percent}% / Target: {target})",
+  "@quotaLaggingReminder": {
+    "placeholders": {
+      "clinicName": { "type": "String" },
+      "percent": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "todayAppointmentsReminder": "{count} appointment(s) scheduled today",
+  "@todayAppointmentsReminder": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "upcomingAppointmentsReminder": "{count} upcoming appointment(s) scheduled",
+  "@upcomingAppointmentsReminder": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "visitProgress": "Visit {current} of {total}",
+  "@visitProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "visitMarkedCompleted": "Visit {number} marked as completed",
+  "@visitMarkedCompleted": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "statusPending": "Pending",
+  "dashboardSubtitle": "{today} • {year} {clinics}",
+  "@dashboardSubtitle": {
+    "placeholders": {
+      "today": { "type": "String" },
+      "year": { "type": "String" },
+      "clinics": { "type": "String" }
+    }
+  }
 }
