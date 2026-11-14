@@ -99,6 +99,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _quotaController = TextEditingController(text: '5');
+  final TextEditingController _notesController = TextEditingController();
 
   late String _selectedProcedure;
   bool _isSubmitting = false;
@@ -116,6 +117,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
   void dispose() {
     _titleController.dispose();
     _quotaController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -142,6 +144,8 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
 
     final title = isOther ? _titleController.text.trim() : _selectedProcedure;
     final targetCount = int.parse(_quotaController.text.trim());
+    final rawNotes = _notesController.text.trim();
+    final notes = rawNotes.isNotEmpty ? rawNotes : null;
 
     // Generate collision-free UUID v4 for the new requirement record.
     // Offline-first SQLite requires client-side primary key generation that guarantees
@@ -155,6 +159,7 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
       title: title,
       targetCount: targetCount,
       completedCount: 0,
+      notes: notes,
     );
 
     try {
@@ -334,9 +339,20 @@ class _AddRequirementModalState extends ConsumerState<AddRequirementModal> {
                 ],
                 validator: AddRequirementModal.validateQuota,
               ),
+              const SizedBox(height: 16),
+
+              // 5. Notes (Optional) Field
+              DenteraTextField(
+                controller: _notesController,
+                label: context.l10n.requirementNotesOptional,
+                hintText: context.l10n.requirementNotesHint,
+                prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
               const SizedBox(height: 28),
 
-              // 5. Action Buttons
+              // 6. Action Buttons
               Row(
                 children: <Widget>[
                   Expanded(

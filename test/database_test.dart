@@ -59,6 +59,7 @@ void main() {
               title TEXT NOT NULL,
               targetCount INTEGER NOT NULL,
               completedCount INTEGER NOT NULL DEFAULT 0,
+              notes TEXT,
               FOREIGN KEY (clinicId) REFERENCES clinics (id) ON DELETE CASCADE
             );
           ''');

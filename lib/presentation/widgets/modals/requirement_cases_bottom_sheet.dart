@@ -135,6 +135,31 @@ class RequirementCasesBottomSheet extends ConsumerWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        if (requirement.notes != null && requirement.notes!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Icon(
+                                Icons.notes_rounded,
+                                size: 13,
+                                color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  requirement.notes!.trim(),
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

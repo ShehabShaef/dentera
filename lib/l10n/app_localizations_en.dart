@@ -954,6 +954,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Clinical Notes / Tooth Number (Optional)';
 
   @override
+  String get requirementNotesOptional => 'Notes (Optional)';
+
+  @override
+  String get requirementNotesHint =>
+      'Add clinical rules, supervisor guidelines, or requirement notes...';
+
+  @override
   String get pleaseSelectPatient => 'Please select a patient';
 
   @override

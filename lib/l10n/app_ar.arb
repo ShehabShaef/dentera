@@ -313,6 +313,8 @@
   "appointmentStatus": "حالة الموعد",
   "procedureAndClinicalNotes": "الإجراء والملاحظات السريرية",
   "clinicalNotesOptional": "ملاحظات سريرية / رقم السن (اختياري)",
+  "requirementNotesOptional": "ملاحظات (اختياري)",
+  "requirementNotesHint": "أضف قواعد سريرية، إرشادات المشرف، أو ملاحظات المتطلب...",
   "pleaseSelectPatient": "يرجى اختيار مريض",
   "pleaseSelectClinic": "يرجى اختيار عيادة",
   "failedToLoadPatients": "فشل في تحميل المرضى",

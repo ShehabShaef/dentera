@@ -58,13 +58,14 @@ void main() {
   });
 
   group('Requirement model', () {
-    test('toMap and fromMap work correctly', () {
+    test('toMap and fromMap work correctly with and without notes', () {
       const requirement = Requirement(
         id: 'req-1',
         clinicId: 'clinic-1',
         title: 'Complete Denture',
         targetCount: 5,
         completedCount: 2,
+        notes: 'Minimum 2 maxillary and 1 mandibular case.',
       );
 
       final map = requirement.toMap();
@@ -73,12 +74,37 @@ void main() {
       expect(map['title'], 'Complete Denture');
       expect(map['targetCount'], 5);
       expect(map['completedCount'], 2);
+      expect(map['notes'], 'Minimum 2 maxillary and 1 mandibular case.');
 
       final parsed = Requirement.fromMap(map);
       expect(parsed, equals(requirement));
+      expect(parsed.notes, equals('Minimum 2 maxillary and 1 mandibular case.'));
 
       final updated = requirement.copyWith(completedCount: 3);
       expect(updated.completedCount, 3);
+      expect(updated.notes, equals('Minimum 2 maxillary and 1 mandibular case.'));
+
+      final updatedWithNewNotes = requirement.copyWith(notes: 'Updated instructions');
+      expect(updatedWithNewNotes.notes, equals('Updated instructions'));
+
+      final clearedNotes = requirement.copyWith(clearNotes: true);
+      expect(clearedNotes.notes, isNull);
+    });
+
+    test('supports null notes seamlessly in fromMap and toMap', () {
+      const requirement = Requirement(
+        id: 'req-2',
+        clinicId: 'clinic-2',
+        title: 'Class I Composite',
+        targetCount: 8,
+      );
+
+      final map = requirement.toMap();
+      expect(map['notes'], isNull);
+
+      final parsed = Requirement.fromMap(map);
+      expect(parsed.notes, isNull);
+      expect(parsed, equals(requirement));
     });
   });
 

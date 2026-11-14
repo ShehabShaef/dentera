@@ -1904,6 +1904,18 @@ abstract class AppLocalizations {
   /// **'Clinical Notes / Tooth Number (Optional)'**
   String get clinicalNotesOptional;
 
+  /// No description provided for @requirementNotesOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (Optional)'**
+  String get requirementNotesOptional;
+
+  /// No description provided for @requirementNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add clinical rules, supervisor guidelines, or requirement notes...'**
+  String get requirementNotesHint;
+
   /// No description provided for @pleaseSelectPatient.
   ///
   /// In en, this message translates to:

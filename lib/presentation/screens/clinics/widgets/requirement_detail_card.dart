@@ -119,6 +119,31 @@ class RequirementDetailCard extends StatelessWidget {
             progressColor: accentColor,
             showQuotaText: false,
           ),
+          if (requirement.notes != null && requirement.notes!.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(
+                  Icons.notes_rounded,
+                  size: 14,
+                  color: isDark ? AppDarkColors.tealAccent : AppColors.secondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    requirement.notes!.trim(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 14),
 
           // Linked Cases Sub-Container

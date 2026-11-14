@@ -951,6 +951,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clinicalNotesOptional => 'ملاحظات سريرية / رقم السن (اختياري)';
 
   @override
+  String get requirementNotesOptional => 'ملاحظات (اختياري)';
+
+  @override
+  String get requirementNotesHint =>
+      'أضف قواعد سريرية، إرشادات المشرف، أو ملاحظات المتطلب...';
+
+  @override
   String get pleaseSelectPatient => 'يرجى اختيار مريض';
 
   @override

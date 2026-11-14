@@ -260,11 +260,11 @@ void main() {
       expect(find.text('Add Requirement'), findsOneWidget);
       expect(find.text('Save Requirement'), findsOneWidget);
 
-      // 4. Fill form: enter Title and Quota
+      // 4. Fill form: enter Title, Quota, and Notes
       final textFields = find.byType(TextField);
-      // First is title, second is quota count
-      await tester.enterText(textFields.first, 'Removable Partial Denture');
-      await tester.enterText(textFields.last, '4');
+      await tester.enterText(textFields.at(0), 'Removable Partial Denture');
+      await tester.enterText(textFields.at(1), '4');
+      await tester.enterText(textFields.at(2), 'Surveying and clasp design required');
       await tester.pumpAndSettle();
 
       // 5. Submit form
@@ -280,6 +280,7 @@ void main() {
       expect(uuidRegex.hasMatch(mockReqRepo.lastAddedRequirement!.id), isTrue);
       expect(mockReqRepo.lastAddedRequirement!.title, 'Removable Partial Denture');
       expect(mockReqRepo.lastAddedRequirement!.targetCount, 4);
+      expect(mockReqRepo.lastAddedRequirement!.notes, 'Surveying and clasp design required');
       expect(mockReqRepo.lastAddedRequirement!.clinicId, testClinic.id);
     });
 
@@ -302,8 +303,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final textFields = find.byType(TextField);
-      await tester.enterText(textFields.first, '');
-      await tester.enterText(textFields.last, '0');
+      await tester.enterText(textFields.at(0), '');
+      await tester.enterText(textFields.at(1), '0');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Save Requirement'));

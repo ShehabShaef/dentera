@@ -378,8 +378,8 @@ void main() {
       expect(find.text('Custom Procedure Title'), findsOneWidget);
 
       final textFields = find.byType(TextField);
-      await tester.enterText(textFields.first, 'Apicoectomy');
-      await tester.enterText(textFields.last, '2');
+      await tester.enterText(textFields.at(0), 'Apicoectomy');
+      await tester.enterText(textFields.at(1), '2');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Save Requirement'));
@@ -418,8 +418,8 @@ void main() {
       expect(find.text('Requirement Title'), findsOneWidget);
 
       final textFields = find.byType(TextField);
-      await tester.enterText(textFields.first, 'Laser Frenectomy');
-      await tester.enterText(textFields.last, '3');
+      await tester.enterText(textFields.at(0), 'Laser Frenectomy');
+      await tester.enterText(textFields.at(1), '3');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Save Requirement'));

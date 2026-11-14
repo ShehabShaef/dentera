@@ -1382,5 +1382,125 @@ void main() {
         }
       }
     });
+
+    test('migrates database from v6 to v7 adding notes column to requirements table', () async {
+      final tempDir = await Directory.systemTemp.createTemp('dentera_v7_test_');
+      final tempDbPath = p.join(tempDir.path, 'dentera_v6_to_v7.db');
+
+      try {
+        final db = await openDatabase(
+          tempDbPath,
+          version: 6,
+          onCreate: (db, version) async {
+            final batch = db.batch();
+            batch.execute('''
+              CREATE TABLE clinics (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                academicYear TEXT NOT NULL,
+                colorHex TEXT NOT NULL
+              );
+            ''');
+            batch.execute('''
+              CREATE TABLE requirements (
+                id TEXT PRIMARY KEY,
+                clinicId TEXT NOT NULL,
+                title TEXT NOT NULL,
+                targetCount INTEGER NOT NULL,
+                completedCount INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (clinicId) REFERENCES clinics (id) ON DELETE CASCADE
+              );
+            ''');
+            await batch.commit();
+
+            await db.insert('clinics', {
+              'id': 'c-pros-v6',
+              'name': 'Prosthodontics',
+              'academicYear': '5th Year',
+              'colorHex': '#3B82F6',
+            });
+            await db.insert('requirements', {
+              'id': 'req-v6-1',
+              'clinicId': 'c-pros-v6',
+              'title': 'Complete Denture',
+              'targetCount': 2,
+              'completedCount': 0,
+            });
+          },
+        );
+
+        await db.close();
+
+        // Upgrade to v7 using onUpgrade logic
+        final upgradedDb = await openDatabase(
+          tempDbPath,
+          version: 7,
+          onUpgrade: (db, oldVersion, newVersion) async {
+            if (oldVersion < 7) {
+              await db.execute('ALTER TABLE requirements ADD COLUMN notes TEXT;');
+            }
+          },
+        );
+
+        // Verify notes column exists via PRAGMA table_info
+        final tableInfo = await upgradedDb.rawQuery('PRAGMA table_info(requirements);');
+        final columnNames = tableInfo.map((col) => col['name'] as String).toSet();
+        expect(columnNames, contains('notes'));
+
+        // Verify updating requirement with notes
+        await upgradedDb.update(
+          'requirements',
+          {'notes': 'Must follow balanced occlusion rules'},
+          where: 'id = ?',
+          whereArgs: ['req-v6-1'],
+        );
+
+        final req = await upgradedDb.query('requirements', where: 'id = ?', whereArgs: ['req-v6-1']);
+        expect(req.first['notes'], equals('Must follow balanced occlusion rules'));
+
+        await upgradedDb.close();
+      } finally {
+        final file = File(tempDbPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
+    });
+
+    test('persists and retrieves Requirement notes via SqliteRequirementRepository', () async {
+      final appDatabase = AppDatabase.instance;
+      final repo = SqliteRequirementRepository(appDatabase);
+
+      const clinicId = 'clinic-prosth';
+      final requirement = Requirement(
+        id: 'req-notes-test-1',
+        clinicId: clinicId,
+        title: 'Over Denture',
+        targetCount: 2,
+        notes: 'Copings required on canine abutments.',
+      );
+
+      // Add requirement
+      await repo.addRequirement(requirement);
+
+      // Query by clinic
+      final clinicReqs = await repo.getRequirementsByClinicId(clinicId);
+      final retrieved = clinicReqs.firstWhere((r) => r.id == 'req-notes-test-1');
+      expect(retrieved.notes, equals('Copings required on canine abutments.'));
+
+      // Update requirement note
+      final updated = retrieved.copyWith(notes: 'Updated: Copings with locator attachments.');
+      await repo.updateRequirement(updated);
+
+      final reRetrieved = (await repo.getRequirementsByClinicId(clinicId))
+          .firstWhere((r) => r.id == 'req-notes-test-1');
+      expect(reRetrieved.notes, equals('Updated: Copings with locator attachments.'));
+
+      // Clean up
+      await repo.deleteRequirement('req-notes-test-1');
+    });
   });
 }

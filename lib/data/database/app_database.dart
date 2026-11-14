@@ -19,7 +19,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String dbName = 'dentera.db';
-  static const int dbVersion = 6;
+  static const int dbVersion = 7;
 
   Database? _database;
 
@@ -155,6 +155,9 @@ class AppDatabase {
       // without affecting student case progress or records.
       await DatabaseSeeder.syncCurriculumRequirements(db);
     }
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE requirements ADD COLUMN notes TEXT;');
+    }
   }
 
   /// Creates the relational schema for all domain tables and pre-populates default academic data.
@@ -208,6 +211,7 @@ class AppDatabase {
         title TEXT NOT NULL,
         targetCount INTEGER NOT NULL,
         completedCount INTEGER NOT NULL DEFAULT 0,
+        notes TEXT,
         FOREIGN KEY (clinicId) REFERENCES clinics (id) ON DELETE CASCADE
       );
     ''');

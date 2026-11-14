@@ -55,6 +55,7 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _quotaController;
+  late final TextEditingController _notesController;
   bool _isSubmitting = false;
 
   @override
@@ -62,12 +63,14 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
     super.initState();
     _titleController = TextEditingController(text: widget.requirement.title);
     _quotaController = TextEditingController(text: widget.requirement.targetCount.toString());
+    _notesController = TextEditingController(text: widget.requirement.notes ?? '');
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _quotaController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -76,9 +79,12 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
 
     setState(() => _isSubmitting = true);
 
+    final rawNotes = _notesController.text.trim();
     final updatedRequirement = widget.requirement.copyWith(
       title: _titleController.text.trim(),
       targetCount: int.parse(_quotaController.text.trim()),
+      notes: rawNotes.isNotEmpty ? rawNotes : null,
+      clearNotes: rawNotes.isEmpty,
     );
 
     try {
@@ -219,9 +225,27 @@ class _EditRequirementModalState extends ConsumerState<EditRequirementModal> {
                   prefixIcon: Icon(Icons.track_changes_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
                   validator: AddRequirementModal.validateQuota,
                 ),
+                const SizedBox(height: 16),
+
+                // 5. Notes (Optional) Input
+                Text(
+                  context.l10n.requirementNotesOptional,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                DenteraTextField(
+                  controller: _notesController,
+                  hintText: context.l10n.requirementNotesHint,
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                  prefixIcon: Icon(Icons.notes_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.outline),
+                ),
                 const SizedBox(height: 24),
 
-                // 5. Action Buttons
+                // 6. Action Buttons
                 Row(
                   children: <Widget>[
                     Expanded(
