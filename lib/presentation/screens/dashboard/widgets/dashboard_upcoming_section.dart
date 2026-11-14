@@ -118,6 +118,10 @@ class DashboardUpcomingSection extends ConsumerWidget {
         else
           Column(
           children: patients.map((item) {
+            final effectiveItemAccent = (isDark && item.accentColor == AppColors.primary)
+                ? AppDarkColors.tertiary
+                : item.accentColor;
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Material(
@@ -158,13 +162,13 @@ class DashboardUpcomingSection extends ConsumerWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: item.accentColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                            color: effectiveItemAccent.withValues(alpha: isDark ? 0.2 : 0.12),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             item.initials,
                             style: AppTextStyles.caption.copyWith(
-                              color: item.accentColor,
+                              color: effectiveItemAccent,
                               fontWeight: FontWeight.w700,
                             ),
                           ),

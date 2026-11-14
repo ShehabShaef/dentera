@@ -43,15 +43,51 @@ class DashboardAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Dynamic surface, border, and shadow adaptation for dark/light themes
+    final cardBgColor = isDark
+        ? theme.colorScheme.surface
+        : AppColors.surfaceContainerLowest;
+    final borderColor = isDark
+        ? AppDarkColors.outlineVariant
+        : AppColors.outlineVariant.withValues(alpha: 0.5);
+    final shadow = isDark ? AppDarkColors.cardShadow : AppColors.cardShadow;
+
+    // Accent colors adapted for contrast in dark mode
+    final effectiveClinicColor = (isDark && clinicColor == AppColors.secondary)
+        ? AppDarkColors.secondary
+        : clinicColor;
+    final procedureAccentColor =
+        isDark ? AppDarkColors.tertiary : AppColors.primary;
+
+    // Text & Avatar contrast mapping
+    final avatarBg = isDark
+        ? AppDarkColors.surfaceContainerHigh
+        : AppColors.surfaceContainerHigh;
+    final avatarTextColor = isDark
+        ? AppDarkColors.textPrimary
+        : AppColors.onSurfaceVariant;
+    final titleTextColor = isDark
+        ? AppDarkColors.textPrimary
+        : AppColors.onSurface;
+    final subtitleTextColor = isDark
+        ? AppDarkColors.textMuted
+        : AppColors.onSurfaceVariant;
+    final buttonIconColor = isDark
+        ? AppDarkColors.textSecondary
+        : AppColors.primary;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: cardBgColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          color: borderColor,
           width: 1.0,
         ),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: shadow,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
@@ -63,7 +99,7 @@ class DashboardAppointmentCard extends StatelessWidget {
               bottom: 0,
               start: 0,
               width: 4,
-              child: Container(color: clinicColor),
+              child: Container(color: effectiveClinicColor),
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -79,7 +115,7 @@ class DashboardAppointmentCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: clinicColor.withValues(alpha: 0.1),
+                          color: effectiveClinicColor.withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(9999),
                         ),
                         child: Row(
@@ -88,13 +124,13 @@ class DashboardAppointmentCard extends StatelessWidget {
                             Icon(
                               Icons.alarm_rounded,
                               size: 14,
-                              color: clinicColor,
+                              color: effectiveClinicColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               timeWindow,
                               style: AppTextStyles.caption.copyWith(
-                                color: clinicColor,
+                                color: effectiveClinicColor,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -105,13 +141,13 @@ class DashboardAppointmentCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
+                          color: procedureAccentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(9999),
                         ),
                         child: Text(
                           procedureTitle,
                           style: AppTextStyles.labelCaps.copyWith(
-                            color: AppColors.primary,
+                            color: procedureAccentColor,
                           ),
                         ),
                       ),
@@ -125,15 +161,15 @@ class DashboardAppointmentCard extends StatelessWidget {
                       Container(
                         width: 44,
                         height: 44,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.surfaceContainerHigh,
+                          color: avatarBg,
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           _initials,
                           style: AppTextStyles.h2.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: avatarTextColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -147,6 +183,7 @@ class DashboardAppointmentCard extends StatelessWidget {
                               patientName,
                               style: AppTextStyles.h2.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: titleTextColor,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -155,7 +192,7 @@ class DashboardAppointmentCard extends StatelessWidget {
                             Text(
                               'ID: $patientId • $patientDetails',
                               style: AppTextStyles.caption.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                                color: subtitleTextColor,
                               ),
                             ),
                           ],
@@ -169,10 +206,10 @@ class DashboardAppointmentCard extends StatelessWidget {
                   SecondaryButton(
                     text: 'View Case',
                     height: 40,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_forward_rounded,
                       size: 16,
-                      color: AppColors.primary,
+                      color: buttonIconColor,
                     ),
                     onPressed: () {
                       if (onViewCase != null) {

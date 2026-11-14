@@ -102,18 +102,18 @@ abstract final class AppDarkColors {
   static const Color onSurfaceVariant = Color(0xFFBACAC4);
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFFE2E8F0);
-  static const Color textMuted = Color(0xFF728299);
-  static const Color textPlaceholder = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color textPlaceholder = Color(0xFF8294AA);
   static const Color inverseSurface = Color(0xFFDBE3F3);
   static const Color inverseOnSurface = Color(0xFF29313D);
-  static const Color surfaceTint = Color(0xFF2ADEC0);
+  static const Color surfaceTint = Color(0xFF38B293);
 
   // Background tokens
   static const Color background = Color(0xFF0C141F);
   static const Color onBackground = Color(0xFFDBE3F3);
 
   // Outline tokens
-  static const Color outline = Color(0xFF85948F);
+  static const Color outline = Color(0xFF8595A5);
   static const Color outlineVariant = Color(0xFF23354D);
   static const Color borderSubtle = Color(0xFF23354D);
   static const Color borderMuted = Color(0xFF23354D);
@@ -122,35 +122,35 @@ abstract final class AppDarkColors {
   static const Color canvasBackground = Color(0xFF0C141F);
   static const Color progressTrack = Color(0xFF2D3541);
 
-  // Primary palette (Luminous Teal)
-  static const Color primary = Color(0xFF46EFCF);
+  // Primary palette (Softer, desaturated emerald / dimmed medical teal)
+  static const Color primary = Color(0xFF38B293);
   static const Color primaryTeal = primary;
   static const Color tealAccent = primary;
-  static const Color onPrimary = Color(0xFF00382E);
+  static const Color onPrimary = Color(0xFF04211B);
   static const Color onTeal = onPrimary;
-  static const Color primaryContainer = Color(0xFF00D2B4);
-  static const Color onPrimaryContainer = Color(0xFF005547);
+  static const Color primaryContainer = Color(0xFF1B4F43);
+  static const Color onPrimaryContainer = Color(0xFF8CE2CE);
   static const Color inversePrimary = Color(0xFF006B5B);
-  static const Color primaryFixed = Color(0xFF57FBDB);
-  static const Color primaryFixedDim = Color(0xFF2ADEC0);
+  static const Color primaryFixed = Color(0xFF68D3BA);
+  static const Color primaryFixedDim = Color(0xFF38B293);
   static const Color onPrimaryFixed = Color(0xFF00201A);
   static const Color onPrimaryFixedVariant = Color(0xFF005144);
 
-  // Secondary palette
-  static const Color secondary = Color(0xFF48F9DD);
-  static const Color onSecondary = Color(0xFF003730);
-  static const Color secondaryContainer = Color(0xFF00DCC1);
-  static const Color onSecondaryContainer = Color(0xFF005B4F);
-  static const Color secondaryFixed = Color(0xFF4CFCE0);
-  static const Color secondaryFixedDim = Color(0xFF0EDFC4);
+  // Secondary palette (Softer desaturated sage / dimmed teal)
+  static const Color secondary = Color(0xFF42A69A);
+  static const Color onSecondary = Color(0xFF052420);
+  static const Color secondaryContainer = Color(0xFF194943);
+  static const Color onSecondaryContainer = Color(0xFF8AE0D2);
+  static const Color secondaryFixed = Color(0xFF65D2C2);
+  static const Color secondaryFixedDim = Color(0xFF42A69A);
   static const Color onSecondaryFixed = Color(0xFF00201B);
   static const Color onSecondaryFixedVariant = Color(0xFF005046);
 
-  // Tertiary palette
-  static const Color tertiary = Color(0xFFBDD9FF);
+  // Tertiary palette (Sky / Cyan Blue accent for high-contrast visibility on dark backgrounds)
+  static const Color tertiary = Color(0xFF93C5FD);
   static const Color onTertiary = Color(0xFF00325A);
-  static const Color tertiaryContainer = Color(0xFF8EBEFA);
-  static const Color onTertiaryContainer = Color(0xFF0E4C82);
+  static const Color tertiaryContainer = Color(0xFF1E3A5F);
+  static const Color onTertiaryContainer = Color(0xFFBFDBFE);
   static const Color tertiaryFixed = Color(0xFFD2E4FF);
   static const Color tertiaryFixedDim = Color(0xFFA0C9FF);
   static const Color onTertiaryFixed = Color(0xFF001C37);
