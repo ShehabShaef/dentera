@@ -9,6 +9,7 @@ class Requirement {
     required this.title,
     required this.targetCount,
     this.completedCount = 0,
+    this.notes,
   });
 
   final String id;
@@ -17,12 +18,18 @@ class Requirement {
   final int targetCount;
   final int completedCount;
 
+  /// Optional contextual notes, supervisor instructions, or clinical rules
+  /// associated with this academic requirement.
+  final String? notes;
+
   Requirement copyWith({
     String? id,
     String? clinicId,
     String? title,
     int? targetCount,
     int? completedCount,
+    String? notes,
+    bool clearNotes = false,
   }) {
     return Requirement(
       id: id ?? this.id,
@@ -30,6 +37,7 @@ class Requirement {
       title: title ?? this.title,
       targetCount: targetCount ?? this.targetCount,
       completedCount: completedCount ?? this.completedCount,
+      notes: clearNotes ? null : (notes ?? this.notes),
     );
   }
 
@@ -40,6 +48,7 @@ class Requirement {
       'title': title,
       'targetCount': targetCount,
       'completedCount': completedCount,
+      'notes': notes,
     };
   }
 
@@ -50,6 +59,7 @@ class Requirement {
       title: map['title'] as String,
       targetCount: (map['targetCount'] as num).toInt(),
       completedCount: (map['completedCount'] as num?)?.toInt() ?? 0,
+      notes: map['notes'] as String?,
     );
   }
 
@@ -61,7 +71,8 @@ class Requirement {
         other.clinicId == clinicId &&
         other.title == title &&
         other.targetCount == targetCount &&
-        other.completedCount == completedCount;
+        other.completedCount == completedCount &&
+        other.notes == notes;
   }
 
   @override
@@ -71,10 +82,11 @@ class Requirement {
         title,
         targetCount,
         completedCount,
+        notes,
       );
 
   @override
   String toString() {
-    return 'Requirement(id: $id, clinicId: $clinicId, title: $title, targetCount: $targetCount, completedCount: $completedCount)';
+    return 'Requirement(id: $id, clinicId: $clinicId, title: $title, targetCount: $targetCount, completedCount: $completedCount, notes: $notes)';
   }
 }

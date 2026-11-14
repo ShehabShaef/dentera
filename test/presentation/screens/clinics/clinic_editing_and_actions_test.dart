@@ -214,8 +214,9 @@ void main() {
       expect(find.text('4'), findsOneWidget);
 
       final textFields = find.byType(TextField);
-      await tester.enterText(textFields.first, 'Special Complete Denture');
-      await tester.enterText(textFields.last, '8');
+      await tester.enterText(textFields.at(0), 'Special Complete Denture');
+      await tester.enterText(textFields.at(1), '8');
+      await tester.enterText(textFields.at(2), 'Custom clinical guidelines');
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Save Changes'));
@@ -224,8 +225,10 @@ void main() {
       expect(mockReqRepo.lastUpdatedRequirement, isNotNull);
       expect(mockReqRepo.lastUpdatedRequirement!.title, equals('Special Complete Denture'));
       expect(mockReqRepo.lastUpdatedRequirement!.targetCount, equals(8));
+      expect(mockReqRepo.lastUpdatedRequirement!.notes, equals('Custom clinical guidelines'));
       expect(updatedResult?.title, equals('Special Complete Denture'));
       expect(updatedResult?.targetCount, equals(8));
+      expect(updatedResult?.notes, equals('Custom clinical guidelines'));
     });
 
     testWidgets('SortClinicCasesModal allows selecting sorting criteria', (WidgetTester tester) async {
