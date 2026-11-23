@@ -82,13 +82,14 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentAvatar = ref.watch(avatarProvider);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainerElevated : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -107,7 +108,7 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -123,7 +124,7 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                   Text(
                     'Profile Photo',
                     style: AppTextStyles.h2.copyWith(
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -131,13 +132,13 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                   Text(
                     'Choose an image source to update your avatar',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.onSurfaceVariant),
+                icon: Icon(Icons.close_rounded, color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                 tooltip: 'Close',
                 onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
               ),
@@ -163,12 +164,14 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withValues(alpha: 0.2),
+                      color: isDark
+                          ? AppDarkColors.primaryContainer.withValues(alpha: 0.3)
+                          : AppColors.primaryContainer.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.camera_alt_outlined,
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.primary : AppColors.primary,
                       size: 22,
                     ),
                   ),
@@ -176,19 +179,19 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                     'Take Photo',
                     style: AppTextStyles.bodyMd.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                     ),
                   ),
                   subtitle: Text(
                     'Use camera to capture a new picture',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                     ),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 16,
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   ),
                   onTap: () => _pickImage(ImageSource.camera),
                 ),
@@ -206,12 +209,14 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer.withValues(alpha: 0.2),
+                      color: isDark
+                          ? AppDarkColors.secondaryContainer.withValues(alpha: 0.3)
+                          : AppColors.secondaryContainer.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.photo_library_outlined,
-                      color: AppColors.secondary,
+                      color: isDark ? AppDarkColors.secondary : AppColors.secondary,
                       size: 22,
                     ),
                   ),
@@ -219,19 +224,19 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                     'Choose from Gallery',
                     style: AppTextStyles.bodyMd.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                     ),
                   ),
                   subtitle: Text(
                     'Select a photo from device photo library',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                     ),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 16,
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                   ),
                   onTap: () => _pickImage(ImageSource.gallery),
                 ),
@@ -250,12 +255,14 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.errorContainer.withValues(alpha: 0.15),
+                        color: isDark
+                            ? AppDarkColors.errorContainer.withValues(alpha: 0.25)
+                            : AppColors.errorContainer.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete_outline_rounded,
-                        color: AppColors.error,
+                        color: isDark ? AppDarkColors.statusError : AppColors.error,
                         size: 22,
                       ),
                     ),
@@ -263,19 +270,19 @@ class _AvatarPickerModalState extends ConsumerState<AvatarPickerModal> {
                       'Remove Photo',
                       style: AppTextStyles.bodyMd.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: AppColors.error,
+                        color: isDark ? AppDarkColors.statusError : AppColors.error,
                       ),
                     ),
                     subtitle: Text(
                       'Revert back to default clinician initials',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                        color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                       ),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 16,
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textMuted : AppColors.onSurfaceVariant,
                     ),
                     onTap: _removeAvatar,
                   ),

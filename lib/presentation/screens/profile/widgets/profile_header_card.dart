@@ -35,6 +35,7 @@ class ProfileHeaderCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final avatarPath = ref.watch(avatarProvider);
     final hasAvatar = avatarPath != null && avatarPath.isNotEmpty;
     final file = hasAvatar ? File(avatarPath) : null;
@@ -57,22 +58,26 @@ class ProfileHeaderCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     gradient: (hasAvatar && (fileExists || _isTestEnvironment))
                         ? null
-                        : AppColors.brandGradient,
+                        : (isDark ? AppDarkColors.brandGradient : AppColors.brandGradient),
                     color: (hasAvatar && (fileExists || _isTestEnvironment))
-                        ? AppColors.primaryContainer.withValues(alpha: 0.2)
+                        ? (isDark
+                            ? AppDarkColors.primaryContainer.withValues(alpha: 0.2)
+                            : AppColors.primaryContainer.withValues(alpha: 0.2))
                         : null,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.outlineVariant,
+                      color: isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant,
                       width: 1.0,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                   ),
                   clipBehavior: Clip.antiAlias,
                   alignment: Alignment.center,
@@ -86,20 +91,20 @@ class ProfileHeaderCard extends ConsumerWidget {
                               errorBuilder: (context, error, stackTrace) => Text(
                                 _initial,
                                 style: AppTextStyles.h1.copyWith(
-                                  color: AppColors.onPrimary,
+                                  color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.person_rounded,
                               size: 34,
-                              color: AppColors.primary,
+                              color: isDark ? AppDarkColors.primary : AppColors.primary,
                             ))
                       : Text(
                           _initial,
                           style: AppTextStyles.h1.copyWith(
-                            color: AppColors.onPrimary,
+                            color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -111,10 +116,10 @@ class ProfileHeaderCard extends ConsumerWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.primary : AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.surface,
+                        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surface,
                         width: 2,
                       ),
                       boxShadow: [
@@ -126,10 +131,10 @@ class ProfileHeaderCard extends ConsumerWidget {
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(
+                    child: Icon(
                       Icons.camera_alt_rounded,
                       size: 11,
-                      color: AppColors.onPrimary,
+                      color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                     ),
                   ),
                 ),
@@ -148,7 +153,7 @@ class ProfileHeaderCard extends ConsumerWidget {
                   name,
                   style: AppTextStyles.h2.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -157,7 +162,7 @@ class ProfileHeaderCard extends ConsumerWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -168,9 +173,9 @@ class ProfileHeaderCard extends ConsumerWidget {
 
           // Edit Action Button
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
-              color: AppColors.onSurfaceVariant,
+              color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
               size: 20,
             ),
             onPressed: onEdit ?? () {

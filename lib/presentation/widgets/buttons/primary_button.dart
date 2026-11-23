@@ -79,15 +79,9 @@ class PrimaryButton extends StatelessWidget {
             : (isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerHigh),
         gradient: _isEnabled && !isDark ? AppColors.brandGradient : null,
         borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: _isEnabled && isDark
-            ? [
-                BoxShadow(
-                  color: AppDarkColors.primary.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
+        // Dark Mode: no colored glow shadow — render clean, flat/crisp edges.
+        // Light Mode: no shadow either (gradient provides visual weight).
+        boxShadow: null,
       ),
       child: Material(
         color: Colors.transparent,

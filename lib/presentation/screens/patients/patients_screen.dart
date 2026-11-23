@@ -148,6 +148,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
     final visiblePatients = filteredPatientsAsync.valueOrNull ?? <Patient>[];
     final visiblePatientIds = visiblePatients.map((p) => p.id).toSet();
     final isAllSelected = visiblePatientIds.isNotEmpty && selectedIds.containsAll(visiblePatientIds);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final PreferredSizeWidget appBar = isSelectionMode
         ? AppBar(
@@ -159,8 +160,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
               },
               child: Text(
                 context.l10n.cancel,
-                style: const TextStyle(
-                  color: AppColors.onSurfaceVariant,
+                style: TextStyle(
+                  color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -168,7 +169,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
             title: Text(
               context.l10n.selectedCount(selectedIds.length),
               style: AppTextStyles.h2.copyWith(
-                color: AppColors.onSurface,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -186,8 +187,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
                 },
                 child: Text(
                   isAllSelected ? context.l10n.deselectAll : context.l10n.selectAll,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: isDark ? AppDarkColors.primary : AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -213,7 +214,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
             title: Text(
               context.l10n.patients,
               style: AppTextStyles.h1Mobile.copyWith(
-                color: AppColors.primary,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -234,7 +235,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
                     value: 'sort',
                     child: Row(
                       children: [
-                        const Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        Icon(Icons.sort_rounded, size: 20, color: isDark ? AppDarkColors.primary : AppColors.primary),
                         const SizedBox(width: 12),
                         Text(context.l10n.sortPatients),
                       ],
@@ -254,8 +255,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen>
               ),
             ],
           );
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: appBar,

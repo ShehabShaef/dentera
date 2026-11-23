@@ -29,6 +29,8 @@ class AcademicYearPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -49,12 +51,12 @@ class AcademicYearPage extends StatelessWidget {
                 Text(
                   'Select your current academic stage to tailor your quota tracking.',
                   style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Selectable Year Options
+                // Selectable Year Options — theme-aware surfaces for Dark Mode
                 Column(
                   children: availableYears.map((year) {
                     final isSelected = year == selectedYear;
@@ -69,11 +71,17 @@ class AcademicYearPage extends StatelessWidget {
                           height: 48,
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColors.secondaryContainer.withValues(alpha: 0.2)
-                                : AppColors.surfaceContainerLowest,
+                                ? (isDark
+                                    ? AppDarkColors.secondary.withValues(alpha: 0.2)
+                                    : AppColors.secondaryContainer.withValues(alpha: 0.2))
+                                : (isDark
+                                    ? AppDarkColors.surfaceContainerLow
+                                    : AppColors.surfaceContainerLowest),
                             borderRadius: BorderRadius.circular(9999),
                             border: Border.all(
-                              color: isSelected ? AppColors.secondary : AppColors.outlineVariant,
+                              color: isSelected
+                                  ? (isDark ? AppDarkColors.secondary : AppColors.secondary)
+                                  : (isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant),
                               width: isSelected ? 2.0 : 1.0,
                             ),
                           ),
@@ -81,7 +89,9 @@ class AcademicYearPage extends StatelessWidget {
                           child: Text(
                             year,
                             style: AppTextStyles.bodyMd.copyWith(
-                              color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                              color: isSelected
+                                  ? (isDark ? AppDarkColors.primary : AppColors.primary)
+                                  : (isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant),
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                             ),
                           ),
@@ -101,7 +111,7 @@ class AcademicYearPage extends StatelessWidget {
                       child: Text(
                         context.l10n.back,
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.outline,
+                          color: isDark ? AppDarkColors.outline : AppColors.outline,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

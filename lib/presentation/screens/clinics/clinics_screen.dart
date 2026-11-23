@@ -155,6 +155,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
     }).toList();
     final visibleClinicIds = visibleClinics.map((c) => c.id).toSet();
     final isAllSelected = visibleClinicIds.isNotEmpty && selectedIds.containsAll(visibleClinicIds);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final PreferredSizeWidget appBar = isSelectionMode
         ? AppBar(
@@ -166,8 +167,8 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
               },
               child: Text(
                 context.l10n.cancel,
-                style: const TextStyle(
-                  color: AppColors.onSurfaceVariant,
+                style: TextStyle(
+                  color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -175,7 +176,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
             title: Text(
               context.l10n.selectedCount(selectedIds.length),
               style: AppTextStyles.h2.copyWith(
-                color: AppColors.onSurface,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -193,8 +194,8 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
                 },
                 child: Text(
                   isAllSelected ? context.l10n.deselectAll : context.l10n.selectAll,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: isDark ? AppDarkColors.primary : AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -220,7 +221,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
             title: Text(
               context.l10n.clinicsAndRequirements,
               style: AppTextStyles.h1Mobile.copyWith(
-                color: AppColors.primary,
+                color: isDark ? AppDarkColors.textPrimary : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -241,7 +242,7 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
                     value: 'sort',
                     child: Row(
                       children: [
-                        const Icon(Icons.sort_rounded, size: 20, color: AppColors.primary),
+                        Icon(Icons.sort_rounded, size: 20, color: isDark ? AppDarkColors.primary : AppColors.primary),
                         const SizedBox(width: 12),
                         Text(context.l10n.sortClinics),
                       ],
@@ -261,8 +262,6 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen>
               ),
             ],
           );
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: appBar,
