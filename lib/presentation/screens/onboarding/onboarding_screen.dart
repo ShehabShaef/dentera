@@ -76,6 +76,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         isGuest: true,
       );
 
+      // Invalidate and reload userProfileProvider & onboarding status
+      await ref.read(userProfileProvider.notifier).loadProfile();
+      ref.invalidate(onboardingStatusProvider);
+
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
@@ -117,6 +121,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         academicYear: _selectedYear,
         isGuest: false,
       );
+
+      // Invalidate and reload userProfileProvider & onboarding status
+      await ref.read(userProfileProvider.notifier).loadProfile();
+      ref.invalidate(onboardingStatusProvider);
 
       if (!mounted) return;
 

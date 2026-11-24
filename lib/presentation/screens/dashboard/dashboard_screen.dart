@@ -34,6 +34,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     final todayAppointmentsAsync = ref.watch(dailyAppointmentsProvider(today));
     final upcomingAppointmentsAsync = ref.watch(upcomingAppointmentsProvider);
     final patientListAsync = ref.watch(patientListProvider);
+    final currentLocale = ref.watch(localeProvider);
 
     final Map<String, String> patientsMap = patientListAsync.maybeWhen(
       data: (patients) => {for (final p in patients) p.id: p.name},
@@ -46,7 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       body: SafeArea(
         child: FutureBuilder<Map<String, String?>>(
           future: Future.wait([
-            prefsRepo.getFormattedShortDoctorName(),
+            prefsRepo.getFormattedShortDoctorName(currentLocale),
             prefsRepo.getAcademicYear(),
           ]).then((results) => {
                 'name': results[0],

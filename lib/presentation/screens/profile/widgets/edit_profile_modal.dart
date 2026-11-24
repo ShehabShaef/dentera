@@ -93,9 +93,12 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
       final split = PreferencesRepository.splitFullName(widget.initialName!);
       defaultFirst = split.$1;
       defaultLast = split.$2;
+    } else if (profile != null) {
+      defaultFirst = profile.firstName;
+      defaultLast = profile.lastName;
     } else {
-      defaultFirst = profile?.firstName ?? 'Shehab';
-      defaultLast = profile?.lastName ?? 'Shaif';
+      defaultFirst = 'Doctor';
+      defaultLast = '';
     }
 
     final defaultUni = widget.initialUniversity ?? profile?.university ?? 'Dental School';

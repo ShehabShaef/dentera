@@ -92,8 +92,8 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
   QuotaReportData _buildReportData() {
     final userProfile = ref.read(userProfileProvider).valueOrNull ??
         const UserProfile(
-          firstName: 'Shehab',
-          lastName: 'Shaif',
+          firstName: 'Doctor',
+          lastName: '',
           university: 'Dental School',
           academicYear: '5th Year',
         );
@@ -211,8 +211,8 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
 
     final userProfile = ref.watch(userProfileProvider).valueOrNull ??
         const UserProfile(
-          firstName: 'Shehab',
-          lastName: 'Shaif',
+          firstName: 'Doctor',
+          lastName: '',
           university: 'Dental School',
           academicYear: '5th Year',
         );
