@@ -17,6 +17,7 @@ class UserProfile {
     String? name,
     required this.university,
     required this.academicYear,
+    this.isGuest = false,
   }) : _legacyName = name;
 
   final String firstName;
@@ -24,10 +25,15 @@ class UserProfile {
   final String? _legacyName;
   final String university;
   final String academicYear;
+  final bool isGuest;
 
   /// Returns the full formatted doctor name with programmatic prefix: "Dr. [FirstName] [LastName]".
   String formattedFullDoctorName([String? locale]) {
-    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+    final isAr = locale?.toLowerCase().startsWith('ar') ?? false;
+    final prefix = isAr ? 'د.' : 'Dr.';
+    if (isGuest) {
+      return isAr ? 'د. ضيف' : 'Dr. Guest';
+    }
     final cleanFirst = PreferencesRepository.stripDoctorPrefix(firstName).trim();
     final cleanLast = PreferencesRepository.stripDoctorPrefix(lastName).trim();
     final full = '$cleanFirst $cleanLast'.trim();
@@ -36,14 +42,18 @@ class UserProfile {
         final cleanLegacy = PreferencesRepository.stripDoctorPrefix(_legacyName).trim();
         return cleanLegacy.isEmpty ? '$prefix Doctor' : '$prefix $cleanLegacy';
       }
-      return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+      return isAr ? 'د. طبيب' : 'Dr. Doctor';
     }
     return '$prefix $full';
   }
 
   /// Returns the short formatted doctor name: "Dr. [FirstName]".
   String formattedShortDoctorName([String? locale]) {
-    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
+    final isAr = locale?.toLowerCase().startsWith('ar') ?? false;
+    final prefix = isAr ? 'د.' : 'Dr.';
+    if (isGuest) {
+      return isAr ? 'د. ضيف' : 'Dr. Guest';
+    }
     final cleanFirst = PreferencesRepository.stripDoctorPrefix(firstName).trim();
     if (cleanFirst.isNotEmpty) {
       return '$prefix $cleanFirst';
@@ -53,7 +63,7 @@ class UserProfile {
       final first = cleanLegacy.split(RegExp(r'\s+')).first;
       return '$prefix $first';
     }
-    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+    return isAr ? 'د. طبيب' : 'Dr. Doctor';
   }
 
   /// Enforces programmatic "Dr." prefix for full clinician name.
@@ -67,14 +77,16 @@ class UserProfile {
           firstName == other.firstName &&
           lastName == other.lastName &&
           university == other.university &&
-          academicYear == other.academicYear;
+          academicYear == other.academicYear &&
+          isGuest == other.isGuest;
 
   @override
   int get hashCode =>
       firstName.hashCode ^
       lastName.hashCode ^
       university.hashCode ^
-      academicYear.hashCode;
+      academicYear.hashCode ^
+      isGuest.hashCode;
 }
 
 /// Central offline preferences and configuration repository for Dentera.
@@ -105,6 +117,16 @@ class PreferencesRepository {
   static const String _keyLocale = 'locale';
   static const String _keyFollowUpAlertsEnabled = 'followUpAlertsEnabled';
   static const String _keyAvatarPath = 'avatarPath';
+  static const String _keyIsGuest = 'isGuest';
+
+  /// Returns the system/device default languageCode ('ar' if system locale is Arabic, otherwise 'en').
+  static String get defaultDeviceLanguageCode {
+    try {
+      final code = WidgetsBinding.instance.platformDispatcher.locale.languageCode.toLowerCase();
+      if (code == 'ar') return 'ar';
+    } catch (_) {}
+    return 'en';
+  }
 
   /// Strips any manual "Dr.", "Dr", "Doctor", "د.", "د/", or "د " prefix.
   static String stripDoctorPrefix(String raw) {
@@ -147,14 +169,21 @@ class PreferencesRepository {
     AppLogger.info('User preference updated: Onboarding completed = $completed');
   }
 
+  /// Checks if the current user profile is operating in Guest Mode.
+  Future<bool> isGuest() async {
+    final prefs = await _instance;
+    return prefs.getBool(_keyIsGuest) ?? false;
+  }
+
   /// Persists the user profile details captured during onboarding or profile editing.
-  /// Supports separate [firstName] and [lastName], with backward-compatible fallback for legacy [name].
+  /// Supports separate [firstName] and [lastName], [isGuest] mode, with backward-compatible fallback for legacy [name].
   Future<void> saveUserProfile({
     String? firstName,
     String? lastName,
     String? name,
     required String university,
     required String academicYear,
+    bool isGuest = false,
   }) async {
     final prefs = await _instance;
 
@@ -179,9 +208,10 @@ class PreferencesRepository {
       prefs.setString(_keyDoctorName, legacyDoctorName),
       prefs.setString(_keyUniversity, university),
       prefs.setString(_keyAcademicYear, academicYear),
+      prefs.setBool(_keyIsGuest, isGuest),
       prefs.setBool(_keyHasCompletedOnboarding, true),
     ]);
-    AppLogger.info('Profile details updated successfully: Dr. $effectiveFirst $effectiveLast');
+    AppLogger.info('Profile details updated successfully: Dr. $effectiveFirst $effectiveLast (isGuest: $isGuest)');
   }
 
   /// Retrieves the doctor's first name, with automatic fallback/migration from legacy doctorName.
@@ -331,10 +361,16 @@ class PreferencesRepository {
     AppLogger.info('User preference updated: ThemeMode set to ${mode.name}');
   }
 
-  /// Retrieves the saved language locale (e.g., 'en', 'ar'). Default is 'en'.
+  /// Retrieves the saved language locale (e.g., 'en', 'ar').
+  /// If no explicit preference has been saved yet, auto-detects device language:
+  /// defaults to 'ar' if device language is Arabic, otherwise 'en'.
   Future<String> getLocale() async {
     final prefs = await _instance;
-    return prefs.getString(_keyLocale) ?? 'en';
+    final saved = prefs.getString(_keyLocale);
+    if (saved != null && saved.isNotEmpty) {
+      return saved;
+    }
+    return defaultDeviceLanguageCode;
   }
 
   /// Persists the language locale preference.
@@ -412,7 +448,7 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((r
 
 /// Reactive StateNotifier managing the active language locale string (e.g. 'en', 'ar').
 class LocaleNotifier extends StateNotifier<String> {
-  LocaleNotifier(this._repository) : super('en') {
+  LocaleNotifier(this._repository) : super(PreferencesRepository.defaultDeviceLanguageCode) {
     _loadInitialLocale();
   }
 
@@ -420,7 +456,9 @@ class LocaleNotifier extends StateNotifier<String> {
 
   Future<void> _loadInitialLocale() async {
     final savedLocale = await _repository.getLocale();
-    state = savedLocale;
+    if (state != savedLocale) {
+      state = savedLocale;
+    }
   }
 
   Future<void> setLocale(String locale) async {
@@ -499,11 +537,13 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       final last = await _repository.getDoctorLastName() ?? 'Shaif';
       final uni = await _repository.getUniversity() ?? 'Dental School';
       final year = await _repository.getAcademicYear() ?? '5th Year';
+      final isGuest = await _repository.isGuest();
       state = AsyncValue.data(UserProfile(
         firstName: first,
         lastName: last,
         university: uni,
         academicYear: year,
+        isGuest: isGuest,
       ));
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -516,6 +556,7 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
     String? name,
     required String university,
     required String academicYear,
+    bool isGuest = false,
   }) async {
     await _repository.saveUserProfile(
       firstName: firstName,
@@ -523,6 +564,7 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       name: name,
       university: university,
       academicYear: academicYear,
+      isGuest: isGuest,
     );
     await loadProfile();
   }

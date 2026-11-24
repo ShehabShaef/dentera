@@ -718,13 +718,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseEnterYourName => 'Please enter your name';
 
   @override
+  String get doctorPrefix => 'Dr.';
+
+  @override
+  String get prefixAddedAutomatically =>
+      'Prefix added automatically. Please enter your first and last name.';
+
+  @override
+  String get firstName => 'First Name';
+
+  @override
+  String get firstNamePlaceholder => 'Ahmed';
+
+  @override
+  String get firstNameRequired => 'First name is required';
+
+  @override
+  String get lastName => 'Last Name';
+
+  @override
+  String get lastNamePlaceholder => 'Nasser';
+
+  @override
+  String get lastNameRequired => 'Last name is required';
+
+  @override
   String get yourInstitution => 'Your Institution';
 
   @override
   String get universityOrSchool => 'University / School';
 
   @override
+  String get whichUniversityAttending =>
+      'Which university or dental school are you attending?';
+
+  @override
+  String get universityHint => 'e.g., University of Sana\'a';
+
+  @override
+  String get universityRequired => 'University name is required';
+
+  @override
   String get clinicalYear => 'Clinical Year';
+
+  @override
+  String get selectAcademicStage =>
+      'Select your current academic stage to tailor your quota tracking.';
+
+  @override
+  String get academicYearThird => '3rd Year';
+
+  @override
+  String get academicYearFourth => '4th Year';
+
+  @override
+  String get academicYearFifth => '5th Year';
+
+  @override
+  String get academicYearInternship => 'Internship';
+
+  @override
+  String get academicYearRequired => 'Please select an academic year';
 
   @override
   String get enterWorkspace => 'Enter Workspace';

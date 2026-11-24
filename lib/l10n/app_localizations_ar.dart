@@ -715,13 +715,67 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pleaseEnterYourName => 'يرجى إدخال اسمك';
 
   @override
+  String get doctorPrefix => 'د.';
+
+  @override
+  String get prefixAddedAutomatically =>
+      'تتم إضافة اللقب تلقائيًا. يُرجى إدخال اسمك الأول واسم العائلة.';
+
+  @override
+  String get firstName => 'الاسم الأول';
+
+  @override
+  String get firstNamePlaceholder => 'أحمد';
+
+  @override
+  String get firstNameRequired => 'الاسم الأول مطلوب';
+
+  @override
+  String get lastName => 'اسم العائلة';
+
+  @override
+  String get lastNamePlaceholder => 'ناصر';
+
+  @override
+  String get lastNameRequired => 'اسم العائلة مطلوب';
+
+  @override
   String get yourInstitution => 'جامعتك أو كليتك';
 
   @override
   String get universityOrSchool => 'الجامعة / الكلية';
 
   @override
+  String get whichUniversityAttending =>
+      'ما هي الجامعة أو كلية طب الأسنان التي تدرس بها؟';
+
+  @override
+  String get universityHint => 'مثال: جامعة صنعاء';
+
+  @override
+  String get universityRequired => 'اسم الجامعة مطلوب';
+
+  @override
   String get clinicalYear => 'السنة الإكلينيكية';
+
+  @override
+  String get selectAcademicStage =>
+      'اختر مرحلتك الدراسية الحالية لتخصيص تتبع المتطلبات الإكلينيكية.';
+
+  @override
+  String get academicYearThird => 'السنة الثالثة';
+
+  @override
+  String get academicYearFourth => 'السنة الرابعة';
+
+  @override
+  String get academicYearFifth => 'السنة الخامسة';
+
+  @override
+  String get academicYearInternship => 'سنة الامتياز';
+
+  @override
+  String get academicYearRequired => 'يرجى تحديد السنة الدراسية';
 
   @override
   String get enterWorkspace => 'الدخول لمساحة العمل';

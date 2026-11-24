@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../../../l10n/l10n.dart';
 import '../root_navigation_screen.dart';
 import 'academic_year_page.dart';
 import 'university_page.dart';
@@ -23,7 +24,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final TextEditingController _universityController = TextEditingController();
 
   int _currentPage = 0;
-  String _selectedYear = '4th Year';
+  String _selectedYear = '';
+  String? _yearError;
   bool _isLoading = false;
 
   @override
@@ -70,7 +72,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         firstName: 'Guest',
         lastName: '',
         university: 'Guest Dental University',
-        academicYear: 'guest Year',
+        academicYear: '5th Year',
+        isGuest: true,
       );
 
       if (!mounted) return;
@@ -90,6 +93,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
+    if (_selectedYear.trim().isEmpty) {
+      setState(() {
+        _yearError = context.l10n.academicYearRequired;
+      });
+      return;
+    }
+
     final firstName = PreferencesRepository.stripDoctorPrefix(_firstNameController.text.trim());
     final lastName = PreferencesRepository.stripDoctorPrefix(_lastNameController.text.trim());
     final university = _universityController.text.trim();
@@ -105,6 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         lastName: lastName,
         university: university.isNotEmpty ? university : 'Dental School',
         academicYear: _selectedYear,
+        isGuest: false,
       );
 
       if (!mounted) return;
@@ -192,9 +203,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   AcademicYearPage(
                     selectedYear: _selectedYear,
+                    errorMessage: _yearError,
                     onYearSelected: (year) {
                       setState(() {
                         _selectedYear = year;
+                        _yearError = null;
                       });
                     },
                     onSubmit: _completeOnboarding,
