@@ -12,6 +12,7 @@ class AcademicYearPage extends StatelessWidget {
     required this.onSubmit,
     required this.onBack,
     this.isLoading = false,
+    this.errorMessage,
   });
 
   final String selectedYear;
@@ -19,6 +20,7 @@ class AcademicYearPage extends StatelessWidget {
   final VoidCallback onSubmit;
   final VoidCallback onBack;
   final bool isLoading;
+  final String? errorMessage;
 
   static const List<String> availableYears = <String>[
     '3rd Year',
@@ -26,6 +28,21 @@ class AcademicYearPage extends StatelessWidget {
     '5th Year',
     'Internship',
   ];
+
+  static String getLocalizedYear(BuildContext context, String year) {
+    switch (year) {
+      case '3rd Year':
+        return context.l10n.academicYearThird;
+      case '4th Year':
+        return context.l10n.academicYearFourth;
+      case '5th Year':
+        return context.l10n.academicYearFifth;
+      case 'Internship':
+        return context.l10n.academicYearInternship;
+      default:
+        return year;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +66,7 @@ class AcademicYearPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Select your current academic stage to tailor your quota tracking.',
+                  context.l10n.selectAcademicStage,
                   style: AppTextStyles.bodyMd.copyWith(
                     color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
@@ -60,6 +77,7 @@ class AcademicYearPage extends StatelessWidget {
                 Column(
                   children: availableYears.map((year) {
                     final isSelected = year == selectedYear;
+                    final localizedTitle = getLocalizedYear(context, year);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: InkWell(
@@ -87,7 +105,7 @@ class AcademicYearPage extends StatelessWidget {
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            year,
+                            localizedTitle,
                             style: AppTextStyles.bodyMd.copyWith(
                               color: isSelected
                                   ? (isDark ? AppDarkColors.primary : AppColors.primary)
@@ -100,6 +118,20 @@ class AcademicYearPage extends StatelessWidget {
                     );
                   }).toList(),
                 ),
+
+                // Validation Error Message
+                if (errorMessage != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0, left: 4.0, right: 4.0),
+                    child: Text(
+                      errorMessage!,
+                      style: AppTextStyles.caption.copyWith(
+                        color: isDark ? AppDarkColors.error : AppColors.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Action Area

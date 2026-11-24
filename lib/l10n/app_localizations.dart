@@ -1466,6 +1466,54 @@ abstract class AppLocalizations {
   /// **'Please enter your name'**
   String get pleaseEnterYourName;
 
+  /// No description provided for @doctorPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Dr.'**
+  String get doctorPrefix;
+
+  /// No description provided for @prefixAddedAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix added automatically. Please enter your first and last name.'**
+  String get prefixAddedAutomatically;
+
+  /// No description provided for @firstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First Name'**
+  String get firstName;
+
+  /// No description provided for @firstNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Ahmed'**
+  String get firstNamePlaceholder;
+
+  /// No description provided for @firstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'First name is required'**
+  String get firstNameRequired;
+
+  /// No description provided for @lastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Name'**
+  String get lastName;
+
+  /// No description provided for @lastNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Nasser'**
+  String get lastNamePlaceholder;
+
+  /// No description provided for @lastNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name is required'**
+  String get lastNameRequired;
+
   /// No description provided for @yourInstitution.
   ///
   /// In en, this message translates to:
@@ -1478,11 +1526,65 @@ abstract class AppLocalizations {
   /// **'University / School'**
   String get universityOrSchool;
 
+  /// No description provided for @whichUniversityAttending.
+  ///
+  /// In en, this message translates to:
+  /// **'Which university or dental school are you attending?'**
+  String get whichUniversityAttending;
+
+  /// No description provided for @universityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g., University of Sana\'a'**
+  String get universityHint;
+
+  /// No description provided for @universityRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'University name is required'**
+  String get universityRequired;
+
   /// No description provided for @clinicalYear.
   ///
   /// In en, this message translates to:
   /// **'Clinical Year'**
   String get clinicalYear;
+
+  /// No description provided for @selectAcademicStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your current academic stage to tailor your quota tracking.'**
+  String get selectAcademicStage;
+
+  /// No description provided for @academicYearThird.
+  ///
+  /// In en, this message translates to:
+  /// **'3rd Year'**
+  String get academicYearThird;
+
+  /// No description provided for @academicYearFourth.
+  ///
+  /// In en, this message translates to:
+  /// **'4th Year'**
+  String get academicYearFourth;
+
+  /// No description provided for @academicYearFifth.
+  ///
+  /// In en, this message translates to:
+  /// **'5th Year'**
+  String get academicYearFifth;
+
+  /// No description provided for @academicYearInternship.
+  ///
+  /// In en, this message translates to:
+  /// **'Internship'**
+  String get academicYearInternship;
+
+  /// No description provided for @academicYearRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an academic year'**
+  String get academicYearRequired;
 
   /// No description provided for @enterWorkspace.
   ///

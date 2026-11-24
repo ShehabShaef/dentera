@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/data/repositories/preferences_repository.dart';
 import 'package:dentera/domain/entities/entities.dart';
+import 'package:dentera/l10n/l10n.dart';
 import 'package:dentera/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:dentera/presentation/screens/onboarding/welcome_page.dart';
 import 'package:dentera/presentation/screens/root_navigation_screen.dart';
@@ -46,13 +47,15 @@ void main() {
         firstName: 'Guest',
         lastName: '',
         university: 'Guest Dental University',
-        academicYear: 'guest Year',
+        academicYear: '5th Year',
+        isGuest: true,
       );
 
       expect(await repo.hasCompletedOnboarding(), isTrue);
       expect(await repo.getDoctorName(), 'Dr. Guest');
       expect(await repo.getUniversity(), 'Guest Dental University');
-      expect(await repo.getAcademicYear(), 'guest Year');
+      expect(await repo.getAcademicYear(), '5th Year');
+      expect(await repo.isGuest(), isTrue);
     });
   });
 
@@ -72,6 +75,9 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: const OnboardingScreen(),
           ),
         ),
@@ -82,14 +88,14 @@ void main() {
       expect(find.text('Dr.'), findsOneWidget);
       expect(find.text('First Name'), findsOneWidget);
       expect(find.text('Last Name'), findsOneWidget);
-      expect(find.text('First name required'), findsNothing);
+      expect(find.text('First name is required'), findsNothing);
 
       // Attempt to continue with blank fields
       await tester.tap(find.widgetWithText(PrimaryButton, 'Continue'));
       await tester.pumpAndSettle();
 
       // Verify validation error is shown and page has NOT advanced
-      expect(find.text('First name required'), findsOneWidget);
+      expect(find.text('First name is required'), findsOneWidget);
       expect(find.text('Your Institution'), findsNothing);
 
       // Enter only whitespace
@@ -102,7 +108,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify validation error remains and still on Step 1
-      expect(find.text('First name required'), findsOneWidget);
+      expect(find.text('First name is required'), findsOneWidget);
       expect(find.text('Your Institution'), findsNothing);
 
       // Enter valid name (with accidental Dr. typed which will be stripped)
@@ -112,7 +118,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Now successfully advanced to Step 2
-      expect(find.text('First name required'), findsNothing);
+      expect(find.text('First name is required'), findsNothing);
       expect(find.text('Your Institution'), findsOneWidget);
     });
 
@@ -131,6 +137,9 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: const OnboardingScreen(),
           ),
         ),
@@ -152,7 +161,8 @@ void main() {
       expect(await repo.hasCompletedOnboarding(), isTrue);
       expect(await repo.getDoctorName(), 'Dr. Guest');
       expect(await repo.getUniversity(), 'Guest Dental University');
-      expect(await repo.getAcademicYear(), 'guest Year');
+      expect(await repo.getAcademicYear(), '5th Year');
+      expect(await repo.isGuest(), isTrue);
     });
 
     testWidgets('Full 3-step onboarding flow navigation and submission with First and Last Name', (WidgetTester tester) async {
@@ -170,6 +180,9 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: const OnboardingScreen(),
           ),
         ),
@@ -243,6 +256,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.lightTheme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(
             body: WelcomePage(
               firstNameController: firstController,
@@ -259,7 +275,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(continueCalled, isFalse);
-      expect(find.text('First name required'), findsOneWidget);
+      expect(find.text('First name is required'), findsOneWidget);
 
       // Tap Continue as a guest
       await tester.tap(find.widgetWithText(TextButton, 'Continue as a guest'));

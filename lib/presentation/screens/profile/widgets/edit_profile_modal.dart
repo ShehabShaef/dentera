@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../../data/repositories/preferences_repository.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../widgets/buttons/buttons.dart';
 import '../../../widgets/inputs/inputs.dart';
 import '../../../widgets/modals/modals.dart';
@@ -296,7 +297,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Dr.',
+                      context.l10n.doctorPrefix,
                       style: AppTextStyles.labelCaps.copyWith(
                         color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                         fontWeight: FontWeight.w700,
@@ -306,7 +307,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Prefix added automatically. Please enter your first and last name.',
+                      context.l10n.prefixAddedAutomatically,
                       style: AppTextStyles.caption.copyWith(
                         color: isDark ? AppDarkColors.textSecondary : AppColors.onSurface,
                         fontWeight: FontWeight.w500,
@@ -325,13 +326,13 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                 Expanded(
                   child: DenteraTextField(
                     controller: _firstNameController,
-                    label: 'First Name',
-                    hintText: 'e.g. Shehab',
+                    label: context.l10n.firstName,
+                    hintText: context.l10n.firstNamePlaceholder,
                     textCapitalization: TextCapitalization.words,
                     validator: (val) {
                       final clean = PreferencesRepository.stripDoctorPrefix(val ?? '');
                       if (clean.trim().isEmpty) {
-                        return 'First name is required';
+                        return context.l10n.firstNameRequired;
                       }
                       return null;
                     },
@@ -341,13 +342,13 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                 Expanded(
                   child: DenteraTextField(
                     controller: _lastNameController,
-                    label: 'Last Name',
-                    hintText: 'e.g. Shaif',
+                    label: context.l10n.lastName,
+                    hintText: context.l10n.lastNamePlaceholder,
                     textCapitalization: TextCapitalization.words,
                     validator: (val) {
                       final clean = PreferencesRepository.stripDoctorPrefix(val ?? '');
                       if (clean.trim().isEmpty) {
-                        return 'Last name is required';
+                        return context.l10n.lastNameRequired;
                       }
                       return null;
                     },
@@ -383,11 +384,11 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
             DenteraTextField(
               controller: _universityController,
               label: 'University / Dental School',
-              hintText: "e.g. Sana'a University Faculty of Dentistry",
+              hintText: context.l10n.universityHint,
               textCapitalization: TextCapitalization.words,
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
-                  return 'University name is required';
+                  return context.l10n.universityRequired;
                 }
                 return null;
               },

@@ -149,7 +149,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Dr.',
+                            context.l10n.doctorPrefix,
                             style: AppTextStyles.labelCaps.copyWith(
                               color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                               fontWeight: FontWeight.w700,
@@ -159,7 +159,7 @@ class _WelcomePageState extends State<WelcomePage> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Prefix added automatically. Please enter your first and last name.',
+                            context.l10n.prefixAddedAutomatically,
                             style: AppTextStyles.caption.copyWith(
                               color: isDark ? AppDarkColors.textSecondary : AppColors.onSurface,
                               fontWeight: FontWeight.w500,
@@ -177,8 +177,8 @@ class _WelcomePageState extends State<WelcomePage> {
                     children: <Widget>[
                       Expanded(
                         child: DenteraTextField(
-                          label: 'First Name',
-                          hintText: 'e.g. Shehab',
+                          label: context.l10n.firstName,
+                          hintText: context.l10n.firstNamePlaceholder,
                           controller: _firstCtrl,
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.words,
@@ -190,7 +190,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           validator: (value) {
                             final clean = PreferencesRepository.stripDoctorPrefix(value ?? '');
                             if (clean.trim().isEmpty) {
-                              return 'First name required';
+                              return context.l10n.firstNameRequired;
                             }
                             return null;
                           },
@@ -199,8 +199,8 @@ class _WelcomePageState extends State<WelcomePage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DenteraTextField(
-                          label: 'Last Name',
-                          hintText: 'e.g. Shaif',
+                          label: context.l10n.lastName,
+                          hintText: context.l10n.lastNamePlaceholder,
                           controller: _lastCtrl,
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.words,
@@ -212,7 +212,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           validator: (value) {
                             final clean = PreferencesRepository.stripDoctorPrefix(value ?? '');
                             if (clean.trim().isEmpty) {
-                              return 'Last name required';
+                              return context.l10n.lastNameRequired;
                             }
                             return null;
                           },

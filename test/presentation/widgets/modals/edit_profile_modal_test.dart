@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/theme/theme.dart';
 import 'package:dentera/data/repositories/preferences_repository.dart';
+import 'package:dentera/l10n/l10n.dart';
 import 'package:dentera/presentation/screens/profile/widgets/edit_profile_modal.dart';
 import 'package:dentera/presentation/widgets/inputs/inputs.dart';
 
@@ -27,6 +28,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -73,6 +77,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -108,6 +115,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -160,6 +170,9 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             theme: AppTheme.lightTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
