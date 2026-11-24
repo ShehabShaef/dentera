@@ -12,8 +12,8 @@ import '../../core/logging/app_logger.dart';
 /// Representation of the student clinician's saved profile credentials.
 class UserProfile {
   const UserProfile({
-    this.firstName = 'Shehab',
-    this.lastName = 'Shaif',
+    this.firstName = 'Doctor',
+    this.lastName = '',
     String? name,
     required this.university,
     required this.academicYear,
@@ -221,6 +221,9 @@ class PreferencesRepository {
     if (first != null && first.isNotEmpty) {
       return first;
     }
+    if (await isGuest()) {
+      return 'Guest';
+    }
     // Fallback: migrate from legacy _keyDoctorName
     final legacyName = prefs.getString(_keyDoctorName);
     if (legacyName != null && legacyName.isNotEmpty) {
@@ -243,6 +246,9 @@ class PreferencesRepository {
     if (last != null) {
       return last;
     }
+    if (await isGuest()) {
+      return '';
+    }
     // Fallback: migrate from legacy _keyDoctorName
     final legacyName = prefs.getString(_keyDoctorName);
     if (legacyName != null && legacyName.isNotEmpty) {
@@ -261,37 +267,56 @@ class PreferencesRepository {
   /// Retrieves the saved student doctor's formatted name with "Dr." prefix.
   Future<String?> getDoctorName([String? locale]) async {
     final prefs = await _instance;
+    final isGuestUser = await isGuest();
+    final isAr = locale?.toLowerCase().startsWith('ar') ?? false;
+    final prefix = isAr ? 'د.' : 'Dr.';
+    if (isGuestUser) {
+      return isAr ? 'د. ضيف' : 'Dr. Guest';
+    }
     final first = await getDoctorFirstName();
     final last = await getDoctorLastName();
     if (first != null && first.isNotEmpty) {
-      final full = '$first ${last ?? ''}'.trim();
-      final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
-      return '$prefix $full';
+      final cleanFirst = stripDoctorPrefix(first).trim();
+      final cleanLast = stripDoctorPrefix(last ?? '').trim();
+      final full = '$cleanFirst $cleanLast'.trim();
+      return full.isNotEmpty ? '$prefix $full' : '$prefix Doctor';
     }
     final legacy = prefs.getString(_keyDoctorName);
     if (legacy != null && legacy.isNotEmpty) {
       final clean = stripDoctorPrefix(legacy).trim();
-      final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
       return clean.isNotEmpty ? '$prefix $clean' : '$prefix Doctor';
     }
     return null;
   }
 
-  /// Formatted short doctor name (e.g. "Dr. Shehab").
+  /// Formatted short doctor name (e.g. "Dr. Ahmed" / "Dr. Guest").
   Future<String> getFormattedShortDoctorName([String? locale]) async {
-    final first = await getDoctorFirstName();
-    final prefix = (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د.' : 'Dr.';
-    if (first != null && first.isNotEmpty) {
-      return '$prefix $first';
+    final isGuestUser = await isGuest();
+    final isAr = locale?.toLowerCase().startsWith('ar') ?? false;
+    final prefix = isAr ? 'د.' : 'Dr.';
+    if (isGuestUser) {
+      return isAr ? 'د. ضيف' : 'Dr. Guest';
     }
-    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+    final first = await getDoctorFirstName();
+    if (first != null && first.isNotEmpty) {
+      final cleanFirst = stripDoctorPrefix(first).trim();
+      if (cleanFirst.isNotEmpty) {
+        return '$prefix $cleanFirst';
+      }
+    }
+    return isAr ? 'د. طبيب' : 'Dr. Doctor';
   }
 
-  /// Formatted full doctor name (e.g. "Dr. Shehab Shaif").
+  /// Formatted full doctor name (e.g. "Dr. Ahmed Nasser" / "Dr. Guest").
   Future<String> getFormattedFullDoctorName([String? locale]) async {
+    final isGuestUser = await isGuest();
+    final isAr = locale?.toLowerCase().startsWith('ar') ?? false;
+    if (isGuestUser) {
+      return isAr ? 'د. ضيف' : 'Dr. Guest';
+    }
     final name = await getDoctorName(locale);
     if (name != null && name.isNotEmpty) return name;
-    return (locale?.toLowerCase().startsWith('ar') ?? false) ? 'د. طبيب' : 'Dr. Doctor';
+    return isAr ? 'د. طبيب' : 'Dr. Doctor';
   }
 
   /// Retrieves the saved academic institution/university.
@@ -533,11 +558,11 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
 
   Future<void> loadProfile() async {
     try {
-      final first = await _repository.getDoctorFirstName() ?? 'Shehab';
-      final last = await _repository.getDoctorLastName() ?? 'Shaif';
-      final uni = await _repository.getUniversity() ?? 'Dental School';
-      final year = await _repository.getAcademicYear() ?? '5th Year';
       final isGuest = await _repository.isGuest();
+      final first = await _repository.getDoctorFirstName() ?? (isGuest ? 'Guest' : 'Doctor');
+      final last = await _repository.getDoctorLastName() ?? '';
+      final uni = await _repository.getUniversity() ?? (isGuest ? 'Guest Dental University' : 'Dental School');
+      final year = await _repository.getAcademicYear() ?? '5th Year';
       state = AsyncValue.data(UserProfile(
         firstName: first,
         lastName: last,

@@ -153,7 +153,7 @@ void main() {
 
       final profile = notifier.state.value;
       expect(profile, isNotNull);
-      expect(profile!.name, equals('Dr. Shehab Shaif'));
+      expect(profile!.name, equals('Dr. Doctor'));
       expect(profile.university, equals('Dental School'));
       expect(profile.academicYear, equals('5th Year'));
 

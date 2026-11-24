@@ -67,7 +67,10 @@ class DashboardHeader extends ConsumerWidget {
     final clean = PreferencesRepository.stripDoctorPrefix(doctorName).trim();
     final isArabic = context.l10n.localeName.startsWith('ar');
     final prefix = isArabic ? 'د.' : 'Dr.';
-    final effectiveDoctorName = clean.isNotEmpty ? '$prefix $clean' : '$prefix Doctor';
+    final isGuest = clean.toLowerCase() == 'guest' || clean == 'ضيف';
+    final effectiveDoctorName = isGuest
+        ? (isArabic ? 'د. ضيف' : 'Dr. Guest')
+        : (clean.isNotEmpty ? '$prefix $clean' : (isArabic ? 'د. طبيب' : 'Dr. Doctor'));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

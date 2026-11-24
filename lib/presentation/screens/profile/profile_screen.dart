@@ -262,8 +262,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final userProfileAsync = ref.watch(userProfileProvider);
     final userProfile = userProfileAsync.valueOrNull ??
         const UserProfile(
-          firstName: 'Shehab',
-          lastName: 'Shaif',
+          firstName: 'Doctor',
+          lastName: '',
           university: 'Dental School',
           academicYear: '5th Year',
         );
