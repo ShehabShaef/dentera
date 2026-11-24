@@ -58,6 +58,8 @@ class DenteraEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Resolve the action button widget if convenience parameters were provided
     Widget? resolvedAction = actionButton;
     if (resolvedAction == null && actionText != null && onAction != null) {
@@ -91,14 +93,16 @@ class DenteraEmptyState extends StatelessWidget {
               Container(
                 width: iconContainerSize,
                 height: iconContainerSize,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.surfaceContainerHigh,
+                  color: isDark
+                      ? AppDarkColors.surfaceContainerElevated
+                      : AppColors.surfaceContainerHigh,
                 ),
                 child: Icon(
                   icon,
                   size: iconSize,
-                  color: AppColors.outline,
+                  color: isDark ? AppDarkColors.textMuted : AppColors.outline,
                 ),
               ),
 
@@ -112,11 +116,11 @@ class DenteraEmptyState extends StatelessWidget {
                   ? AppTextStyles.h2.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                     )
                   : AppTextStyles.h2.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
+                      color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                     ),
               textAlign: TextAlign.center,
             ),
@@ -127,10 +131,10 @@ class DenteraEmptyState extends StatelessWidget {
               subtitle,
               style: isCompact
                   ? AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.textSecondary,
                     )
                   : AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.textSecondary,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.textSecondary,
                     ),
               textAlign: TextAlign.center,
             ),

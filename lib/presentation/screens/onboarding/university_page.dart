@@ -18,6 +18,8 @@ class UniversityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -38,7 +40,7 @@ class UniversityPage extends StatelessWidget {
                 Text(
                   'Which university or dental school are you attending?',
                   style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -49,9 +51,9 @@ class UniversityPage extends StatelessWidget {
                   hintText: "e.g., University of Sana'a",
                   controller: universityController,
                   textInputAction: TextInputAction.next,
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.school_outlined,
-                    color: AppColors.outline,
+                    color: isDark ? AppDarkColors.outline : AppColors.outline,
                     size: 20,
                   ),
                   onFieldSubmitted: (_) => onContinue(),
@@ -67,7 +69,7 @@ class UniversityPage extends StatelessWidget {
                       child: Text(
                         context.l10n.back,
                         style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
+                          color: isDark ? AppDarkColors.primary : AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -75,10 +77,10 @@ class UniversityPage extends StatelessWidget {
                     PrimaryButton(
                       isFullWidth: false,
                       text: context.l10n.continueButton,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_forward_rounded,
                         size: 18,
-                        color: AppColors.onPrimary,
+                        color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                       ),
                       onPressed: onContinue,
                     ),

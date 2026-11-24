@@ -81,6 +81,8 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -100,10 +102,10 @@ class _WelcomePageState extends State<WelcomePage> {
                       'assets/images/dentera_logo.png',
                       width: 56,
                       height: 56,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
+                      errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.medical_services_outlined,
                         size: 48,
-                        color: AppColors.primary,
+                        color: isDark ? AppDarkColors.primary : AppColors.primary,
                       ),
                     ),
                   ),
@@ -118,7 +120,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   Text(
                     context.l10n.setupClinicalWorkspace,
                     style: AppTextStyles.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -127,10 +129,14 @@ class _WelcomePageState extends State<WelcomePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: isDark
+                          ? AppDarkColors.primary.withValues(alpha: 0.08)
+                          : AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.2),
+                        color: isDark
+                            ? AppDarkColors.primary.withValues(alpha: 0.2)
+                            : AppColors.primary.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -139,13 +145,13 @@ class _WelcomePageState extends State<WelcomePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: isDark ? AppDarkColors.primary : AppColors.primary,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             'Dr.',
                             style: AppTextStyles.labelCaps.copyWith(
-                              color: AppColors.onPrimary,
+                              color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -155,7 +161,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           child: Text(
                             'Prefix added automatically. Please enter your first and last name.',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.onSurface,
+                              color: isDark ? AppDarkColors.textSecondary : AppColors.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -240,7 +246,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             child: Text(
                               context.l10n.continueAsGuest,
                               style: AppTextStyles.caption.copyWith(
-                                color: AppColors.primary,
+                                color: isDark ? AppDarkColors.primary : AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

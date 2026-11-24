@@ -158,12 +158,13 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainerElevated : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -185,7 +186,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -199,12 +200,14 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: isDark
+                        ? AppDarkColors.primaryContainer.withValues(alpha: 0.25)
+                        : AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_outlined,
-                    color: AppColors.primary,
+                    color: isDark ? AppDarkColors.primary : AppColors.primary,
                     size: 22,
                   ),
                 ),
@@ -212,7 +215,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                 Text(
                   'Edit Clinician Profile',
                   style: AppTextStyles.h2.copyWith(
-                    color: AppColors.onSurface,
+                    color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -230,7 +233,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                     Stack(
                       clipBehavior: Clip.none,
                       children: <Widget>[
-                        _buildAvatarPreview(),
+                        _buildAvatarPreview(isDark),
                         Positioned(
                           bottom: -2,
                           right: -2,
@@ -238,18 +241,18 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: isDark ? AppDarkColors.primary : AppColors.primary,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.surface,
+                                color: isDark ? AppDarkColors.surfaceContainerElevated : AppColors.surface,
                                 width: 2,
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: const Icon(
+                            child: Icon(
                               Icons.camera_alt_rounded,
                               size: 12,
-                              color: AppColors.onPrimary,
+                              color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                             ),
                           ),
                         ),
@@ -259,7 +262,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                     Text(
                       'Change Photo',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
+                        color: isDark ? AppDarkColors.primary : AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -273,10 +276,14 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: isDark
+                    ? AppDarkColors.primary.withValues(alpha: 0.08)
+                    : AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: isDark
+                      ? AppDarkColors.primary.withValues(alpha: 0.2)
+                      : AppColors.primary.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -285,13 +292,13 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: isDark ? AppDarkColors.primary : AppColors.primary,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Dr.',
                       style: AppTextStyles.labelCaps.copyWith(
-                        color: AppColors.onPrimary,
+                        color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -301,7 +308,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                     child: Text(
                       'Prefix added automatically. Please enter your first and last name.',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.onSurface,
+                        color: isDark ? AppDarkColors.textSecondary : AppColors.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -418,7 +425,7 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
       Platform.executable.contains('flutter_tester') ||
       WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
 
-  Widget _buildAvatarPreview() {
+  Widget _buildAvatarPreview(bool isDark) {
     final avatarPath = ref.watch(avatarProvider);
     final hasAvatar = avatarPath != null && avatarPath.isNotEmpty;
     final file = hasAvatar ? File(avatarPath) : null;
@@ -433,13 +440,15 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
       decoration: BoxDecoration(
         gradient: (hasAvatar && (fileExists || _isTestEnvironment))
             ? null
-            : AppColors.brandGradient,
+            : (isDark ? AppDarkColors.brandGradient : AppColors.brandGradient),
         color: (hasAvatar && (fileExists || _isTestEnvironment))
-            ? AppColors.primaryContainer.withValues(alpha: 0.2)
+            ? (isDark
+                ? AppDarkColors.primaryContainer.withValues(alpha: 0.2)
+                : AppColors.primaryContainer.withValues(alpha: 0.2))
             : null,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppColors.outlineVariant,
+          color: isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant,
           width: 1.0,
         ),
       ),
@@ -455,20 +464,20 @@ class _EditProfileModalState extends ConsumerState<EditProfileModal> {
                   errorBuilder: (context, error, stackTrace) => Text(
                     initial,
                     style: AppTextStyles.h1.copyWith(
-                      color: AppColors.onPrimary,
+                      color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 )
-              : const Icon(
+              : Icon(
                   Icons.person_rounded,
                   size: 38,
-                  color: AppColors.primary,
+                  color: isDark ? AppDarkColors.primary : AppColors.primary,
                 ))
           : Text(
               initial,
               style: AppTextStyles.h1.copyWith(
-                color: AppColors.onPrimary,
+                color: isDark ? AppDarkColors.onPrimary : AppColors.onPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),

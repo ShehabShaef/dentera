@@ -74,32 +74,39 @@ class _DenteraSearchBarState extends State<DenteraSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveFillColor = widget.fillColor ?? AppColors.surfaceContainerLowest;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveFillColor = widget.fillColor ??
+        (isDark ? AppDarkColors.surfaceBase : AppColors.surfaceContainerLowest);
+    final effectiveTextColor = isDark ? AppDarkColors.textPrimary : AppColors.onSurface;
+    final effectiveHintColor = isDark ? AppDarkColors.textPlaceholder : AppColors.outline;
+    final effectiveIconColor = isDark ? AppDarkColors.outline : AppColors.outline;
+    final effectiveBorderColor = isDark ? AppDarkColors.outlineVariant : AppColors.outlineVariant;
+    final effectiveFocusBorderColor = isDark ? AppDarkColors.primary : AppColors.primary;
 
     return TextField(
       controller: _controller,
       enabled: widget.enabled,
       autofocus: widget.autofocus,
-      style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
+      style: AppTextStyles.bodyMd.copyWith(color: effectiveTextColor),
       textInputAction: TextInputAction.search,
       onChanged: widget.onChanged,
       onSubmitted: widget.onSubmitted,
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.outline),
+        hintStyle: AppTextStyles.bodyMd.copyWith(color: effectiveHintColor),
         filled: true,
         fillColor: effectiveFillColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search_rounded,
-          color: AppColors.outline,
+          color: effectiveIconColor,
           size: 22,
         ),
         suffixIcon: _hasText
             ? IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
-                  color: AppColors.outline,
+                  color: effectiveIconColor,
                   size: 20,
                 ),
                 onPressed: _handleClear,
@@ -108,22 +115,22 @@ class _DenteraSearchBarState extends State<DenteraSearchBar> {
             : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.outlineVariant,
+          borderSide: BorderSide(
+            color: effectiveBorderColor,
             width: 1.0,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.outlineVariant,
+          borderSide: BorderSide(
+            color: effectiveBorderColor,
             width: 1.0,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
+          borderSide: BorderSide(
+            color: effectiveFocusBorderColor,
             width: 2.0,
           ),
         ),
