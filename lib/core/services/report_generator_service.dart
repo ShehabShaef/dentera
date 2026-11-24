@@ -11,6 +11,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../data/database/database_seeder.dart';
 import '../../domain/entities/entities.dart';
 import '../logging/app_logger.dart';
 
@@ -28,6 +29,8 @@ class QuotaReportData {
     this.filterClinicId,
     this.startDate,
     this.endDate,
+    this.isDemoReport = false,
+    this.localeCode = 'en',
   });
 
   final String doctorName;
@@ -41,6 +44,13 @@ class QuotaReportData {
   final String? filterClinicId;
   final DateTime? startDate;
   final DateTime? endDate;
+
+  /// Marks this payload as a showcase Demo Report (used in Guest Mode), adding clear
+  /// watermark banners across generated PDF and CSV files.
+  final bool isDemoReport;
+
+  /// Active UI locale code (`'en'` or `'ar'`) used to localize demo watermarks.
+  final String localeCode;
 
   /// Human-readable date range label.
   String get dateRangeLabel {
@@ -131,10 +141,45 @@ class ReportGeneratorService {
     return RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]').hasMatch(text);
   }
 
+  /// Builds a rich showcase [QuotaReportData] populated strictly from the Guest demo dataset
+  /// with [isDemoReport] enforced to `true`.
+  static QuotaReportData buildGuestDemoReportData({
+    String localeCode = 'en',
+    String? filterClinicId,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? generatedDate,
+  }) {
+    final isAr = localeCode.toLowerCase().startsWith('ar');
+    final now = generatedDate ?? DateTime.now();
+    final demo = DatabaseSeeder.buildGuestDemoDataset(referenceNow: now);
+    return QuotaReportData(
+      doctorName: isAr ? 'د. ضيف' : 'Dr. Guest',
+      university: 'Guest Dental University',
+      academicYear: '5th Year',
+      generatedDate: now,
+      clinics: demo.clinics,
+      requirements: demo.requirements,
+      cases: demo.caseRecords,
+      patients: demo.patients,
+      filterClinicId: filterClinicId,
+      startDate: startDate,
+      endDate: endDate,
+      isDemoReport: true,
+      localeCode: localeCode,
+    );
+  }
+
   /// Generates a standardized academic PDF report containing clinician identity,
   /// department quota progress bars, evaluated cases, and supervisory sign-off blocks.
+  ///
+  /// When [QuotaReportData.isDemoReport] is `true`, inserts a prominent showcase banner
+  /// across the document header and top body stating `"DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)"`
+  /// (plus its Arabic equivalent when `localeCode == 'ar'`) and `"DEMO REPORT — SAMPLE DATA ONLY"`.
   Future<Uint8List> generatePdfReport(QuotaReportData data) async {
-    AppLogger.info('Generating PDF supervisory quota report for ${data.doctorName}');
+    AppLogger.info(
+      'Generating PDF ${data.isDemoReport ? "DEMO showcase" : "live"} supervisory quota report for ${data.doctorName}',
+    );
     final doc = pw.Document();
 
     final (baseFont, boldFont) = await loadArabicFonts();
@@ -170,6 +215,11 @@ class ReportGeneratorService {
         build: (pw.Context context) => <pw.Widget>[
           pw.SizedBox(height: 12),
 
+          if (data.isDemoReport) ...[
+            _buildDemoWatermarkBanner(data),
+            pw.SizedBox(height: 14),
+          ],
+
           // 1. Clinician Profile Metadata Box
           _buildMetadataBox(data, formattedDate),
           pw.SizedBox(height: 20),
@@ -189,6 +239,44 @@ class ReportGeneratorService {
     );
 
     return await doc.save();
+  }
+
+  pw.Widget _buildDemoWatermarkBanner(QuotaReportData data) {
+    final isAr = data.localeCode.toLowerCase().startsWith('ar');
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.amber50,
+        border: pw.Border.all(color: PdfColors.amber800, width: 1.5),
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: isAr ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start,
+        children: <pw.Widget>[
+          pw.Text(
+            isAr
+                ? 'تقرير تجريبي — للعرض فقط (بيانات تجريبية)'
+                : 'DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)',
+            textDirection: isAr ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.amber900,
+            ),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            'DEMO REPORT — SAMPLE DATA ONLY • Not valid for official clinical submission',
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.grey800,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   pw.Widget _buildPdfHeader(QuotaReportData data, String dateStr) {
@@ -213,14 +301,43 @@ class ReportGeneratorService {
               ),
               pw.SizedBox(height: 2),
               pw.Text(
-                'Official Academic Quota & Case Record Log',
-                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                data.isDemoReport
+                    ? 'DEMO REPORT — SAMPLE DATA ONLY'
+                    : 'Official Academic Quota & Case Record Log',
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  fontWeight: data.isDemoReport ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  color: data.isDemoReport ? PdfColors.amber900 : PdfColors.grey700,
+                ),
               ),
             ],
           ),
-          pw.Text(
-            dateStr,
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: <pw.Widget>[
+              if (data.isDemoReport)
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  margin: const pw.EdgeInsets.only(bottom: 3),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.amber100,
+                    border: pw.Border.all(color: PdfColors.amber800, width: 0.8),
+                    borderRadius: pw.BorderRadius.circular(3),
+                  ),
+                  child: pw.Text(
+                    'DEMO',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.amber900,
+                    ),
+                  ),
+                ),
+              pw.Text(
+                dateStr,
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+              ),
+            ],
           ),
         ],
       ),
@@ -604,7 +721,9 @@ class ReportGeneratorService {
 
   /// Generates a standardized tabular CSV string suitable for spreadsheet grading.
   String generateCsvReport(QuotaReportData data) {
-    AppLogger.info('Generating CSV supervisory report for ${data.doctorName}');
+    AppLogger.info(
+      'Generating CSV ${data.isDemoReport ? "DEMO showcase" : "live"} supervisory report for ${data.doctorName}',
+    );
     final buffer = StringBuffer();
     // UTF-8 Byte Order Mark (BOM) so Microsoft Excel and spreadsheet tools display Arabic text properly
     buffer.write('\uFEFF');
@@ -620,6 +739,16 @@ class ReportGeneratorService {
     final clinicMap = <String, Clinic>{
       for (final c in data.clinics) c.id: c,
     };
+
+    // Showcase Demo Report banner when generated in Guest Mode
+    if (data.isDemoReport) {
+      final isAr = data.localeCode.toLowerCase().startsWith('ar');
+      buffer.writeln('"DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)"');
+      buffer.writeln('"STATUS","DEMO REPORT — SAMPLE DATA ONLY"');
+      if (isAr) {
+        buffer.writeln('"تنبيه","تقرير تجريبي — للعرض فقط (بيانات تجريبية)"');
+      }
+    }
 
     // Metadata header
     buffer.writeln('"DENTERA CLINICAL SUPERVISORY REPORT"');

@@ -1,12 +1,38 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../domain/repositories/repositories.dart';
 import '../repositories/repositories.dart';
 import 'app_database.dart';
+import 'database_seeder.dart';
+
+/// Signature for onboarding database initialization (Guest demo vs. clean Real User slate).
+typedef OnboardingSeeder = Future<void> Function({
+  required bool isGuest,
+  required String academicYear,
+});
 
 /// Riverpod provider for the singleton SQLite [AppDatabase] instance.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return AppDatabase.instance;
+});
+
+/// Riverpod provider coordinating initial SQLite seeding after onboarding completes.
+///
+/// - When `isGuest == true`, populates [DatabaseSeeder.seedGuestDemoData].
+/// - When `isGuest == false`, ensures [DatabaseSeeder.seedRealUserBaseline] with
+///   zero sample patients, zero sample cases, and zero sample appointments.
+final onboardingSeederProvider = Provider<OnboardingSeeder>((ref) {
+  return ({required bool isGuest, required String academicYear}) async {
+    final db = await ref.read(appDatabaseProvider).database;
+    if (isGuest) {
+      AppLogger.info('[onboardingSeederProvider] Completing Guest onboarding — seeding demo showcase dataset.');
+      await DatabaseSeeder.seedGuestDemoData(db);
+    } else {
+      AppLogger.info('[onboardingSeederProvider] Completing Real User onboarding — enforcing clean clinical slate.');
+      await DatabaseSeeder.seedRealUserBaseline(db, academicYear: academicYear);
+    }
+  };
 });
 
 /// Riverpod provider for the [PatientRepository].

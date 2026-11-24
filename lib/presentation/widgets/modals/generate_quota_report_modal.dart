@@ -90,6 +90,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
   }
 
   QuotaReportData _buildReportData() {
+    final currentLocale = ref.read(localeProvider);
     final userProfile = ref.read(userProfileProvider).valueOrNull ??
         const UserProfile(
           firstName: 'Doctor',
@@ -97,6 +98,17 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
           university: 'Dental School',
           academicYear: '5th Year',
         );
+
+    // Restrict Guest Mode strictly to watermarked showcase Demo Reports populated with sample data.
+    if (userProfile.isGuest) {
+      return ReportGeneratorService.buildGuestDemoReportData(
+        localeCode: currentLocale,
+        filterClinicId: _selectedClinicId,
+        startDate: _selectedStartDate,
+        endDate: _selectedEndDate,
+      );
+    }
+
     final clinics = ref.read(clinicListProvider).valueOrNull ?? const <Clinic>[];
     final allClinics = <Clinic>[
       if (widget.initialClinic != null && !clinics.any((c) => c.id == widget.initialClinic!.id))
@@ -108,7 +120,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
     final patients = ref.read(patientListProvider).valueOrNull ?? const <Patient>[];
 
     return QuotaReportData(
-      doctorName: userProfile.name,
+      doctorName: userProfile.formattedFullDoctorName(currentLocale),
       university: userProfile.university,
       academicYear: userProfile.academicYear,
       generatedDate: DateTime.now(),
@@ -119,23 +131,92 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
       filterClinicId: _selectedClinicId,
       startDate: _selectedStartDate,
       endDate: _selectedEndDate,
+      isDemoReport: false,
+      localeCode: currentLocale,
     );
   }
 
-  Future<void> _handlePreviewAndPrint() async {
+  /// Displays a clear informational dialog when in Guest Mode before exporting a Demo Report.
+  /// Returns `true` to proceed with report generation, or `false` if cancelled.
+  Future<bool> _confirmGuestDemoExportIfNeeded() async {
+    final userProfile = ref.read(userProfileProvider).valueOrNull;
+    final isGuest = userProfile?.isGuest ?? false;
+    if (!isGuest) return true;
+
+    AppLogger.info(
+      '[GenerateQuotaReportModal] Guest export intercepted — presenting Demo Report showcase dialog.',
+    );
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final warningColor = isDark ? AppDarkColors.statusWarning : const Color(0xFFD97706);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: <Widget>[
+            Icon(Icons.info_outline_rounded, color: warningColor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.l10n.demoReportDialogTitle,
+                style: AppTextStyles.h2.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          context.l10n.demoReportDialogMessage,
+          style: AppTextStyles.bodyMd,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            icon: const Icon(Icons.description_outlined, size: 18),
+            label: Text(context.l10n.generateDemoReportButton),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.generatingDemoReportNotice),
+          backgroundColor: AppColors.secondary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<void> _executeReportAction({
+    required Future<void> Function(ReportGeneratorService service, QuotaReportData data) action,
+    required String errorMessage,
+    required String actionName,
+  }) async {
     if (_isGenerating) return;
+    final shouldProceed = await _confirmGuestDemoExportIfNeeded();
+    if (!shouldProceed || !mounted) return;
+
     setState(() => _isGenerating = true);
     try {
       final service = ref.read(reportGeneratorServiceProvider);
       final data = _buildReportData();
-      await service.previewAndPrintPdf(data);
+      await action(service, data);
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
-      AppLogger.error('Failed to preview/print quota report: $e', e, st);
+      AppLogger.error('Failed to $actionName: $e', e, st);
       if (mounted) {
         DenteraSnackBar.showError(
           context,
-          message: context.l10n.failedToGeneratePdf,
+          message: errorMessage,
           error: e,
           stackTrace: st,
         );
@@ -145,51 +226,23 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
     }
   }
 
-  Future<void> _handleSharePdf() async {
-    if (_isGenerating) return;
-    setState(() => _isGenerating = true);
-    try {
-      final service = ref.read(reportGeneratorServiceProvider);
-      final data = _buildReportData();
-      await service.sharePdf(data);
-      if (mounted) Navigator.of(context).pop();
-    } catch (e, st) {
-      AppLogger.error('Failed to share PDF report: $e', e, st);
-      if (mounted) {
-        DenteraSnackBar.showError(
-          context,
-          message: context.l10n.failedToSharePdf,
-          error: e,
-          stackTrace: st,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isGenerating = false);
-    }
-  }
+  Future<void> _handlePreviewAndPrint() => _executeReportAction(
+        action: (service, data) => service.previewAndPrintPdf(data),
+        errorMessage: context.l10n.failedToGeneratePdf,
+        actionName: 'preview/print quota report',
+      );
 
-  Future<void> _handleExportCsv() async {
-    if (_isGenerating) return;
-    setState(() => _isGenerating = true);
-    try {
-      final service = ref.read(reportGeneratorServiceProvider);
-      final data = _buildReportData();
-      await service.shareCsv(data);
-      if (mounted) Navigator.of(context).pop();
-    } catch (e, st) {
-      AppLogger.error('Failed to export CSV grading report: $e', e, st);
-      if (mounted) {
-        DenteraSnackBar.showError(
-          context,
-          message: context.l10n.failedToExportCsv,
-          error: e,
-          stackTrace: st,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isGenerating = false);
-    }
-  }
+  Future<void> _handleSharePdf() => _executeReportAction(
+        action: (service, data) => service.sharePdf(data),
+        errorMessage: context.l10n.failedToSharePdf,
+        actionName: 'share PDF report',
+      );
+
+  Future<void> _handleExportCsv() => _executeReportAction(
+        action: (service, data) => service.shareCsv(data),
+        errorMessage: context.l10n.failedToExportCsv,
+        actionName: 'export CSV grading report',
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +262,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
             ? _selectedClinicId
             : null;
 
+    final currentLocale = ref.watch(localeProvider);
     final userProfile = ref.watch(userProfileProvider).valueOrNull ??
         const UserProfile(
           firstName: 'Doctor',
@@ -216,6 +270,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
           university: 'Dental School',
           academicYear: '5th Year',
         );
+    final isGuest = userProfile.isGuest;
 
     final allReqs = ref.watch(allRequirementsProvider).valueOrNull ?? const <Requirement>[];
     final allCases = ref.watch(allCasesProvider).valueOrNull ?? const <CaseRecord>[];
@@ -346,7 +401,7 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          userProfile.name,
+                          userProfile.formattedFullDoctorName(currentLocale),
                           style: AppTextStyles.bodyMd.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
@@ -364,6 +419,39 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
                 ],
               ),
             ),
+            if (isGuest) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (isDark ? AppDarkColors.statusWarning : const Color(0xFFD97706)).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: (isDark ? AppDarkColors.statusWarning : const Color(0xFFD97706)).withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: isDark ? AppDarkColors.statusWarning : const Color(0xFFD97706),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        context.l10n.guestDemoReportNotice,
+                        style: AppTextStyles.caption.copyWith(
+                          color: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
 
             // Scope Selector: Department / Clinic
@@ -506,7 +594,9 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
             else ...[
               // Preview & Print PDF Button
               PrimaryButton(
-                text: context.l10n.previewAndPrintPdf,
+                text: isGuest
+                    ? context.l10n.previewAndPrintDemoPdf
+                    : context.l10n.previewAndPrintPdf,
                 icon: Icon(Icons.print_rounded, size: 20, color: isDark ? AppDarkColors.onTeal : AppColors.onPrimary),
                 onPressed: _handlePreviewAndPrint,
               ),
@@ -514,7 +604,9 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
 
               // Share PDF Button
               SecondaryButton(
-                text: context.l10n.sharePdfReport,
+                text: isGuest
+                    ? context.l10n.shareDemoPdfReport
+                    : context.l10n.sharePdfReport,
                 icon: Icon(Icons.share_rounded, size: 20, color: isDark ? AppDarkColors.tealAccent : AppColors.primary),
                 onPressed: _handleSharePdf,
               ),
@@ -524,7 +616,11 @@ class _GenerateQuotaReportModalState extends ConsumerState<GenerateQuotaReportMo
               OutlinedButton.icon(
                 onPressed: _handleExportCsv,
                 icon: const Icon(Icons.table_chart_outlined, size: 18),
-                label: Text(context.l10n.exportTabularCsv),
+                label: Text(
+                  isGuest
+                      ? context.l10n.exportDemoCsv
+                      : context.l10n.exportTabularCsv,
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? AppDarkColors.textPrimary : AppColors.onSurface,
                   side: BorderSide(color: isDark ? AppDarkColors.borderSubtle : AppColors.outlineVariant),

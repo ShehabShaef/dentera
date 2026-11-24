@@ -1599,4 +1599,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String dashboardSubtitle(String today, String year, String clinics) {
     return '$today • عيادات $year';
   }
+
+  @override
+  String get demoReportBanner => 'تقرير تجريبي — للعرض فقط (بيانات تجريبية)';
+
+  @override
+  String get demoReportSampleBadge => 'تقرير تجريبي — بيانات عينة فقط';
+
+  @override
+  String get guestDemoReportNotice =>
+      'وضع الضيف: يتم تصدير تقرير تجريبي ببيانات عينة لعرض تصميم التقارير في دنتيرا.';
+
+  @override
+  String get demoReportDialogTitle => 'عرض التقرير التجريبي';
+
+  @override
+  String get demoReportDialogMessage =>
+      'تصدير التقارير الإكلينيكية الحية متاح لحسابات الطلاب المسجلين فقط. لأنك في وضع الضيف، سيتم إنشاء تقرير تجريبي ببيانات عينة مزود بعلامة مائية لعرض شكل التقارير في دنتيرا.';
+
+  @override
+  String get generateDemoReportButton => 'إنشاء التقرير التجريبي';
+
+  @override
+  String get generatingDemoReportNotice =>
+      'جاري إنشاء التقرير التجريبي للعرض (بيانات تجريبية)...';
+
+  @override
+  String get previewAndPrintDemoPdf => 'معاينة وطباعة PDF تجريبي';
+
+  @override
+  String get shareDemoPdfReport => 'مشاركة تقرير PDF التجريبي';
+
+  @override
+  String get exportDemoCsv => 'تصدير جدول CSV التجريبي';
 }

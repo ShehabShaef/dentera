@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dentera/core/services/report_generator_service.dart';
 import 'package:dentera/core/theme/theme.dart';
+import 'package:dentera/data/database/database_providers.dart';
 import 'package:dentera/data/repositories/preferences_repository.dart';
 import 'package:dentera/domain/entities/entities.dart';
 import 'package:dentera/l10n/l10n.dart';
@@ -35,6 +36,7 @@ void main() {
             allCasesProvider.overrideWith((ref) => <CaseRecord>[]),
             allRequirementsProvider.overrideWith((ref) => <Requirement>[]),
             clinicListProvider.overrideWith((ref) => <Clinic>[]),
+            onboardingSeederProvider.overrideWithValue(({required isGuest, required academicYear}) async {}),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,

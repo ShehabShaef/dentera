@@ -1608,4 +1608,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String dashboardSubtitle(String today, String year, String clinics) {
     return '$today • $year $clinics';
   }
+
+  @override
+  String get demoReportBanner => 'DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)';
+
+  @override
+  String get demoReportSampleBadge => 'DEMO REPORT — SAMPLE DATA ONLY';
+
+  @override
+  String get guestDemoReportNotice =>
+      'Guest Mode: Exporting generates a Demo Report with sample showcase data to preview Dentera\'s report layout.';
+
+  @override
+  String get demoReportDialogTitle => 'Demo Report Showcase';
+
+  @override
+  String get demoReportDialogMessage =>
+      'Standard live clinical report export is reserved for registered student accounts. Because you are in Guest Mode, this generates a watermarked Demo Report populated with sample data to showcase how Dentera\'s reports look.';
+
+  @override
+  String get generateDemoReportButton => 'Generate Demo Report';
+
+  @override
+  String get generatingDemoReportNotice =>
+      'Generating showcase Demo Report (demo data)...';
+
+  @override
+  String get previewAndPrintDemoPdf => 'Preview & Print Demo PDF';
+
+  @override
+  String get shareDemoPdfReport => 'Share Demo PDF Report';
+
+  @override
+  String get exportDemoCsv => 'Export Demo Tabular CSV';
 }

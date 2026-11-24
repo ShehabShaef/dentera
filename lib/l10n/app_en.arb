@@ -674,5 +674,15 @@
       "year": { "type": "String" },
       "clinics": { "type": "String" }
     }
-  }
+  },
+  "demoReportBanner": "DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)",
+  "demoReportSampleBadge": "DEMO REPORT — SAMPLE DATA ONLY",
+  "guestDemoReportNotice": "Guest Mode: Exporting generates a Demo Report with sample showcase data to preview Dentera's report layout.",
+  "demoReportDialogTitle": "Demo Report Showcase",
+  "demoReportDialogMessage": "Standard live clinical report export is reserved for registered student accounts. Because you are in Guest Mode, this generates a watermarked Demo Report populated with sample data to showcase how Dentera's reports look.",
+  "generateDemoReportButton": "Generate Demo Report",
+  "generatingDemoReportNotice": "Generating showcase Demo Report (demo data)...",
+  "previewAndPrintDemoPdf": "Preview & Print Demo PDF",
+  "shareDemoPdfReport": "Share Demo PDF Report",
+  "exportDemoCsv": "Export Demo Tabular CSV"
 }
