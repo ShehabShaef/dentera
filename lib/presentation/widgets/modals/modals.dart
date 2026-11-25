@@ -1,3 +1,4 @@
+export 'account_recovery_dialog.dart';
 export 'add_clinic_modal.dart';
 export 'add_patient_modal.dart';
 export 'add_radiograph_modal.dart';

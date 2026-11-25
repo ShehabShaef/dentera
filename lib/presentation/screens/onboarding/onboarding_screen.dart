@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
+import '../../../core/services/account_recovery_service.dart';
 import '../../../core/services/database_backup_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/database/database.dart';
@@ -96,10 +97,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         academicYear: academicYear,
       );
 
+      // Persist recovery metadata (for non-guest users) and installation verification marker.
+      await ref.read(accountRecoveryServiceProvider).writeRecoverySnapshotAndInstallMarker(
+            UserProfile(
+              firstName: firstName,
+              lastName: lastName,
+              university: university,
+              academicYear: academicYear,
+              isGuest: isGuest,
+            ),
+          );
+
       // Refresh reactive profile notifier and clear any stale provider caches before entering workspace.
       await ref.read(userProfileProvider.notifier).loadProfile();
       ref.read(databaseBackupServiceProvider).invalidateRiverpodState();
       ref.invalidate(onboardingStatusProvider);
+      ref.invalidate(startupRecoveryCandidateProvider);
 
       if (!mounted) return;
 

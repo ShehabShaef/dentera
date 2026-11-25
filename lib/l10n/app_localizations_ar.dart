@@ -1632,4 +1632,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get exportDemoCsv => 'تصدير جدول CSV التجريبي';
+
+  @override
+  String get accountRecoveryTitle => 'تم العثور على حساب سابق';
+
+  @override
+  String accountRecoveryMessage(String doctorName, String academicYear) {
+    return 'تم العثور على بيانات محفوظة مسبقًا لـ $doctorName ($academicYear). هل ترغب في المتابعة ببياناتك الحالية أم البدء بحساب جديد؟';
+  }
+
+  @override
+  String get continueWithExistingData => 'المتابعة بالبيانات الحالية';
+
+  @override
+  String get startNewAccount => 'البدء بحساب جديد';
 }

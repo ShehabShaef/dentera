@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/services/database_backup_service.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../core/theme/theme.dart';
@@ -8,6 +9,7 @@ import '../../../data/repositories/preferences_repository.dart';
 import '../../../l10n/l10n.dart';
 import '../../state/state.dart';
 import '../../widgets/modals/modals.dart';
+import '../onboarding/onboarding_screen.dart';
 import 'widgets/widgets.dart';
 
 /// Profile & Settings screen managing user profile, preferences, and offline backups.
@@ -242,15 +244,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Future<void> _onResetAllData() async {
     final didReset = await DatabaseResetModal.show(context);
     if (didReset == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'All clinical data and preferences have been successfully reset.',
-            style: AppTextStyles.bodyMd.copyWith(color: Colors.white),
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
+      // Reset active bottom navigation tab back to Dashboard (index 0) and replace the
+      // entire route stack so consecutive resets (1st, 2nd, 3rd, ...) reliably return to Onboarding.
+      ref.read(rootNavigationIndexProvider.notifier).state = 0;
+      AppLogger.info('[ProfileScreen] App reset completed — routing root Navigator to OnboardingScreen.');
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute<void>(
+          builder: (context) => const OnboardingScreen(),
         ),
+        (route) => false,
       );
     }
   }
@@ -474,29 +476,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ),
                   const SizedBox(height: 32),
 
-                  // 6. Danger Zone
+                  // 6. Danger Zone — Compact, theme-aware destructive action
                   Center(
-                    child: OutlinedButton.icon(
-                      onPressed: _onResetAllData,
-                      icon: const Icon(
-                        Icons.delete_forever_rounded,
-                        color: AppColors.error,
-                        size: 20,
-                      ),
-                      label: Text(
-                        context.l10n.resetAllClinicalData,
-                        style: AppTextStyles.bodyMd.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.error, width: 1.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final dangerColor = isDark ? AppDarkColors.statusError : AppColors.error;
+                        return OutlinedButton.icon(
+                          key: const Key('profile_reset_button'),
+                          onPressed: _onResetAllData,
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: dangerColor,
+                            size: 18,
+                          ),
+                          label: Text(
+                            context.l10n.resetAllClinicalData,
+                            style: AppTextStyles.bodyMd.copyWith(
+                              fontSize: 13.5,
+                              color: dangerColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: dangerColor.withValues(alpha: isDark ? 0.12 : 0.06),
+                            foregroundColor: dangerColor,
+                            side: BorderSide(
+                              color: dangerColor.withValues(alpha: isDark ? 0.34 : 0.28),
+                              width: 1.0,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                            minimumSize: const Size(0, 42),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 48),

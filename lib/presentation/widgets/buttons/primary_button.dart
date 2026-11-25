@@ -62,10 +62,14 @@ class PrimaryButton extends StatelessWidget {
           icon!,
           const SizedBox(width: 8),
         ],
-        Text(
-          text,
-          style: effectiveTextStyle,
-          textAlign: TextAlign.center,
+        Flexible(
+          child: Text(
+            text,
+            style: effectiveTextStyle,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

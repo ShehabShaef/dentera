@@ -118,6 +118,7 @@ class PreferencesRepository {
   static const String _keyFollowUpAlertsEnabled = 'followUpAlertsEnabled';
   static const String _keyAvatarPath = 'avatarPath';
   static const String _keyIsGuest = 'isGuest';
+  static const String _keyWasExplicitlyReset = 'wasExplicitlyReset';
 
   /// Returns the system/device default languageCode ('ar' if system locale is Arabic, otherwise 'en').
   static String get defaultDeviceLanguageCode {
@@ -175,6 +176,21 @@ class PreferencesRepository {
     return prefs.getBool(_keyIsGuest) ?? false;
   }
 
+  /// Checks whether the user explicitly wiped data via the destructive Reset flow.
+  ///
+  /// Used on reinstall to suppress account recovery prompts after an explicit reset.
+  Future<bool> wasExplicitlyReset() async {
+    final prefs = await _instance;
+    return prefs.getBool(_keyWasExplicitlyReset) ?? false;
+  }
+
+  /// Updates the [wasExplicitlyReset] flag.
+  Future<void> setWasExplicitlyReset(bool value) async {
+    final prefs = await _instance;
+    await prefs.setBool(_keyWasExplicitlyReset, value);
+    AppLogger.info('User preference updated: wasExplicitlyReset = $value');
+  }
+
   /// Persists the user profile details captured during onboarding or profile editing.
   /// Supports separate [firstName] and [lastName], [isGuest] mode, with backward-compatible fallback for legacy [name].
   Future<void> saveUserProfile({
@@ -210,6 +226,7 @@ class PreferencesRepository {
       prefs.setString(_keyAcademicYear, academicYear),
       prefs.setBool(_keyIsGuest, isGuest),
       prefs.setBool(_keyHasCompletedOnboarding, true),
+      prefs.setBool(_keyWasExplicitlyReset, false),
     ]);
     AppLogger.info('Profile details updated successfully: Dr. $effectiveFirst $effectiveLast (isGuest: $isGuest)');
   }
@@ -419,7 +436,10 @@ class PreferencesRepository {
   }
 
   /// Completely wipes all persisted preferences from disk.
-  Future<void> clearAll() async {
+  ///
+  /// When [markExplicitReset] is `true` (default), persists `wasExplicitlyReset = true`
+  /// so subsequent reinstalls suppress previous-account recovery prompts.
+  Future<void> clearAll({bool markExplicitReset = true}) async {
     final prefs = await _instance;
     final avatarPath = prefs.getString(_keyAvatarPath);
     if (avatarPath != null) {
@@ -433,7 +453,10 @@ class PreferencesRepository {
       }
     }
     await prefs.clear();
-    AppLogger.info('All preferences cleared from disk');
+    if (markExplicitReset) {
+      await prefs.setBool(_keyWasExplicitlyReset, true);
+    }
+    AppLogger.info('All preferences cleared from disk (wasExplicitlyReset: $markExplicitReset)');
   }
 }
 
@@ -456,10 +479,12 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
   Future<void> _loadInitialTheme() async {
     final savedMode = await _repository.getThemeMode();
+    if (!mounted) return;
     state = savedMode;
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
+    if (!mounted) return;
     state = mode;
     await _repository.setThemeMode(mode);
   }
@@ -481,12 +506,14 @@ class LocaleNotifier extends StateNotifier<String> {
 
   Future<void> _loadInitialLocale() async {
     final savedLocale = await _repository.getLocale();
+    if (!mounted) return;
     if (state != savedLocale) {
       state = savedLocale;
     }
   }
 
   Future<void> setLocale(String locale) async {
+    if (!mounted) return;
     state = locale;
     await _repository.setLocale(locale);
   }
@@ -508,10 +535,12 @@ class FollowUpAlertsNotifier extends StateNotifier<bool> {
 
   Future<void> _loadInitialAlerts() async {
     final enabled = await _repository.getFollowUpAlertsEnabled();
+    if (!mounted) return;
     state = enabled;
   }
 
   Future<void> setAlertsEnabled(bool enabled) async {
+    if (!mounted) return;
     state = enabled;
     await _repository.setFollowUpAlertsEnabled(enabled);
   }
@@ -533,10 +562,12 @@ class AgendaRemindersNotifier extends StateNotifier<bool> {
 
   Future<void> _loadInitialReminders() async {
     final enabled = await _repository.getRemindersEnabled();
+    if (!mounted) return;
     state = enabled;
   }
 
   Future<void> setRemindersEnabled(bool enabled) async {
+    if (!mounted) return;
     state = enabled;
     await _repository.setRemindersEnabled(enabled);
   }
@@ -563,6 +594,7 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       final last = await _repository.getDoctorLastName() ?? '';
       final uni = await _repository.getUniversity() ?? (isGuest ? 'Guest Dental University' : 'Dental School');
       final year = await _repository.getAcademicYear() ?? '5th Year';
+      if (!mounted) return;
       state = AsyncValue.data(UserProfile(
         firstName: first,
         lastName: last,
@@ -571,6 +603,7 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
         isGuest: isGuest,
       ));
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
@@ -628,6 +661,7 @@ class AvatarNotifier extends StateNotifier<String?> {
 
   Future<void> _loadInitialAvatar() async {
     final path = await _repository.getAvatarPath();
+    if (!mounted) return;
     if (path != null) {
       if (_isTestEnvironment || File(path).existsSync()) {
         state = path;
@@ -639,6 +673,7 @@ class AvatarNotifier extends StateNotifier<String?> {
 
   /// Updates the avatar file path in memory and persists to preferences.
   Future<void> setAvatarPath(String path) async {
+    if (!mounted) return;
     state = path;
     await _repository.saveAvatarPath(path);
   }
@@ -656,7 +691,9 @@ class AvatarNotifier extends StateNotifier<String?> {
         AppLogger.warning('Failed to delete avatar file from disk: $e');
       }
     }
-    state = null;
+    if (mounted) {
+      state = null;
+    }
     await _repository.clearAvatarPath();
   }
 

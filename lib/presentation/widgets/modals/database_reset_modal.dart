@@ -93,12 +93,16 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final dangerColor = isDark ? AppDarkColors.statusError : AppColors.error;
+    final primaryText = isDark ? AppDarkColors.textPrimary : AppColors.onSurface;
+    final secondaryText = isDark ? AppDarkColors.textSecondary : AppColors.onSurfaceVariant;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: isDark ? AppDarkColors.surfaceContainer : AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         left: 20,
@@ -116,7 +120,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: isDark ? AppDarkColors.dragHandle : AppColors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -130,12 +134,12 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
+                  color: dangerColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.warning_amber_rounded,
-                  color: AppColors.error,
+                  color: dangerColor,
                   size: 26,
                 ),
               ),
@@ -147,7 +151,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                     Text(
                       context.l10n.dangerZone,
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.error,
+                        color: dangerColor,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.2,
                       ),
@@ -156,7 +160,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                     Text(
                       context.l10n.resetAllClinicalData,
                       style: AppTextStyles.h2.copyWith(
-                        color: AppColors.onSurface,
+                        color: primaryText,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -171,14 +175,14 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.06),
+              color: dangerColor.withValues(alpha: isDark ? 0.10 : 0.06),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+              border: Border.all(color: dangerColor.withValues(alpha: isDark ? 0.30 : 0.20)),
             ),
             child: Text(
               context.l10n.destructiveResetWarning,
               style: AppTextStyles.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
+                color: secondaryText,
                 height: 1.5,
               ),
             ),
@@ -190,7 +194,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
             context.l10n.typeResetToConfirm,
             style: AppTextStyles.caption.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.onSurface,
+              color: primaryText,
             ),
           ),
           const SizedBox(height: 8),
@@ -219,8 +223,8 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: _isResetEnabled && !_isResetting
-                        ? AppColors.error
-                        : AppColors.surfaceContainerHigh,
+                        ? dangerColor
+                        : (isDark ? AppDarkColors.surfaceContainerHigh : AppColors.surfaceContainerHigh),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Material(
@@ -245,7 +249,7 @@ class _DatabaseResetModalState extends ConsumerState<DatabaseResetModal> {
                                   fontWeight: FontWeight.w600,
                                   color: _isResetEnabled && !_isResetting
                                       ? Colors.white
-                                      : AppColors.outline,
+                                      : (isDark ? AppDarkColors.textMuted : AppColors.outline),
                                 ),
                               ),
                       ),

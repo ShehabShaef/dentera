@@ -10,11 +10,18 @@ import '../../data/database/app_database.dart';
 import '../../data/database/database_providers.dart';
 import '../../data/repositories/preferences_repository.dart';
 import '../../presentation/state/appointments_provider.dart';
+import '../../presentation/state/case_visits_provider.dart';
 import '../../presentation/state/cases_provider.dart';
 import '../../presentation/state/clinics_provider.dart';
+import '../../presentation/state/navigation_provider.dart';
 import '../../presentation/state/patients_provider.dart';
+import '../../presentation/state/radiographs_provider.dart';
+import '../../presentation/state/reminders_provider.dart';
 import '../../presentation/state/requirements_provider.dart';
+import '../../presentation/state/treatment_plans_provider.dart';
 import '../logging/app_logger.dart';
+import 'account_recovery_service.dart';
+import 'local_notification_service.dart';
 
 /// Status outcomes for database backup exports.
 enum BackupStatus {
@@ -107,6 +114,7 @@ class DatabaseBackupService {
     AppDatabase? appDatabase,
     this.customDatabasePath,
     this.ref,
+    this.notificationService,
   }) : _appDatabase = appDatabase ?? AppDatabase.instance;
 
   final AppDatabase _appDatabase;
@@ -114,8 +122,11 @@ class DatabaseBackupService {
   /// Optional custom database path override for isolated unit testing.
   final String? customDatabasePath;
 
-  /// Riverpod ref used to trigger systematic provider invalidation post-import.
+  /// Riverpod ref used to trigger systematic provider invalidation post-import or reset.
   final Ref? ref;
+
+  /// Optional notification service override used when cancelling reminders during reset.
+  final LocalNotificationService? notificationService;
 
   /// Expected 16-byte magic number header found at offset 0 of all valid SQLite 3 database files:
   /// `SQLite format 3\000` (ASCII bytes: 0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72, 0x6D, 0x61, 0x74, 0x20, 0x33, 0x00).
@@ -368,8 +379,28 @@ class DatabaseBackupService {
     AppLogger.warning('CRITICAL: Executing complete database wipe. All clinical records cleared.');
     try {
       await _appDatabase.resetAllData(preferencesRepository: preferencesRepository);
-      invalidateRiverpodState();
-      AppLogger.info('Complete database reset and preference wipe executed successfully.');
+
+      // Cancel all pending local notification reminders so wiped clinical cases never fire orphan alerts.
+      try {
+        final notifService = notificationService ?? ref?.read(notificationServiceProvider);
+        if (notifService != null) {
+          await notifService.cancelAllReminders();
+        } else {
+          await LocalNotificationService().cancelAllReminders();
+        }
+      } catch (e) {
+        AppLogger.warning('Notification reminder cancellation encountered an error during reset: $e');
+      }
+
+      // Remove install sentinel and recovery metadata via AccountRecoveryService if available.
+      try {
+        await ref?.read(accountRecoveryServiceProvider).clearAllRecoveryArtifacts();
+      } catch (e) {
+        AppLogger.warning('Failed clearing recovery artifacts during reset: $e');
+      }
+
+      invalidateRiverpodState(resetUiFilters: true);
+      AppLogger.info('Complete database reset, notification wipe, and preference clear executed successfully.');
     } catch (e, stackTrace) {
       final errorMsg = 'Failed to execute complete database wipe: $e';
       AppLogger.error(errorMsg, e, stackTrace);
@@ -377,41 +408,91 @@ class DatabaseBackupService {
     }
   }
 
-  /// Systematically invalidates all database and domain Riverpod providers.
+  void _invalidateIfExists(Ref activeRef, ProviderBase<Object?> provider) {
+    if (activeRef.exists(provider)) {
+      activeRef.invalidate(provider);
+    }
+  }
+
+  /// Systematically invalidates all mounted database, domain, preference, and optional UI
+  /// state providers.
   ///
-  /// Executing this after an import or database reset forces Riverpod to tear down
-  /// cached repository instances and re-fetch records from the database file, preventing
-  /// the UI from rendering obsolete or inconsistent "ghost" data.
-  void invalidateRiverpodState() {
+  /// Checking `Ref.exists` before invalidating prevents Riverpod from eagerly constructing and
+  /// mounting dormant providers (which avoids unintended SQLite or preference lookups in tests
+  /// and background flows), while still refreshing every active provider held by the UI.
+  void invalidateRiverpodState({bool resetUiFilters = false}) {
     final activeRef = ref;
     if (activeRef == null) {
       AppLogger.debug('Riverpod Ref is null; skipping provider invalidation.');
       return;
     }
 
-    AppLogger.info('Invalidating all Riverpod database, domain, and preference providers...');
+    AppLogger.info(
+      'Invalidating all Riverpod database, domain, and preference providers (resetUiFilters: $resetUiFilters)...',
+    );
 
     // Invalidate database singleton & repositories
-    activeRef.invalidate(appDatabaseProvider);
-    activeRef.invalidate(patientRepositoryProvider);
-    activeRef.invalidate(clinicRepositoryProvider);
-    activeRef.invalidate(requirementRepositoryProvider);
-    activeRef.invalidate(caseRecordRepositoryProvider);
-    activeRef.invalidate(appointmentRepositoryProvider);
-    activeRef.invalidate(preferencesRepositoryProvider);
+    _invalidateIfExists(activeRef, appDatabaseProvider);
+    _invalidateIfExists(activeRef, patientRepositoryProvider);
+    _invalidateIfExists(activeRef, clinicRepositoryProvider);
+    _invalidateIfExists(activeRef, requirementRepositoryProvider);
+    _invalidateIfExists(activeRef, caseRecordRepositoryProvider);
+    _invalidateIfExists(activeRef, appointmentRepositoryProvider);
+    _invalidateIfExists(activeRef, caseVisitRepositoryProvider);
+    _invalidateIfExists(activeRef, treatmentPlanRepositoryProvider);
+    _invalidateIfExists(activeRef, radiographRepositoryProvider);
+    _invalidateIfExists(activeRef, preferencesRepositoryProvider);
 
-    // Invalidate domain query providers
-    activeRef.invalidate(patientListProvider);
-    activeRef.invalidate(clinicListProvider);
-    activeRef.invalidate(allRequirementsProvider);
-    activeRef.invalidate(allCasesProvider);
-    activeRef.invalidate(allAppointmentsProvider);
+    // Invalidate domain query & family providers
+    _invalidateIfExists(activeRef, patientListProvider);
+    _invalidateIfExists(activeRef, filteredPatientListProvider);
+    activeRef.invalidate(patientByIdProvider);
+    _invalidateIfExists(activeRef, clinicListProvider);
+    _invalidateIfExists(activeRef, allRequirementsProvider);
+    activeRef.invalidate(requirementsByClinicProvider);
+    _invalidateIfExists(activeRef, globalQuotaSummaryProvider);
+    _invalidateIfExists(activeRef, allCasesProvider);
+    activeRef.invalidate(casesByPatientProvider);
+    activeRef.invalidate(casesByRequirementProvider);
+    activeRef.invalidate(casesWithRequirementsByPatientProvider);
+    _invalidateIfExists(activeRef, allAppointmentsProvider);
     activeRef.invalidate(dailyAppointmentsProvider);
-    activeRef.invalidate(upcomingAppointmentsProvider);
-    activeRef.invalidate(globalQuotaSummaryProvider);
-    activeRef.invalidate(filteredPatientListProvider);
-    activeRef.invalidate(onboardingStatusProvider);
-    activeRef.invalidate(remindersEnabledProvider);
+    _invalidateIfExists(activeRef, upcomingAppointmentsProvider);
+    activeRef.invalidate(caseVisitsByCaseRecordProvider);
+    activeRef.invalidate(treatmentPlansByPatientProvider);
+    _invalidateIfExists(activeRef, allTreatmentPlansProvider);
+    activeRef.invalidate(radiographsByPatientProvider);
+    _invalidateIfExists(activeRef, allRadiographsProvider);
+    _invalidateIfExists(activeRef, clinicalRemindersProvider);
+
+    // Invalidate preference & startup recovery providers
+    _invalidateIfExists(activeRef, onboardingStatusProvider);
+    _invalidateIfExists(activeRef, startupRecoveryCandidateProvider);
+    _invalidateIfExists(activeRef, remindersEnabledProvider);
+    _invalidateIfExists(activeRef, userProfileProvider);
+    _invalidateIfExists(activeRef, avatarProvider);
+    _invalidateIfExists(activeRef, themeModeProvider);
+    _invalidateIfExists(activeRef, localeProvider);
+    _invalidateIfExists(activeRef, followUpAlertsProvider);
+    _invalidateIfExists(activeRef, agendaRemindersProvider);
+
+    // Reset navigation & UI filter/selection states when performing a full app reset
+    if (resetUiFilters) {
+      _invalidateIfExists(activeRef, rootNavigationIndexProvider);
+      _invalidateIfExists(activeRef, selectedScheduleDateProvider);
+      _invalidateIfExists(activeRef, selectedClinicCategoryProvider);
+      _invalidateIfExists(activeRef, clinicSortOptionProvider);
+      _invalidateIfExists(activeRef, clinicSelectionModeProvider);
+      _invalidateIfExists(activeRef, selectedClinicIdsProvider);
+      activeRef.invalidate(clinicRequirementSortOptionProvider);
+      activeRef.invalidate(clinicRequirementSelectionModeProvider);
+      activeRef.invalidate(selectedClinicRequirementIdsProvider);
+      _invalidateIfExists(activeRef, patientSearchQueryProvider);
+      _invalidateIfExists(activeRef, patientFilterCategoryProvider);
+      _invalidateIfExists(activeRef, patientSortOptionProvider);
+      _invalidateIfExists(activeRef, patientSelectionModeProvider);
+      _invalidateIfExists(activeRef, selectedPatientIdsProvider);
+    }
 
     AppLogger.debug('All clinical providers successfully invalidated.');
   }
@@ -420,7 +501,8 @@ class DatabaseBackupService {
 /// Riverpod provider exposing the [DatabaseBackupService] singleton.
 final databaseBackupServiceProvider = Provider<DatabaseBackupService>((ref) {
   return DatabaseBackupService(
-    appDatabase: ref.watch(appDatabaseProvider),
+    appDatabase: ref.read(appDatabaseProvider),
+    notificationService: ref.read(notificationServiceProvider),
     ref: ref,
   );
 });

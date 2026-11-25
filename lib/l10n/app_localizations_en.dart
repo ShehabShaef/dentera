@@ -1641,4 +1641,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportDemoCsv => 'Export Demo Tabular CSV';
+
+  @override
+  String get accountRecoveryTitle => 'Previous Account Found';
+
+  @override
+  String accountRecoveryMessage(String doctorName, String academicYear) {
+    return 'Found existing data for $doctorName ($academicYear). Would you like to continue with your previous account or start a new account?';
+  }
+
+  @override
+  String get continueWithExistingData => 'Continue with Existing Data';
+
+  @override
+  String get startNewAccount => 'Start New Account';
 }

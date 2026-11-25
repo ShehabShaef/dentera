@@ -684,5 +684,15 @@
   "generatingDemoReportNotice": "Generating showcase Demo Report (demo data)...",
   "previewAndPrintDemoPdf": "Preview & Print Demo PDF",
   "shareDemoPdfReport": "Share Demo PDF Report",
-  "exportDemoCsv": "Export Demo Tabular CSV"
+  "exportDemoCsv": "Export Demo Tabular CSV",
+  "accountRecoveryTitle": "Previous Account Found",
+  "accountRecoveryMessage": "Found existing data for {doctorName} ({academicYear}). Would you like to continue with your previous account or start a new account?",
+  "@accountRecoveryMessage": {
+    "placeholders": {
+      "doctorName": { "type": "String" },
+      "academicYear": { "type": "String" }
+    }
+  },
+  "continueWithExistingData": "Continue with Existing Data",
+  "startNewAccount": "Start New Account"
 }
