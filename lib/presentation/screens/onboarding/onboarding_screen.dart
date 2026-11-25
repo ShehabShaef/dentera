@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
+import '../../../core/services/database_backup_service.dart';
 import '../../../core/theme/theme.dart';
+import '../../../data/database/database.dart';
 import '../../../data/repositories/preferences_repository.dart';
 import '../../../l10n/l10n.dart';
 import '../root_navigation_screen.dart';
@@ -61,7 +64,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  Future<void> _continueAsGuest() async {
+  /// Shared onboarding finalization helper enforcing strict Guest vs. Real User isolation:
+  /// - Persists clinician credentials & `isGuest` flag via [PreferencesRepository].
+  /// - If `isGuest == true`, seeds the rich showcase demo dataset (`DatabaseSeeder.seedGuestDemoData`).
+  /// - If `isGuest == false`, enforces a clean clinical slate (`DatabaseSeeder.seedRealUserBaseline`:
+  ///   0 patients, 0 case records, 0 appointments).
+  /// - Synchronizes Riverpod profile state and invalidates cached domain providers prior to navigation.
+  Future<void> _finalizeOnboarding({
+    required bool isGuest,
+    required String firstName,
+    required String lastName,
+    required String university,
+    required String academicYear,
+  }) async {
     setState(() {
       _isLoading = true;
     });
@@ -69,15 +84,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final prefsRepo = ref.read(preferencesRepositoryProvider);
       await prefsRepo.saveUserProfile(
-        firstName: 'Guest',
-        lastName: '',
-        university: 'Guest Dental University',
-        academicYear: '5th Year',
-        isGuest: true,
+        firstName: firstName,
+        lastName: lastName,
+        university: university,
+        academicYear: academicYear,
+        isGuest: isGuest,
       );
 
-      // Invalidate and reload userProfileProvider & onboarding status
+      await ref.read(onboardingSeederProvider)(
+        isGuest: isGuest,
+        academicYear: academicYear,
+      );
+
+      // Refresh reactive profile notifier and clear any stale provider caches before entering workspace.
       await ref.read(userProfileProvider.notifier).loadProfile();
+      ref.read(databaseBackupServiceProvider).invalidateRiverpodState();
       ref.invalidate(onboardingStatusProvider);
 
       if (!mounted) return;
@@ -87,6 +108,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           builder: (context) => const RootNavigationScreen(),
         ),
       );
+    } catch (e, stackTrace) {
+      AppLogger.error('[OnboardingScreen] Failed to complete onboarding (isGuest: $isGuest): $e', e, stackTrace);
+      rethrow;
     } finally {
       if (mounted) {
         setState(() {
@@ -94,6 +118,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         });
       }
     }
+  }
+
+  Future<void> _continueAsGuest() async {
+    await _finalizeOnboarding(
+      isGuest: true,
+      firstName: 'Guest',
+      lastName: '',
+      university: 'Guest Dental University',
+      academicYear: '5th Year',
+    );
   }
 
   Future<void> _completeOnboarding() async {
@@ -108,38 +142,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final lastName = PreferencesRepository.stripDoctorPrefix(_lastNameController.text.trim());
     final university = _universityController.text.trim();
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final prefsRepo = ref.read(preferencesRepositoryProvider);
-      await prefsRepo.saveUserProfile(
-        firstName: firstName.isNotEmpty ? firstName : 'Doctor',
-        lastName: lastName,
-        university: university.isNotEmpty ? university : 'Dental School',
-        academicYear: _selectedYear,
-        isGuest: false,
-      );
-
-      // Invalidate and reload userProfileProvider & onboarding status
-      await ref.read(userProfileProvider.notifier).loadProfile();
-      ref.invalidate(onboardingStatusProvider);
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (context) => const RootNavigationScreen(),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    await _finalizeOnboarding(
+      isGuest: false,
+      firstName: firstName.isNotEmpty ? firstName : 'Doctor',
+      lastName: lastName,
+      university: university.isNotEmpty ? university : 'Dental School',
+      academicYear: _selectedYear,
+    );
   }
 
   @override

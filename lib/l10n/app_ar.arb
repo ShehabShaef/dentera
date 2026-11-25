@@ -503,5 +503,15 @@
   "visitProgress": "الزيارة {current} من {total}",
   "visitMarkedCompleted": "تم تحديد الزيارة {number} كمكتملة",
   "statusPending": "قيد الانتظار",
-  "dashboardSubtitle": "{today} • عيادات {year}"
+  "dashboardSubtitle": "{today} • عيادات {year}",
+  "demoReportBanner": "تقرير تجريبي — للعرض فقط (بيانات تجريبية)",
+  "demoReportSampleBadge": "تقرير تجريبي — بيانات عينة فقط",
+  "guestDemoReportNotice": "وضع الضيف: يتم تصدير تقرير تجريبي ببيانات عينة لعرض تصميم التقارير في دنتيرا.",
+  "demoReportDialogTitle": "عرض التقرير التجريبي",
+  "demoReportDialogMessage": "تصدير التقارير الإكلينيكية الحية متاح لحسابات الطلاب المسجلين فقط. لأنك في وضع الضيف، سيتم إنشاء تقرير تجريبي ببيانات عينة مزود بعلامة مائية لعرض شكل التقارير في دنتيرا.",
+  "generateDemoReportButton": "إنشاء التقرير التجريبي",
+  "generatingDemoReportNotice": "جاري إنشاء التقرير التجريبي للعرض (بيانات تجريبية)...",
+  "previewAndPrintDemoPdf": "معاينة وطباعة PDF تجريبي",
+  "shareDemoPdfReport": "مشاركة تقرير PDF التجريبي",
+  "exportDemoCsv": "تصدير جدول CSV التجريبي"
 }

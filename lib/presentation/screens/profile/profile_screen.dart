@@ -406,7 +406,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       SettingsListTile(
                         icon: Icons.picture_as_pdf_outlined,
                         title: context.l10n.generateQuotaReport,
-                        subtitle: 'Supervisory academic PDF & CSV export',
+                        subtitle: userProfile.isGuest
+                            ? context.l10n.demoReportDialogTitle
+                            : 'Supervisory academic PDF & CSV export',
                         showDivider: true,
                         trailing: Icon(
                           Icons.chevron_right_rounded,

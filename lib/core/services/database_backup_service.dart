@@ -406,6 +406,7 @@ class DatabaseBackupService {
     activeRef.invalidate(allRequirementsProvider);
     activeRef.invalidate(allCasesProvider);
     activeRef.invalidate(allAppointmentsProvider);
+    activeRef.invalidate(dailyAppointmentsProvider);
     activeRef.invalidate(upcomingAppointmentsProvider);
     activeRef.invalidate(globalQuotaSummaryProvider);
     activeRef.invalidate(filteredPatientListProvider);

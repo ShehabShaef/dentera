@@ -3049,6 +3049,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{today} • {year} {clinics}'**
   String dashboardSubtitle(String today, String year, String clinics);
+
+  /// No description provided for @demoReportBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'DEMO REPORT — FOR SHOWCASE ONLY (DEMO DATA)'**
+  String get demoReportBanner;
+
+  /// No description provided for @demoReportSampleBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'DEMO REPORT — SAMPLE DATA ONLY'**
+  String get demoReportSampleBadge;
+
+  /// No description provided for @guestDemoReportNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest Mode: Exporting generates a Demo Report with sample showcase data to preview Dentera\'s report layout.'**
+  String get guestDemoReportNotice;
+
+  /// No description provided for @demoReportDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo Report Showcase'**
+  String get demoReportDialogTitle;
+
+  /// No description provided for @demoReportDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard live clinical report export is reserved for registered student accounts. Because you are in Guest Mode, this generates a watermarked Demo Report populated with sample data to showcase how Dentera\'s reports look.'**
+  String get demoReportDialogMessage;
+
+  /// No description provided for @generateDemoReportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Demo Report'**
+  String get generateDemoReportButton;
+
+  /// No description provided for @generatingDemoReportNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating showcase Demo Report (demo data)...'**
+  String get generatingDemoReportNotice;
+
+  /// No description provided for @previewAndPrintDemoPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview & Print Demo PDF'**
+  String get previewAndPrintDemoPdf;
+
+  /// No description provided for @shareDemoPdfReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Demo PDF Report'**
+  String get shareDemoPdfReport;
+
+  /// No description provided for @exportDemoCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Demo Tabular CSV'**
+  String get exportDemoCsv;
 }
 
 class _AppLocalizationsDelegate
