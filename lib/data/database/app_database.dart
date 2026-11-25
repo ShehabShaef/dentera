@@ -413,9 +413,22 @@ class AppDatabase {
       if (await radiographsDir.exists()) {
         await radiographsDir.delete(recursive: true);
       }
+      // Remove persisted reinstall recovery metadata so post-reset reinstalls launch clean.
+      final recoveryMetaFile = File(p.join(docDir.path, 'dentera_recovery_meta.json'));
+      if (await recoveryMetaFile.exists()) {
+        await recoveryMetaFile.delete();
+      }
+    } catch (_) {}
+
+    try {
+      final supportDir = await getApplicationSupportDirectory();
+      final installMarkerFile = File(p.join(supportDir.path, 'dentera_install_verified'));
+      if (await installMarkerFile.exists()) {
+        await installMarkerFile.delete();
+      }
     } catch (_) {}
 
     final prefsRepo = preferencesRepository ?? PreferencesRepository();
-    await prefsRepo.clearAll();
+    await prefsRepo.clearAll(markExplicitReset: true);
   }
 }

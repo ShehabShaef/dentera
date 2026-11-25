@@ -3109,6 +3109,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export Demo Tabular CSV'**
   String get exportDemoCsv;
+
+  /// No description provided for @accountRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous Account Found'**
+  String get accountRecoveryTitle;
+
+  /// No description provided for @accountRecoveryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Found existing data for {doctorName} ({academicYear}). Would you like to continue with your previous account or start a new account?'**
+  String accountRecoveryMessage(String doctorName, String academicYear);
+
+  /// No description provided for @continueWithExistingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Existing Data'**
+  String get continueWithExistingData;
+
+  /// No description provided for @startNewAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Start New Account'**
+  String get startNewAccount;
 }
 
 class _AppLocalizationsDelegate

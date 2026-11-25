@@ -513,5 +513,9 @@
   "generatingDemoReportNotice": "جاري إنشاء التقرير التجريبي للعرض (بيانات تجريبية)...",
   "previewAndPrintDemoPdf": "معاينة وطباعة PDF تجريبي",
   "shareDemoPdfReport": "مشاركة تقرير PDF التجريبي",
-  "exportDemoCsv": "تصدير جدول CSV التجريبي"
+  "exportDemoCsv": "تصدير جدول CSV التجريبي",
+  "accountRecoveryTitle": "تم العثور على حساب سابق",
+  "accountRecoveryMessage": "تم العثور على بيانات محفوظة مسبقًا لـ {doctorName} ({academicYear}). هل ترغب في المتابعة ببياناتك الحالية أم البدء بحساب جديد؟",
+  "continueWithExistingData": "المتابعة بالبيانات الحالية",
+  "startNewAccount": "البدء بحساب جديد"
 }
