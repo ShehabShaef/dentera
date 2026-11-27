@@ -99,9 +99,11 @@ class _WelcomePageState extends State<WelcomePage> {
                   // Header Logo
                   Center(
                     child: Image.asset(
-                      'assets/images/dentera_logo.png',
-                      width: 56,
-                      height: 56,
+                      isDark
+                          ? 'assets/images/dentera_logo_dark.png'
+                          : 'assets/images/dentera_logo.png',
+                      width: 64,
+                      height: 64,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.medical_services_outlined,
                         size: 48,

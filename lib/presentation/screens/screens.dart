@@ -7,3 +7,4 @@ export 'patients/patient_case_sheet_screen.dart';
 export 'patients/patients_screen.dart';
 export 'profile/profile_screen.dart';
 export 'root_navigation_screen.dart';
+export 'splash/splash_screen.dart';
