@@ -8,6 +8,7 @@ import 'data/repositories/preferences_repository.dart';
 import 'l10n/app_localizations.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 import 'presentation/screens/root_navigation_screen.dart';
+import 'presentation/screens/splash/splash_screen.dart';
 import 'presentation/widgets/modals/account_recovery_dialog.dart';
 
 void main() {
@@ -40,7 +41,7 @@ class DenteraApp extends ConsumerWidget {
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: const InitializationScreen(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -81,7 +82,9 @@ class InitializationScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Image.asset(
-              'assets/images/dentera_logo.png',
+              isDark
+                  ? 'assets/images/dentera_logo_dark.png'
+                  : 'assets/images/dentera_logo.png',
               width: 72,
               height: 72,
               errorBuilder: (context, error, stackTrace) => Icon(
